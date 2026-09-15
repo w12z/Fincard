@@ -1,0 +1,43 @@
+{
+  "indicators": {
+    "gdp": "国内生产总值",
+    "inflation": "通货膨胀",
+    "unemployment": "失业率",
+    "debt": "政府债务",
+    "confidence": "市场信心",
+    "approval": "民众支持率",
+    "interest_rate": "利率",
+    "tax_rate": "税率",
+    "growth": "经济增长率",
+    "debt_ratio": "债务率",
+    "political_capital_gain": "每回合政治行动点增益"
+  },
+  "resources": {
+    "budget": "财政预算",
+    "political_capital": "政治行动点"
+  },
+  "events": {
+    "turn_started": "回合开始",
+    "turn_ended": "回合结束",
+    "card_played": "打出卡牌",
+    "card_gained": "获得卡牌",
+    "cards_drawn": "抽牌",
+    "indicator_changed": "指标变化",
+    "modifier_applied": "修正生效",
+    "modifier_expired": "修正到期",
+    "resource_changed": "资源变化",
+    "year_started": "财年开始",
+    "year_ended": "财年结束",
+    "event_triggered": "事件触发",
+    "event_resolved": "事件处理",
+    "cabinet_appointed": "任命内阁",
+    "aid_used": "使用援助",
+    "aid_gained": "获得援助",
+    "budget_offered": "确定预算",
+    "budget_chosen": "预算确定",
+    "reward_offered": "发放奖励",
+    "reward_chosen": "选择奖励",
+    "run_won": "胜利",
+    "run_lost": "失败"
+  }
+}

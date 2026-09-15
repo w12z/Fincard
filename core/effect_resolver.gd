@@ -1,0 +1,103 @@
+class_name EffectResolver
+extends RefCounted
+
+const OP_NAMES := {
+	"add": Modifier.Op.ADD,
+	"mul": Modifier.Op.MUL,
+	"override": Modifier.Op.OVERRIDE,
+}
+
+var economy: EconomyModel
+
+
+func resolve(effect: Effect, state: GameState, rng: Rng) -> Array[Event]:
+	if effect.condition != null and (economy == null or not effect.condition.evaluate(state, economy)):
+		return []
+	match effect.kind:
+		Effect.Kind.APPLY_MODIFIER:
+			return _apply_modifier(effect.params, state)
+		Effect.Kind.REMOVE_MODIFIER:
+			return _remove_modifier(effect.params, state)
+		Effect.Kind.ADJUST_INDICATOR:
+			return _adjust_indicator(effect.params, state)
+		Effect.Kind.DRAW_CARDS:
+			return _draw(effect.params, state, rng)
+		Effect.Kind.GAIN_BUDGET:
+			return _gain_resource(effect.params, state, &"budget")
+		Effect.Kind.GAIN_POLITICAL_CAPITAL:
+			return _gain_resource(effect.params, state, &"political_capital")
+		_:
+			return []
+
+
+func _apply_modifier(params: Dictionary, state: GameState) -> Array[Event]:
+	var modifier := Modifier.new(
+		StringName(params.get("target", "")),
+		_op_from(params.get("op", "add")),
+		float(params.get("value", 0.0)),
+		int(params.get("duration", 0)),
+		StringName(params.get("source", ""))
+	)
+	state.modifiers.append(modifier)
+	return [Event.new(Event.Kind.MODIFIER_APPLIED, {
+		"target": modifier.target,
+		"op": modifier.op,
+		"source": modifier.source,
+	})]
+
+
+func _remove_modifier(params: Dictionary, state: GameState) -> Array[Event]:
+	var target := StringName(params.get("target", ""))
+	var source := StringName(params.get("source", ""))
+	var kept: Array[Modifier] = []
+	var events: Array[Event] = []
+	for modifier in state.modifiers:
+		var matches_target := target == &"" or modifier.target == target
+		var matches_source := source == &"" or modifier.source == source
+		if matches_target and matches_source:
+			events.append(Event.new(Event.Kind.MODIFIER_EXPIRED, {
+				"target": modifier.target,
+				"source": modifier.source,
+			}))
+		else:
+			kept.append(modifier)
+	state.modifiers = kept
+	return events
+
+
+func _adjust_indicator(params: Dictionary, state: GameState) -> Array[Event]:
+	var target := StringName(params.get("target", ""))
+	var delta := float(params.get("amount", 0.0))
+	var previous := float(state.indicators.get(target, 0.0))
+	state.indicators[target] = previous + delta
+	return [Event.new(Event.Kind.INDICATOR_CHANGED, {
+		"indicator": target,
+		"previous": previous,
+		"current": previous + delta,
+		"delta": delta,
+	})]
+
+
+func _draw(params: Dictionary, state: GameState, rng: Rng) -> Array[Event]:
+	var count := int(params.get("count", 0))
+	var drawn := 0
+	while drawn < count and state.draw_card(rng):
+		drawn += 1
+	if drawn == 0:
+		return []
+	return [Event.new(Event.Kind.CARDS_DRAWN, {"count": drawn})]
+
+
+func _gain_resource(params: Dictionary, state: GameState, resource: StringName) -> Array[Event]:
+	var amount := int(params.get("amount", 0))
+	if resource == &"budget":
+		state.budget += amount
+	else:
+		state.political_capital += amount
+	return [Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": resource, "amount": amount})]
+
+
+func _op_from(value) -> int:
+	if value is String:
+		return OP_NAMES.get(value, Modifier.Op.ADD)
+	return int(value)

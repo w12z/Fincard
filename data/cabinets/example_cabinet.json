@@ -1,0 +1,11 @@
+{
+  "id": "example_cabinet",
+  "display_name": "示例内阁：财政顾问",
+  "description": "样板内阁。modifiers 为任命时生效的永久修正，triggers 为被动监听。",
+  "modifiers": [
+    { "kind": "apply_modifier", "params": { "target": "gdp", "op": "add", "value": 1, "duration": -1 } }
+  ],
+  "triggers": [
+    { "on": "turn_started", "effects": [ { "kind": "gain_political_capital", "params": { "amount": 1 } } ] }
+  ]
+}

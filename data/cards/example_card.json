@@ -1,0 +1,17 @@
+{
+  "id": "example_card",
+  "display_name": "示例政策：调整税率",
+  "description": "短期提高税率以增加收入，代价是暂时压低市场信心；若通胀偏高，还能顺带压低通胀。",
+  "cost": 1,
+  "political_cost": 1,
+  "tags": ["fiscal"],
+  "effects": [
+    { "kind": "apply_modifier", "params": { "target": "tax_rate", "op": "add", "value": 2, "duration": 2 } },
+    { "kind": "apply_modifier", "params": { "target": "confidence", "op": "add", "value": -1, "duration": 2 } },
+    {
+      "kind": "adjust_indicator",
+      "params": { "target": "inflation", "amount": -1 },
+      "condition": { "indicator": "inflation", "comparator": "gt", "value": 5 }
+    }
+  ]
+}

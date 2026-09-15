@@ -1,0 +1,39 @@
+{
+  "coefficients": {
+    "natural_unemployment": 6,
+    "neutral_rate": 3,
+    "debt_threshold": 0.9,
+    "confidence_neutral": 50,
+
+    "gdp_autonomy": 1.0,
+    "gdp_confidence": 0.01,
+    "gdp_rate": 0.05,
+    "gdp_crowding": 0,
+    "gdp_tax": 0.005,
+    "gdp_budget": 0.2,
+
+    "inflation_persistence": 0.0,
+    "inflation_phillips": 0.05,
+    "inflation_overheat": 0.05,
+    "inflation_budget": 0.02,
+    "inflation_rate": 0.0,
+
+    "unemployment_okun": 0.1,
+    "unemployment_reversion": 0.2,
+
+    "debt_spending": 0.2,
+    "debt_revenue": 0.0005,
+    "debt_interest": 0,
+
+    "confidence_growth": 0.1,
+    "confidence_inflation": 0.1,
+    "confidence_debt": 0,
+    "confidence_budget": 0.05,
+    "confidence_reversion": 0.2,
+
+    "approval_growth": 0.1,
+    "approval_inflation": 0.05,
+    "approval_unemployment": 0.05,
+    "approval_debt": 0
+  }
+}

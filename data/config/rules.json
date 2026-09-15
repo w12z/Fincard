@@ -1,0 +1,10 @@
+{
+  "draw_per_turn": 4,
+  "turns_per_year": 12,
+  "reward_option_count": 3,
+  "trigger_iteration_limit": 8,
+  "political_capital_per_turn": 1,
+  "base_budget": 10,
+  "base_political_capital": 5,
+  "base_budget_scale": 1
+}

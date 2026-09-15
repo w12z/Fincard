@@ -1,0 +1,40 @@
+{
+  "id": "example_country",
+  "display_name": "示例国",
+  "description": "样板开局情形。包含初始牌组、经济状态、事件池、初始资源与最终目标。",
+  "starting_deck": [
+    "example_card",
+    "example_card",
+    "example_card",
+    "example_card",
+    "example_card"
+  ],
+  "indicators": {
+    "gdp": 100,
+    "inflation": 3,
+    "unemployment": 6,
+    "debt": 60,
+    "confidence": 50,
+    "approval": 50,
+    "interest_rate": 3,
+    "tax_rate": 20
+  },
+  "event_pool": ["example_event"],
+  "innate_modifiers": [
+    { "kind": "apply_modifier", "params": { "target": "approval", "op": "add", "value": 0, "duration": -1 } }
+  ],
+  "budget_pool": ["example_budget"],
+  "groups": ["example_group"],
+  "goal": {
+    "description": "样板目标：把 GDP 提升到 110 以上，同时把通胀控制在 5 以下。",
+    "deadline_years": 5,
+    "conditions": [
+      { "indicator": "gdp", "comparator": "ge", "value": 110 },
+      { "indicator": "inflation", "comparator": "le", "value": 5 }
+    ],
+    "loss_conditions": [
+      { "indicator": "inflation", "comparator": "gt", "value": 20 },
+      { "indicator": "approval", "comparator": "lt", "value": 0 }
+    ]
+  }
+}

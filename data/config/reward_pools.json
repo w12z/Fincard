@@ -1,0 +1,6 @@
+{
+  "cards": ["example_card"],
+  "cabinets": ["example_cabinet"],
+  "aids": ["example_aid"],
+  "budgets": ["example_budget"]
+}
