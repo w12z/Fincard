@@ -1,0 +1,6 @@
+{
+  "id": "example_card_group",
+  "type": "cards",
+  "display_name": "示例卡牌组",
+  "members": ["example_card"]
+}

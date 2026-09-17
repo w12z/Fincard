@@ -1,0 +1,6 @@
+{
+  "id": "example_budget_group",
+  "type": "budgets",
+  "display_name": "示例预算组",
+  "members": ["example_budget"]
+}

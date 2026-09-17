@@ -1,0 +1,6 @@
+{
+  "id": "example_event_group",
+  "type": "events",
+  "display_name": "示例事件组",
+  "members": ["example_event"]
+}

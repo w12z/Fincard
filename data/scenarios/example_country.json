@@ -24,7 +24,13 @@
     { "kind": "apply_modifier", "params": { "target": "approval", "op": "add", "value": 0, "duration": -1 } }
   ],
   "budget_pool": ["example_budget"],
-  "groups": ["example_group"],
+  "groups": {
+    "cards": ["example_card_group"],
+    "cabinets": ["example_cabinet_group"],
+    "aids": ["example_aid_group"],
+    "budgets": ["example_budget_group"],
+    "events": ["example_event_group"]
+  },
   "goal": {
     "description": "样板目标：把 GDP 提升到 110 以上，同时把通胀控制在 5 以下。",
     "deadline_years": 5,

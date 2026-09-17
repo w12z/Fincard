@@ -38,8 +38,7 @@ static func from_dict(data: Dictionary) -> ScenarioDef:
 		var flat: Array[StringName] = []
 		for group_id in raw_groups:
 			flat.append(StringName(group_id))
-		for type in GroupDef.TYPES:
-			scenario.groups[type] = flat.duplicate()
+		scenario.groups["*"] = flat
 	elif raw_groups is Dictionary:
 		for key in raw_groups:
 			var list: Array[StringName] = []

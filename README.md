@@ -347,40 +347,43 @@ godot --headless --path . --quit            # 启动主场景
 
 ### 4.11 组 `data/groups/*.json` 与按国限定
 
-组是独立文件，用 id 列出各类型的成员（成员需已在对应目录中存在）：
+**每个组只属于一种类型**，独立成一个文件，用 `members` 列出该类型的成员 id（成员需已在对应目录中存在）：
 
 ```json
 {
-  "id": "example_group",
-  "display_name": "示例组",
-  "cards": ["card_id", "card_id2"],
-  "cabinets": ["cabinet_id"],
-  "aids": ["aid_id"],
-  "budgets": ["budget_id"],
-  "events": ["event_id"]
+  "id": "example_card_group",
+  "type": "cards",
+  "display_name": "示例卡牌组",
+  "members": ["card_id", "card_id2"]
 }
 ```
+
+`type` 取 `cards` / `cabinets` / `aids` / `budgets` / `events`。各类各建各的组，例如 `data/groups/fiscal_cards.json`（type=cards）、`data/groups/standard_budgets.json`（type=budgets）。
 
 国家用 `groups` 声明本局允许使用哪些组。两种写法：
 
 ```json
-"groups": ["group_a", "group_b"]
-```
-
-```json
 "groups": {
-  "cards": ["group_a"],
-  "cabinets": ["group_b"],
-  "events": ["group_a"]
+  "cards": ["example_card_group"],
+  "cabinets": ["example_cabinet_group"],
+  "aids": ["example_aid_group"],
+  "budgets": ["example_budget_group"],
+  "events": ["example_event_group"]
 }
 ```
 
+```json
+"groups": ["example_card_group", "example_budget_group"]
+```
+
+（平铺写法：组按自身 `type` 归入对应类型。）
+
 规则：
 
-- 某类型一旦配置了非空组列表，则该类型只有**出现在这些组的成员列表里**的条目可用。
+- 某类型一旦配置了非空组列表，则该类型只有**属于这些组（且组类型匹配）**的条目可用。
 - 未配置 `groups`（或某类型列表为空）时，该类型不做限制（全部可用）。
 - 生效范围：财年奖励（卡牌/内阁/援助）、预算档位、每回合随机事件（`event_pool` 非空时在其基础上按组过滤；为空时从全部事件里按组抽取）。
-- 定义文件不再需要 `group` 字段；每张卡/每个内阁只需有自己的 `id`，成员关系全部写在组文件里。UI 的悬停详情会显示条目"所属组"。
+- 定义文件（卡牌/内阁等）不需要 `group` 字段；成员关系全部写在组文件里。UI 悬停详情会显示条目"所属组"。
 
 ---
 

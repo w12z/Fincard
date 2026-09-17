@@ -1,9 +1,0 @@
-{
-  "id": "example_group",
-  "display_name": "示例组",
-  "cards": ["example_card"],
-  "cabinets": ["example_cabinet"],
-  "aids": ["example_aid"],
-  "budgets": ["example_budget"],
-  "events": ["example_event"]
-}

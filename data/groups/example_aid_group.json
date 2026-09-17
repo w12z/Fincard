@@ -1,0 +1,6 @@
+{
+  "id": "example_aid_group",
+  "type": "aids",
+  "display_name": "示例援助组",
+  "members": ["example_aid"]
+}

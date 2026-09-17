@@ -437,24 +437,31 @@ func _build_budget_options() -> Array[StringName]:
 func _allowed_groups(type: String) -> Array:
 	if _scenario == null:
 		return []
-	return _scenario.groups.get(type, [])
+	if _scenario.groups.has(type):
+		return _scenario.groups[type]
+	return _scenario.groups.get("*", [])
 
 
 func _member_allowed(type: String, id: StringName) -> bool:
 	var allowed: Array = _allowed_groups(type)
 	if allowed.is_empty():
 		return true
+	var type_name := StringName(type)
 	for group_id in allowed:
-		if group_db.has(group_id) and group_db[group_id].contains(type, id):
+		if not group_db.has(group_id):
+			continue
+		var group: GroupDef = group_db[group_id]
+		if group.type == type_name and group.contains(id):
 			return true
 	return false
 
 
 func groups_of(type: String, id: StringName) -> Array[StringName]:
 	var result: Array[StringName] = []
+	var type_name := StringName(type)
 	for group_id in group_db:
 		var group: GroupDef = group_db[group_id]
-		if group.contains(type, id):
+		if group.type == type_name and group.contains(id):
 			result.append(group_id)
 	return result
 

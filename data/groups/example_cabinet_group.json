@@ -1,0 +1,6 @@
+{
+  "id": "example_cabinet_group",
+  "type": "cabinets",
+  "display_name": "示例内阁组",
+  "members": ["example_cabinet"]
+}

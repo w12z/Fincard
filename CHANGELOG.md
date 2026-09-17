@@ -28,7 +28,7 @@
 | `core/budget_plan_def.gd` | 年度预算档位 |
 | `core/reward.gd` | 财年奖励选项 |
 | `core/trigger.gd` + `core/trigger_engine.gd` | 触发器系统（级联、带安全上限） |
-| `core/group_def.gd` | 组（按 id 列出各类型成员） |
+| `core/group_def.gd` | 组（单类型，`members` 列成员） |
 | `core/effect.gd` + `core/effect_resolver.gd` | 效果与结算 |
 | `core/modifier.gd` | 数值修正器（ADD/MUL/OVERRIDE，永久或限时） |
 
@@ -62,16 +62,16 @@
 
 ## 6. 分组系统
 
-- 组是独立文件 `data/groups/*.json`，用 id 列出各类型成员：
+- **每个组只属于一种类型**，独立文件 `data/groups/*.json`：
   ```json
-  { "id": "example_group", "display_name": "示例组",
-    "cards": ["..."], "cabinets": ["..."], "aids": ["..."],
-    "budgets": ["..."], "events": ["..."] }
+  { "id": "example_card_group", "type": "cards",
+    "display_name": "示例卡牌组", "members": ["card_id"] }
   ```
-- 国家用 `groups` 声明允许的组，支持两种写法：平铺数组（对所有类型生效）或按类型字典。
-- 规则：某类型配置了非空组列表后，仅"出现在这些组成员列表里"的条目可用；未配置则不限制。
+  `type` 取 `cards` / `cabinets` / `aids` / `budgets` / `events`。
+- 国家用 `groups` 声明允许的组，支持按类型字典或平铺数组（平铺时组按自身 `type` 归类）。
+- 规则：某类型配置了非空组列表后，仅"属于这些组且组类型匹配"的条目可用；未配置则不限制。
 - 生效范围：财年奖励（卡牌/内阁/援助）、预算档位、每回合随机事件。
-- 定义文件不再需要 `group` 字段，成员关系全部集中在组文件；UI 悬停详情显示"所属组"。
+- 定义文件不需要 `group` 字段，成员关系全部集中在组文件；UI 悬停详情显示"所属组"。
 
 ## 7. 效果与条件
 
