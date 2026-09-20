@@ -48,6 +48,7 @@
   "events": {
     "turn_started": "回合开始",
     "turn_ended": "回合结束",
+    "run_started": "开局",
     "card_played": "打出卡牌",
     "card_gained": "获得卡牌",
     "cards_drawn": "抽牌",

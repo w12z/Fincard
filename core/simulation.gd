@@ -105,7 +105,7 @@ func _reset_state() -> void:
 
 func _start_turn() -> Array[Event]:
 	var events: Array[Event] = []
-	events.append(turns.enter(TurnStateMachine.Phase.TURN_START, state))
+	turns.enter(TurnStateMachine.Phase.TURN_START, state)
 	state.turn += 1
 	state.turn_in_year += 1
 	events.append(Event.new(Event.Kind.TURN_STARTED, {
@@ -121,9 +121,9 @@ func _start_turn() -> Array[Event]:
 
 func _enter_main() -> Array[Event]:
 	var events: Array[Event] = []
-	events.append(turns.enter(TurnStateMachine.Phase.DRAW, state))
+	turns.enter(TurnStateMachine.Phase.DRAW, state)
 	events.append_array(_draw(int(rules.get("draw_per_turn", 0))))
-	events.append(turns.enter(TurnStateMachine.Phase.MAIN, state))
+	turns.enter(TurnStateMachine.Phase.MAIN, state)
 	return events
 
 
@@ -182,7 +182,7 @@ func _resolve_event(params: Dictionary) -> Array[Event]:
 	events.append(Event.new(Event.Kind.EVENT_RESOLVED, {"event": definition.id}))
 	state.pending_event = &""
 	state.pending_event_choices.clear()
-	events.append(turns.enter(TurnStateMachine.Phase.MAIN, state))
+	turns.enter(TurnStateMachine.Phase.MAIN, state)
 	return events
 
 
@@ -192,7 +192,7 @@ func _end_turn() -> Array[Event]:
 		return events
 	if turns.phase != TurnStateMachine.Phase.MAIN:
 		return events
-	events.append(turns.enter(TurnStateMachine.Phase.TURN_END, state))
+	turns.enter(TurnStateMachine.Phase.TURN_END, state)
 	for card_id in state.hand:
 		state.discard.append(card_id)
 	state.hand.clear()
@@ -576,6 +576,7 @@ func _advance_modifiers() -> Array[Event]:
 		if modifier.is_expired():
 			events.append(Event.new(Event.Kind.MODIFIER_EXPIRED, {
 				"target": modifier.target,
+				"scope": modifier.scope,
 				"source": modifier.source,
 			}))
 		else:

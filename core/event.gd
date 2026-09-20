@@ -4,7 +4,6 @@ extends RefCounted
 enum Kind {
 	TURN_STARTED,
 	TURN_ENDED,
-	PHASE_CHANGED,
 	CARD_PLAYED,
 	CARD_GAINED,
 	CARDS_DRAWN,
@@ -12,14 +11,12 @@ enum Kind {
 	MODIFIER_APPLIED,
 	MODIFIER_EXPIRED,
 	RESOURCE_CHANGED,
-	EFFECT_RESOLVED,
 	RUN_STARTED,
 	YEAR_STARTED,
 	YEAR_ENDED,
 	EVENT_TRIGGERED,
 	EVENT_RESOLVED,
 	CABINET_APPOINTED,
-	CABINET_GAINED,
 	AID_USED,
 	AID_GAINED,
 	BUDGET_OFFERED,
@@ -34,7 +31,6 @@ enum Kind {
 const KIND_NAMES := {
 	"turn_started": Kind.TURN_STARTED,
 	"turn_ended": Kind.TURN_ENDED,
-	"phase_changed": Kind.PHASE_CHANGED,
 	"card_played": Kind.CARD_PLAYED,
 	"card_gained": Kind.CARD_GAINED,
 	"cards_drawn": Kind.CARDS_DRAWN,
@@ -42,14 +38,12 @@ const KIND_NAMES := {
 	"modifier_applied": Kind.MODIFIER_APPLIED,
 	"modifier_expired": Kind.MODIFIER_EXPIRED,
 	"resource_changed": Kind.RESOURCE_CHANGED,
-	"effect_resolved": Kind.EFFECT_RESOLVED,
 	"run_started": Kind.RUN_STARTED,
 	"year_started": Kind.YEAR_STARTED,
 	"year_ended": Kind.YEAR_ENDED,
 	"event_triggered": Kind.EVENT_TRIGGERED,
 	"event_resolved": Kind.EVENT_RESOLVED,
 	"cabinet_appointed": Kind.CABINET_APPOINTED,
-	"cabinet_gained": Kind.CABINET_GAINED,
 	"aid_used": Kind.AID_USED,
 	"aid_gained": Kind.AID_GAINED,
 	"budget_offered": Kind.BUDGET_OFFERED,
@@ -64,6 +58,8 @@ const KIND_NAMES := {
 var kind: int
 var params: Dictionary
 
+static var _name_by_kind: Dictionary = {}
+
 
 func _init(p_kind: int, p_params: Dictionary = {}) -> void:
 	kind = p_kind
@@ -74,3 +70,10 @@ static func kind_from(value) -> int:
 	if value is String:
 		return KIND_NAMES.get(value, Kind.CUSTOM)
 	return int(value)
+
+
+static func name_of(kind: int) -> StringName:
+	if _name_by_kind.is_empty():
+		for key in KIND_NAMES:
+			_name_by_kind[KIND_NAMES[key]] = StringName(key)
+	return _name_by_kind.get(kind, &"")

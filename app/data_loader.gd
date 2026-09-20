@@ -19,10 +19,3 @@ static func load_dir(path: String, factory: Callable) -> Dictionary:
 		file = dir.get_next()
 	dir.list_dir_end()
 	return db
-
-
-static func load_single(path: String, factory: Callable) -> Variant:
-	var data = ConfigLoader.load_json(path)
-	if not data is Dictionary:
-		return null
-	return factory.call(data)

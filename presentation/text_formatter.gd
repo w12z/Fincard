@@ -18,6 +18,12 @@ static func coefficient(labels: Dictionary, id: StringName) -> String:
 	return _lookup(labels, "coefficients", id)
 
 
+static func modifier_target(labels: Dictionary, scope: StringName, id: StringName) -> String:
+	if scope == Modifier.SCOPE_COEFFICIENT:
+		return "系数·%s" % coefficient(labels, id)
+	return indicator(labels, id)
+
+
 static func resource(labels: Dictionary, id: StringName) -> String:
 	return _lookup(labels, "resources", id)
 
@@ -84,21 +90,18 @@ static func _effect_body(labels: Dictionary, effect: Effect) -> String:
 				signed(float(params.get("amount", 0.0))),
 			]
 		Effect.Kind.APPLY_MODIFIER:
-			var modifier_scope := String(params.get("scope", "indicator"))
-			var target := _modifier_target(labels, modifier_scope, StringName(params.get("target", "")))
+			var target := modifier_target(labels, StringName(params.get("scope", "indicator")), StringName(params.get("target", "")))
 			var duration := int(params.get("duration", 0))
 			var window := "永久" if duration < 0 else "%d 回合内" % duration
-			var op: String = params.get("op", "add")
-			match op:
-				"mul":
+			match Modifier.op_from(params.get("op", "add")):
+				Modifier.Op.MUL:
 					return "%s %s ×%s" % [window, target, fmt(float(params.get("value", 0.0)))]
-				"override":
+				Modifier.Op.OVERRIDE:
 					return "%s %s 设为 %s" % [window, target, fmt(float(params.get("value", 0.0)))]
 				_:
 					return "%s %s %s" % [window, target, signed(float(params.get("value", 0.0)))]
 		Effect.Kind.REMOVE_MODIFIER:
-			var remove_scope := String(params.get("scope", "indicator"))
-			return "移除修正：%s" % _modifier_target(labels, remove_scope, StringName(params.get("target", "")))
+			return "移除修正：%s" % modifier_target(labels, StringName(params.get("scope", "indicator")), StringName(params.get("target", "")))
 		Effect.Kind.DRAW_CARDS:
 			return "抽 %d 张牌" % int(params.get("count", 0))
 		Effect.Kind.GAIN_BUDGET:
@@ -131,16 +134,7 @@ static func parse_effects(raw: Variant) -> Array[Effect]:
 
 
 static func _kind_name(kind: int) -> StringName:
-	for key in Event.KIND_NAMES:
-		if Event.KIND_NAMES[key] == kind:
-			return StringName(key)
-	return &""
-
-
-static func _modifier_target(labels: Dictionary, scope: String, id: StringName) -> String:
-	if scope == "coefficient":
-		return "系数·%s" % coefficient(labels, id)
-	return indicator(labels, id)
+	return Event.name_of(kind)
 
 
 static func _lookup(labels: Dictionary, section: String, id: StringName) -> String:

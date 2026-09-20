@@ -18,7 +18,3 @@ func _init(p_type: int = Type.CARD, p_id: StringName = &"", p_label: String = ""
 	type = p_type
 	id = p_id
 	label = p_label
-
-
-func to_dict() -> Dictionary:
-	return {"type": type, "id": id, "label": label}

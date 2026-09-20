@@ -1,12 +1,6 @@
 class_name EffectResolver
 extends RefCounted
 
-const OP_NAMES := {
-	"add": Modifier.Op.ADD,
-	"mul": Modifier.Op.MUL,
-	"override": Modifier.Op.OVERRIDE,
-}
-
 var economy: EconomyModel
 
 
@@ -54,7 +48,7 @@ func _resolve_effects(raw_list: Variant, state: GameState, rng: Rng) -> Array[Ev
 func _apply_modifier(params: Dictionary, state: GameState) -> Array[Event]:
 	var modifier := Modifier.new(
 		StringName(params.get("target", "")),
-		_op_from(params.get("op", "add")),
+		Modifier.op_from(params.get("op", "add")),
 		float(params.get("value", 0.0)),
 		int(params.get("duration", 0)),
 		StringName(params.get("source", "")),
@@ -82,6 +76,7 @@ func _remove_modifier(params: Dictionary, state: GameState) -> Array[Event]:
 		if matches_target and matches_source and matches_scope:
 			events.append(Event.new(Event.Kind.MODIFIER_EXPIRED, {
 				"target": modifier.target,
+				"scope": modifier.scope,
 				"source": modifier.source,
 			}))
 		else:
@@ -129,9 +124,3 @@ func _gain_resource(params: Dictionary, state: GameState, resource: StringName) 
 	else:
 		state.political_capital += amount
 	return [Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": resource, "amount": amount})]
-
-
-func _op_from(value) -> int:
-	if value is String:
-		return OP_NAMES.get(value, Modifier.Op.ADD)
-	return int(value)

@@ -18,10 +18,6 @@ func next_int(max_exclusive: int) -> int:
 	return (_next_u64() & _POSITIVE_MASK) % max_exclusive
 
 
-func next_float() -> float:
-	return float(_next_u64() & _POSITIVE_MASK) / float(_POSITIVE_MASK)
-
-
 func pick(array: Array) -> Variant:
 	if array.is_empty():
 		return null

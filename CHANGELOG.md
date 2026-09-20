@@ -225,5 +225,16 @@
 
 验证：临时脚本确认——基准 `gdp_auto` 0.3 → 示例国国家精神 0.5 → 切至阿卡迪亚复位 0.3；剧本覆盖 `infl_anchor` 0.05 生效；内阁系数修正 `gdp_conf` 0.15→0.2；`bounds` 覆盖 `growth [-30,30]` 与复位均正确。全部 69 个 JSON 通过校验，Godot 导入与运行无脚本错误。
 
+## 21. 代码清理：删除死代码、消除重复
+
+- **删除死代码**：`Event.Kind.EFFECT_RESOLVED`、`CABINET_GAINED`（从未发出）、`PHASE_CHANGED`（有发出但无消费者，`TurnStateMachine.enter` 改为不产生事件、仅切状态）；`TurnStateMachine.can_transition`/`ALLOWED`、`Reward.to_dict`、`Rng.next_float`、`Modifier.PERMANENT`、`DataLoader.load_single`（均无引用）。
+- **C1/C3 事件名表收敛**：`Event` 增加 `name_of(kind)` 反向映射（`static var` 惰性构建），`TextFormatter._kind_name` 不再线性反查；`GameUI._describe` 的事件前缀统一改由 `labels.events` + `Event.name_of` 生成，消除日志里硬编码的中文与 `labels` 重复；`labels.json` 补 `run_started`。
+- **B1 格式化去重**：删除 `GameUI._fmt/_signed`，统一用 `TextFormatter.fmt/signed`。
+- **B2 名称查找去重**：`GameUI` 的 `_card_name/_cabinet_name/_aid_name/_budget_name/_scenario_name` 合并为通用 `_display_name(db, id)`。
+- **B4 修正算子收敛**：`Modifier` 提供 `OP_NAMES`/`OP_LABELS`/`op_from()`/`op_label()`；`EffectResolver` 删除本地 `OP_NAMES`/`_op_from`，`TextFormatter` 按 `Modifier.Op` 枚举匹配，`GameUI` 用 `Modifier.op_label`。作用域感知的标签抽为 `TextFormatter.modifier_target`，`MODIFIER_EXPIRED` 事件补齐 `scope` 字段。
+
+验证：Godot 导入与运行无脚本错误/警告；临时脚本驱动 `GameUI._describe` 覆盖各事件分支，文案正确（含「系数·潜在增长率」）。
+
+
 
 

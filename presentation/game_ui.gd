@@ -225,7 +225,7 @@ func _render_indicators() -> void:
 		for id in ids:
 			_indicators_box.add_child(_label("%s：%s" % [
 				TextFormatter.indicator(_labels(), id),
-				_fmt(controller.simulation.economy.value(_state, id)),
+				TextFormatter.fmt(controller.simulation.economy.value(_state, id)),
 			]))
 	var derived := controller.simulation.economy.derived_ids
 	if not derived.is_empty():
@@ -233,7 +233,7 @@ func _render_indicators() -> void:
 		for id in derived:
 			_indicators_box.add_child(_label("%s：%s" % [
 				TextFormatter.indicator(_labels(), id),
-				_fmt(controller.simulation.economy.value(_state, id)),
+				TextFormatter.fmt(controller.simulation.economy.value(_state, id)),
 			]))
 
 
@@ -244,12 +244,10 @@ func _render_modifiers() -> void:
 		return
 	for modifier in _state.modifiers:
 		var remaining := "永久" if modifier.is_permanent() else "%d 回合" % modifier.remaining_turns
-		var modifier_label := TextFormatter.indicator(_labels(), modifier.target)
-		if modifier.scope == Modifier.SCOPE_COEFFICIENT:
-			modifier_label = "系数·" + TextFormatter.coefficient(_labels(), modifier.target)
+		var modifier_label := TextFormatter.modifier_target(_labels(), modifier.scope, modifier.target)
 		_modifiers_box.add_child(_label("%s %s %s（%s）" % [
 			modifier_label,
-			_op_word(modifier.op),
+			Modifier.op_label(modifier.op),
 			TextFormatter.fmt(modifier.value),
 			remaining,
 		]))
@@ -517,68 +515,71 @@ func _play_events(events: Array) -> void:
 
 func _describe(event: Event) -> String:
 	var params := event.params
+	var name := TextFormatter.event_name(_labels(), Event.name_of(event.kind))
 	match event.kind:
 		Event.Kind.RUN_STARTED:
-			return "[b]开局：%s[/b]" % _scenario_name(params.get("scenario", &""))
+			return "[b]%s：%s[/b]" % [name, _display_name(controller.scenarios, params.get("scenario", &""))]
 		Event.Kind.YEAR_STARTED:
 			return "[b]—— 第 %d 财年开始 ——[/b]" % int(params.get("year", 0))
 		Event.Kind.YEAR_ENDED:
 			return "[b]—— 第 %d 财年结束 ——[/b]" % int(params.get("year", 0))
 		Event.Kind.TURN_STARTED:
-			return "回合 %d 开始" % int(params.get("turn_in_year", 0))
+			return "%s %d" % [name, int(params.get("turn_in_year", 0))]
 		Event.Kind.TURN_ENDED:
-			return "回合结束"
+			return name
 		Event.Kind.CARD_PLAYED:
-			return "打出卡牌：%s" % _card_name(params.get("card_id", &""))
+			return "%s：%s" % [name, _display_name(controller.cards, params.get("card_id", &""))]
 		Event.Kind.CARD_GAINED:
-			return "获得卡牌：%s" % _card_name(params.get("card_id", &""))
+			return "%s：%s" % [name, _display_name(controller.cards, params.get("card_id", &""))]
 		Event.Kind.CARDS_DRAWN:
-			return "抽牌 %d 张" % int(params.get("count", 0))
+			return "%s %d 张" % [name, int(params.get("count", 0))]
 		Event.Kind.INDICATOR_CHANGED:
 			return "%s：%s → %s（%s）" % [
 				TextFormatter.indicator(_labels(), StringName(params.get("indicator", ""))),
-				_fmt(float(params.get("previous", 0.0))),
-				_fmt(float(params.get("current", 0.0))),
-				_signed(float(params.get("delta", 0.0))),
+				TextFormatter.fmt(float(params.get("previous", 0.0))),
+				TextFormatter.fmt(float(params.get("current", 0.0))),
+				TextFormatter.signed(float(params.get("delta", 0.0))),
 			]
 		Event.Kind.MODIFIER_APPLIED:
-			return "修正生效：%s（%s）来源 %s" % [
-				TextFormatter.indicator(_labels(), StringName(params.get("target", ""))),
-				_op_word(int(params.get("op", 0))),
+			return "%s：%s（%s）来源 %s" % [
+				name,
+				TextFormatter.modifier_target(_labels(), StringName(params.get("scope", "indicator")), StringName(params.get("target", ""))),
+				Modifier.op_label(int(params.get("op", 0))),
 				params.get("source", ""),
 			]
 		Event.Kind.MODIFIER_EXPIRED:
-			return "修正到期：%s 来源 %s" % [
-				TextFormatter.indicator(_labels(), StringName(params.get("target", ""))),
+			return "%s：%s 来源 %s" % [
+				name,
+				TextFormatter.modifier_target(_labels(), StringName(params.get("scope", "indicator")), StringName(params.get("target", ""))),
 				params.get("source", ""),
 			]
 		Event.Kind.RESOURCE_CHANGED:
 			return "%s %s" % [
 				TextFormatter.resource(_labels(), StringName(params.get("resource", ""))),
-				_signed(float(params.get("amount", 0.0))),
+				TextFormatter.signed(float(params.get("amount", 0.0))),
 			]
 		Event.Kind.EVENT_TRIGGERED:
-			return "[color=orange]事件：%s[/color]" % params.get("title", "")
+			return "[color=orange]%s：%s[/color]" % [name, params.get("title", "")]
 		Event.Kind.EVENT_RESOLVED:
-			return "事件处理完毕"
+			return name
 		Event.Kind.CABINET_APPOINTED:
-			return "任命内阁：%s" % _cabinet_name(params.get("cabinet", &""))
+			return "%s：%s" % [name, _display_name(controller.cabinets, params.get("cabinet", &""))]
 		Event.Kind.AID_USED:
-			return "使用援助：%s" % _aid_name(params.get("aid", &""))
+			return "%s：%s" % [name, _display_name(controller.aids, params.get("aid", &""))]
 		Event.Kind.AID_GAINED:
-			return "获得援助：%s" % _aid_name(params.get("aid", &""))
+			return "%s：%s" % [name, _display_name(controller.aids, params.get("aid", &""))]
 		Event.Kind.BUDGET_OFFERED:
-			return "请确定下一年度预算"
+			return name
 		Event.Kind.BUDGET_CHOSEN:
-			return "已确定预算：%s" % _budget_name(params.get("plan", &""))
+			return "%s：%s" % [name, _display_name(controller.budgets, params.get("plan", &""))]
 		Event.Kind.REWARD_OFFERED:
-			return "财年奖励待选择"
+			return name
 		Event.Kind.REWARD_CHOSEN:
-			return "已选择财年奖励"
+			return name
 		Event.Kind.RUN_WON:
-			return "[b][color=green]胜利！[/color][/b]"
+			return "[b][color=green]%s！[/color][/b]" % name
 		Event.Kind.RUN_LOST:
-			return "[b][color=red]失败：%s[/color][/b]" % params.get("reason", "")
+			return "[b][color=red]%s：%s[/color][/b]" % [name, params.get("reason", "")]
 	return ""
 
 
@@ -611,35 +612,17 @@ func _status_color() -> Color:
 func _indicator_summary() -> String:
 	var parts := PackedStringArray()
 	for id in controller.simulation.economy.indicator_ids:
-		parts.append("%s=%s" % [TextFormatter.indicator(_labels(), id), _fmt(controller.simulation.economy.value(_state, id))])
+		parts.append("%s=%s" % [TextFormatter.indicator(_labels(), id), TextFormatter.fmt(controller.simulation.economy.value(_state, id))])
 	for id in controller.simulation.economy.derived_ids:
-		parts.append("%s=%s" % [TextFormatter.indicator(_labels(), id), _fmt(controller.simulation.economy.value(_state, id))])
+		parts.append("%s=%s" % [TextFormatter.indicator(_labels(), id), TextFormatter.fmt(controller.simulation.economy.value(_state, id))])
 	return "，".join(parts)
 
 
-func _card_name(id: StringName) -> String:
-	var card: CardDef = controller.cards.get(id)
-	return card.display_name if card != null else String(id)
-
-
-func _cabinet_name(id: StringName) -> String:
-	var cabinet: CabinetDef = controller.cabinets.get(id)
-	return cabinet.display_name if cabinet != null else String(id)
-
-
-func _aid_name(id: StringName) -> String:
-	var aid: AidDef = controller.aids.get(id)
-	return aid.display_name if aid != null else String(id)
-
-
-func _budget_name(id: StringName) -> String:
-	var plan: BudgetPlanDef = controller.budgets.get(id)
-	return plan.display_name if plan != null else String(id)
-
-
-func _scenario_name(id: StringName) -> String:
-	var scenario: ScenarioDef = controller.scenarios.get(id)
-	return scenario.display_name if scenario != null else String(id)
+func _display_name(db: Dictionary, id: StringName) -> String:
+	var definition = db.get(id)
+	if definition != null and "display_name" in definition and str(definition.display_name) != "":
+		return str(definition.display_name)
+	return String(id)
 
 
 func _labels() -> Dictionary:
@@ -657,17 +640,6 @@ func _wrapped(text: String, color: Color, width: float = 220.0) -> Label:
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.custom_minimum_size = Vector2(width, 0)
 	return label
-
-
-func _op_word(op: int) -> String:
-	match op:
-		Modifier.Op.ADD:
-			return "增加"
-		Modifier.Op.MUL:
-			return "乘以"
-		Modifier.Op.OVERRIDE:
-			return "设为"
-	return "?"
 
 
 func _reward_detail(reward: Reward) -> String:
@@ -707,16 +679,6 @@ func _group_names(group_ids: Array) -> String:
 		var group: GroupDef = controller.groups.get(group_id)
 		parts.append(group.display_name if group != null and group.display_name != "" else String(group_id))
 	return "，".join(parts)
-
-
-func _signed(value: float) -> String:
-	return "+%s" % _fmt(value) if value >= 0.0 else _fmt(value)
-
-
-func _fmt(value: float) -> String:
-	if is_equal_approx(value, roundf(value)):
-		return str(int(roundf(value)))
-	return "%.2f" % value
 
 
 func _label(text: String) -> Label:
