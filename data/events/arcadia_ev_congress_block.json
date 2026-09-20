@@ -16,7 +16,7 @@
                                         {
                                             "kind":  "adjust_indicator",
                                             "params":  {
-                                                           "target":  "approval",
+                                                           "target":  "confidence",
                                                            "amount":  1
                                                        }
                                         },
@@ -43,7 +43,7 @@
                                         {
                                             "kind":  "adjust_indicator",
                                             "params":  {
-                                                           "target":  "approval",
+                                                           "target":  "confidence",
                                                            "amount":  2
                                                        }
                                         },

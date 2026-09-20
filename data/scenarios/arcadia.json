@@ -30,7 +30,6 @@
     "unemployment": 5,
     "debt": 30,
     "confidence": 70,
-    "approval": 55,
     "interest_rate": 5,
     "tax_rate": 25
   },
@@ -77,7 +76,6 @@
     ],
     "loss_conditions": [
       { "indicator": "inflation", "comparator": "lt", "value": -15 },
-      { "indicator": "approval", "comparator": "lt", "value": 0 },
       { "indicator": "confidence", "comparator": "lt", "value": 0 }
     ]
   }

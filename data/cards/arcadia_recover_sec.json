@@ -17,7 +17,7 @@
                     {
                         "kind":  "adjust_indicator",
                         "params":  {
-                                       "target":  "approval",
+                                       "target":  "confidence",
                                        "amount":  2
                                    }
                     }

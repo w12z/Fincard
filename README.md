@@ -184,13 +184,7 @@ godot --headless --path . --quit            # 启动主场景
     "conf_infl": 0.2,
     "conf_debt": 4.0,
     "conf_stim": 0.1,
-    "conf_anchor": 0.2,
-
-    "appr_growth": 0.5,
-    "appr_infl": 0.08,
-    "appr_u": 0.15,
-    "appr_debt": 1.5,
-    "appr_anchor": 0.1
+    "conf_anchor": 0.2
   },
   "bounds": {
     "inflation": [-20, 40],
@@ -198,7 +192,6 @@ godot --headless --path . --quit            # 启动主场景
     "interest_rate": [0, 25],
     "tax_rate": [0, 70],
     "confidence": [0, 100],
-    "approval": [0, 100],
     "debt_ratio": [0, 5],
     "growth": [-8, 8]
   }
@@ -211,7 +204,7 @@ godot --headless --path . --quit            # 启动主场景
 - **通胀**（百分点）：锚定目标 `infl_anchor×(目标−通胀)` + 菲利普斯 → 需求拉动 → 财政刺激 − 利率反应（即可用的货币政策沟道：加息既拖增长又压通胀）。
 - **失业率**（百分点）：`u_revert × (自然失业−失业)` − `u_okun × 增长率`。
 - **债务**（存量）：`Δ债务 = GDP × (赤字 − 收入 + 利息负担)`，其中赤字 `debt_spend×规模`、收入 `debt_rev×税率/100`、利息 `debt_int_pass×债务率×利率/100`——全部按 GDP 比例表达，债务率越大利息负担越重（债务螺旋通道）。
-- **信心/支持率**（0-100 点）：对增长、通胀、债务率、财政刺激响应，且向中性值回归。
+- **信心**（0-100 点）：对增长、通胀、债务率、财政刺激响应，且向中性值回归。
 - `bounds`：指标的硬上下限，tick 与任何效果调值都会被夹取（如失业非负、利率非负、情绪 0~100）。
 
 只有国家在 `indicators` 中定义了某个 id，该指标才会被 tick 演化。派生指标自动生成：`growth`（每回合 GDP 增长率 %）、`debt_ratio`（债务/GDP）。
@@ -447,12 +440,12 @@ godot --headless --path . --quit            # 启动主场景
   "params": {
     "condition": { "indicator": "inflation", "comparator": "gt", "value": 5 },
     "then": [ { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 1 } } ],
-    "else": [ { "kind": "adjust_indicator", "params": { "target": "approval", "amount": 1 } } ]
+    "else": [ { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 1 } } ]
   }
 }
 ```
 
-UI 中显示为：`若 通货膨胀 > 5：国内生产总值 +1；否则：民众支持率 +1`。
+UI 中显示为：`若 通货膨胀 > 5：国内生产总值 +1；否则：市场信心 +1`。
 
 ### 修正器求值
 

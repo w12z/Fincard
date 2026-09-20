@@ -15,14 +15,11 @@
     "unemployment": 6,
     "debt": 60,
     "confidence": 50,
-    "approval": 50,
     "interest_rate": 3,
     "tax_rate": 20
   },
   "event_pool": ["example_event"],
-  "innate_modifiers": [
-    { "kind": "apply_modifier", "params": { "target": "approval", "op": "add", "value": 0, "duration": -1 } }
-  ],
+  "innate_modifiers": [],
   "budget_pool": ["example_budget"],
   "groups": {
     "cards": ["example_card_group"],
@@ -39,8 +36,7 @@
       { "indicator": "inflation", "comparator": "le", "value": 5 }
     ],
     "loss_conditions": [
-      { "indicator": "inflation", "comparator": "gt", "value": 20 },
-      { "indicator": "approval", "comparator": "lt", "value": 0 }
+      { "indicator": "inflation", "comparator": "gt", "value": 20 }
     ]
   }
 }

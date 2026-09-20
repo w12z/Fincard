@@ -44,13 +44,6 @@ static func build(economy: EconomyModel, config: Dictionary, rules: Dictionary) 
 			+ float(c.get("conf_stim", 0.0)) * state.budget_scale \
 			+ float(c.get("conf_anchor", 0.0)) * (conf_neutral - model.value(state, &"confidence"))
 
-	economy.equations[&"approval"] = func(state: GameState, model: EconomyModel, _rng: Rng) -> float:
-		return float(c.get("appr_growth", 0.0)) * model.value(state, &"growth") \
-			- float(c.get("appr_infl", 0.0)) * maxf(0.0, model.value(state, &"inflation")) \
-			- float(c.get("appr_u", 0.0)) * model.value(state, &"unemployment") \
-			- float(c.get("appr_debt", 0.0)) * EconomyBuilder._debt_ratio(state, model) \
-			+ float(c.get("appr_anchor", 0.0)) * (conf_neutral - model.value(state, &"approval"))
-
 	economy.register_derived(&"growth", func(state: GameState, model: EconomyModel) -> float:
 		return EconomyBuilder._growth_rate(state, model, c, u_natural, rate_neutral, tax_neutral, ratio_threshold, conf_neutral)
 	)

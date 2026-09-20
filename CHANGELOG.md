@@ -194,3 +194,11 @@
 - 经济模型的软限幅（`tanh`/夹取）尚未内置，需在方程中处理，避免强正反馈跑飞。
 - 修正器的 `delay`（滞后生效）尚未实现。
 - 内容量：目前仅一套样板，可继续按国家/组扩充卡牌、内阁、援助、事件、预算。
+
+## 18. 移除「支持率」机制
+
+- **内核**：删除 `approval` 演化方程与全部 `appr_*` 系数（`app/economy_builder.gd`、`data/config/economy.json`），移除 `approval` 的 `bounds` 与 `labels` 显示名。
+- **剧本**：两套剧本（`example_country`、`arcadia`）不再定义 `approval` 指标；失败线中引用 `approval < 0` 的条件删除（`arcadia` 保留通缩与信心归零两条失败线）。
+- **内容**：卡牌/事件/内阁/援助/预算中所有以 `approval` 为目标的增减效果**改指向 `confidence`**（共 25 个数据文件），保留原有内容强度与"民心"维度；`example_card` 的分支演示（else 分支）随之变为加信心，功能不受影响。
+- 结果：情绪维度统一为单一的「市场信心 confidence」。
+

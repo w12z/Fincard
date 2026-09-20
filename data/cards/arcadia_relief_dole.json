@@ -17,7 +17,7 @@
                     {
                         "kind":  "apply_modifier",
                         "params":  {
-                                       "target":  "approval",
+                                       "target":  "confidence",
                                        "op":  "add",
                                        "value":  3,
                                        "duration":  3
