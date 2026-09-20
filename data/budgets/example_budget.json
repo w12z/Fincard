@@ -1,10 +1,9 @@
 {
     "id":  "example_budget",
     "display_name":  "示例预算：稳健",
-    "description":  "样板预算档位。budget 重设下年财政预算，political_capital 为下年政治行动点的大额补充，scale 进入经济方程。",
+    "description":  "样板预算档位。budget 重设下年财政预算，political_capital 为下年政治行动点的大额补充。",
     "budget":  10,
     "political_capital":  5,
-    "scale":  1,
     "effects":  [
                     {
                         "kind":  "adjust_indicator",

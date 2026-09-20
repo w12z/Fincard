@@ -4,7 +4,6 @@
     "description":  "以大规模赤字支出「泵水」，主动启动停滞的经济。",
     "budget":  20,
     "political_capital":  3,
-    "scale":  3,
     "effects":  [
                     {
                         "kind":  "adjust_indicator",

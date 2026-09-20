@@ -14,6 +14,10 @@ static func indicator(labels: Dictionary, id: StringName) -> String:
 	return _lookup(labels, "indicators", id)
 
 
+static func coefficient(labels: Dictionary, id: StringName) -> String:
+	return _lookup(labels, "coefficients", id)
+
+
 static func resource(labels: Dictionary, id: StringName) -> String:
 	return _lookup(labels, "resources", id)
 
@@ -80,7 +84,8 @@ static func _effect_body(labels: Dictionary, effect: Effect) -> String:
 				signed(float(params.get("amount", 0.0))),
 			]
 		Effect.Kind.APPLY_MODIFIER:
-			var target := indicator(labels, StringName(params.get("target", "")))
+			var modifier_scope := String(params.get("scope", "indicator"))
+			var target := _modifier_target(labels, modifier_scope, StringName(params.get("target", "")))
 			var duration := int(params.get("duration", 0))
 			var window := "永久" if duration < 0 else "%d 回合内" % duration
 			var op: String = params.get("op", "add")
@@ -92,7 +97,8 @@ static func _effect_body(labels: Dictionary, effect: Effect) -> String:
 				_:
 					return "%s %s %s" % [window, target, signed(float(params.get("value", 0.0)))]
 		Effect.Kind.REMOVE_MODIFIER:
-			return "移除修正：%s" % indicator(labels, StringName(params.get("target", "")))
+			var remove_scope := String(params.get("scope", "indicator"))
+			return "移除修正：%s" % _modifier_target(labels, remove_scope, StringName(params.get("target", "")))
 		Effect.Kind.DRAW_CARDS:
 			return "抽 %d 张牌" % int(params.get("count", 0))
 		Effect.Kind.GAIN_BUDGET:
@@ -129,6 +135,12 @@ static func _kind_name(kind: int) -> StringName:
 		if Event.KIND_NAMES[key] == kind:
 			return StringName(key)
 	return &""
+
+
+static func _modifier_target(labels: Dictionary, scope: String, id: StringName) -> String:
+	if scope == "coefficient":
+		return "系数·%s" % coefficient(labels, id)
+	return indicator(labels, id)
 
 
 static func _lookup(labels: Dictionary, section: String, id: StringName) -> String:

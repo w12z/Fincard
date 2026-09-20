@@ -6,6 +6,30 @@ var derived_ids: Array[StringName] = []
 var equations: Dictionary = {}
 var derived: Dictionary = {}
 var bounds: Dictionary = {}
+var base_bounds: Dictionary = {}
+var base_coefficients: Dictionary = {}
+var scenario_coefficients: Dictionary = {}
+
+
+func set_scenario_coefficients(overrides: Dictionary) -> void:
+	scenario_coefficients = overrides
+
+
+func coefficient(state: GameState, key: StringName) -> float:
+	var value := float(base_coefficients.get(key, 0.0))
+	if scenario_coefficients.has(key):
+		value = float(scenario_coefficients[key])
+	for modifier in state.modifiers:
+		if modifier.scope != Modifier.SCOPE_COEFFICIENT or modifier.target != key:
+			continue
+		match modifier.op:
+			Modifier.Op.ADD:
+				value += modifier.value
+			Modifier.Op.MUL:
+				value *= modifier.value
+			Modifier.Op.OVERRIDE:
+				value = modifier.value
+	return value
 
 
 func register_indicator(id: StringName) -> void:
@@ -21,6 +45,21 @@ func register_derived(id: StringName, compute: Callable) -> void:
 
 func set_bounds(id: StringName, min_value: float, max_value: float) -> void:
 	bounds[id] = [min_value, max_value]
+
+
+func reset_bounds() -> void:
+	bounds.clear()
+	for key in base_bounds:
+		bounds[key] = base_bounds[key]
+
+
+func apply_bounds_overrides(overrides: Dictionary) -> void:
+	for key in overrides:
+		var pair = overrides[key]
+		if pair is Array and pair.size() == 2:
+			bounds[key] = [float(pair[0]), float(pair[1])]
+		elif pair == null:
+			bounds.erase(key)
 
 
 func clamp_indicator(state: GameState, id: StringName) -> void:
@@ -65,7 +104,7 @@ func tick(state: GameState, rng: Rng) -> Array[Event]:
 func value(state: GameState, id: StringName) -> float:
 	var result := float(state.indicators.get(id, 0.0))
 	for modifier in state.modifiers:
-		if modifier.target != id:
+		if modifier.scope != Modifier.SCOPE_INDICATOR or modifier.target != id:
 			continue
 		match modifier.op:
 			Modifier.Op.ADD:

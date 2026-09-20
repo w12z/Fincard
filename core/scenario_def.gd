@@ -12,6 +12,8 @@ var goal: GoalDef
 var budget_pool: Array[StringName] = []
 var groups: Dictionary = {}
 var scheduled_events: Dictionary = {}
+var economy_overrides: Dictionary = {}
+var bounds_overrides: Dictionary = {}
 
 
 static func from_dict(data: Dictionary) -> ScenarioDef:
@@ -53,4 +55,16 @@ static func from_dict(data: Dictionary) -> ScenarioDef:
 		for entry in raw_scheduled:
 			if entry is Dictionary and entry.has("event"):
 				scenario.scheduled_events[int(entry.get("turn", 0))] = StringName(entry.get("event", ""))
+	var raw_overrides = data.get("economy_overrides", {})
+	if raw_overrides is Dictionary:
+		for key in raw_overrides:
+			scenario.economy_overrides[StringName(key)] = float(raw_overrides[key])
+	var raw_bounds = data.get("bounds", {})
+	if raw_bounds is Dictionary:
+		for key in raw_bounds:
+			var raw_pair = raw_bounds[key]
+			if raw_pair is Array and raw_pair.size() == 2:
+				scenario.bounds_overrides[StringName(key)] = [float(raw_pair[0]), float(raw_pair[1])]
+			elif raw_pair == null:
+				scenario.bounds_overrides[StringName(key)] = null
 	return scenario

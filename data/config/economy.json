@@ -12,26 +12,22 @@
     "gdp_rate_gap": 0.02,
     "gdp_tax_gap": 0.03,
     "gdp_crowd": 1.0,
-    "gdp_stim": 0.4,
 
-    "infl_anchor": 0.3,
+    "infl_anchor": 0.1,
     "infl_phillips": 0.15,
     "infl_demand": 0.1,
-    "infl_stim": 0.03,
     "infl_rate": 0.1,
 
     "u_okun": 0.25,
-    "u_revert": 0.08,
+    "u_revert": 0.05,
 
-    "debt_spend": 0.002,
     "debt_rev": 0.05,
     "debt_int_pass": 0.25,
 
     "conf_growth": 0.5,
     "conf_infl": 0.2,
     "conf_debt": 4.0,
-    "conf_stim": 0.1,
-    "conf_anchor": 0.2
+    "conf_anchor": 0.1
   },
   "bounds": {
     "inflation": [-20, 40],

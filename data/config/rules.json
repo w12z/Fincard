@@ -6,6 +6,5 @@
   "trigger_iteration_limit": 8,
   "political_capital_per_turn": 1,
   "base_budget": 10,
-  "base_political_capital": 5,
-  "base_budget_scale": 1
+  "base_political_capital": 5
 }

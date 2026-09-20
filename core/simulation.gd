@@ -42,6 +42,9 @@ func start_run(scenario_id: StringName) -> Array[Event]:
 		push_warning("Unknown scenario: %s" % scenario_id)
 		return events
 	_scenario = scenario_db[scenario_id]
+	economy.set_scenario_coefficients(_scenario.economy_overrides)
+	economy.reset_bounds()
+	economy.apply_bounds_overrides(_scenario.bounds_overrides)
 	_reset_state()
 	state.scenario_id = _scenario.id
 	for id in _scenario.indicators:
@@ -88,7 +91,6 @@ func _reset_state() -> void:
 	state.flags.clear()
 	state.budget = 0
 	state.political_capital = 0
-	state.budget_scale = 0.0
 	state.budget_plan = &""
 	state.pending_budget_plans.clear()
 	state.pending_event = &""
@@ -311,7 +313,6 @@ func _grant_year_resources(plan: BudgetPlanDef) -> Array[Event]:
 	if plan != null:
 		budget_grant = plan.budget
 		political_grant = plan.political_capital
-		state.budget_scale = plan.scale
 		for effect in plan.effects:
 			events.append_array(resolver.resolve(effect, state, rng))
 	else:
@@ -319,8 +320,6 @@ func _grant_year_resources(plan: BudgetPlanDef) -> Array[Event]:
 			budget_grant = int(rules["base_budget"])
 		if rules.has("base_political_capital"):
 			political_grant = int(rules["base_political_capital"])
-		if rules.has("base_budget_scale"):
-			state.budget_scale = float(rules["base_budget_scale"])
 	state.budget = budget_grant
 	state.political_capital += political_grant
 	events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"budget", "amount": budget_grant}))
@@ -497,7 +496,6 @@ func _budget_options_info() -> Array[Dictionary]:
 			"description": plan.description,
 			"budget": plan.budget,
 			"political_capital": plan.political_capital,
-			"scale": plan.scale,
 		})
 	return info
 

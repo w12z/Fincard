@@ -57,12 +57,14 @@ func _apply_modifier(params: Dictionary, state: GameState) -> Array[Event]:
 		_op_from(params.get("op", "add")),
 		float(params.get("value", 0.0)),
 		int(params.get("duration", 0)),
-		StringName(params.get("source", ""))
+		StringName(params.get("source", "")),
+		StringName(params.get("scope", "indicator"))
 	)
 	state.modifiers.append(modifier)
 	return [Event.new(Event.Kind.MODIFIER_APPLIED, {
 		"target": modifier.target,
 		"op": modifier.op,
+		"scope": modifier.scope,
 		"source": modifier.source,
 	})]
 
@@ -70,12 +72,14 @@ func _apply_modifier(params: Dictionary, state: GameState) -> Array[Event]:
 func _remove_modifier(params: Dictionary, state: GameState) -> Array[Event]:
 	var target := StringName(params.get("target", ""))
 	var source := StringName(params.get("source", ""))
+	var scope := StringName(params.get("scope", ""))
 	var kept: Array[Modifier] = []
 	var events: Array[Event] = []
 	for modifier in state.modifiers:
 		var matches_target := target == &"" or modifier.target == target
 		var matches_source := source == &"" or modifier.source == source
-		if matches_target and matches_source:
+		var matches_scope := scope == &"" or modifier.scope == scope
+		if matches_target and matches_source and matches_scope:
 			events.append(Event.new(Event.Kind.MODIFIER_EXPIRED, {
 				"target": modifier.target,
 				"source": modifier.source,
@@ -90,8 +94,11 @@ func _adjust_indicator(params: Dictionary, state: GameState) -> Array[Event]:
 	var target := StringName(params.get("target", ""))
 	var delta := float(params.get("amount", 0.0))
 	if bool(params.get("percent", false)):
-		var gdp := float(state.indicators.get(&"gdp", 0.0))
-		delta = delta / 100.0 * gdp
+		if target == &"gdp" or target == &"debt":
+			var gdp := float(state.indicators.get(&"gdp", 0.0))
+			delta = delta / 100.0 * gdp
+		else:
+			push_warning("percent 仅适用于 gdp/debt，已按绝对值处理：%s" % target)
 	var previous := float(state.indicators.get(target, 0.0))
 	state.indicators[target] = previous + delta
 	if economy != null:

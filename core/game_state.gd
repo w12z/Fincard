@@ -13,7 +13,6 @@ var cabinets: Array[CabinetDef] = []
 var aids: Array[Dictionary] = []
 var budget: int = 0
 var political_capital: int = 0
-var budget_scale: float = 0.0
 var turn: int = 0
 var turn_in_year: int = 0
 var year: int = 0

@@ -19,7 +19,14 @@
     "tax_rate": 20
   },
   "event_pool": ["example_event"],
-  "innate_modifiers": [],
+  "innate_modifiers": [
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.2, "duration": -1, "source": "国家精神·自由市场" } }
+  ],
+  "economy_overrides": {
+    "infl_anchor": 0.15,
+    "conf_anchor": 0.12,
+    "u_revert": 0.07
+  },
   "budget_pool": ["example_budget"],
   "groups": {
     "cards": ["example_card_group"],

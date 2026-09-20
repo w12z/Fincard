@@ -244,8 +244,11 @@ func _render_modifiers() -> void:
 		return
 	for modifier in _state.modifiers:
 		var remaining := "永久" if modifier.is_permanent() else "%d 回合" % modifier.remaining_turns
+		var modifier_label := TextFormatter.indicator(_labels(), modifier.target)
+		if modifier.scope == Modifier.SCOPE_COEFFICIENT:
+			modifier_label = "系数·" + TextFormatter.coefficient(_labels(), modifier.target)
 		_modifiers_box.add_child(_label("%s %s %s（%s）" % [
-			TextFormatter.indicator(_labels(), modifier.target),
+			modifier_label,
 			_op_word(modifier.op),
 			TextFormatter.fmt(modifier.value),
 			remaining,

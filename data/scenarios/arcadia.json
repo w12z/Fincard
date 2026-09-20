@@ -53,6 +53,11 @@
     { "turn": 28, "event": "arcadia_ev_credit_freeze" }
   ],
   "innate_modifiers": [],
+  "economy_overrides": {
+    "infl_anchor": 0.05,
+    "conf_anchor": 0.05,
+    "u_revert": 0.03
+  },
   "budget_pool": [
     "arcadia_budget_austerity",
     "arcadia_budget_moderate",

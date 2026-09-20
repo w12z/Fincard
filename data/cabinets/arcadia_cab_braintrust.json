@@ -4,7 +4,8 @@
   "description": "提供系统的复苏蓝图，长期提升增长与市场信心。",
   "modifiers": [
     { "kind": "apply_modifier", "params": { "target": "gdp", "op": "mul", "value": 1.01, "duration": -1 } },
-    { "kind": "apply_modifier", "params": { "target": "confidence", "op": "add", "value": 1, "duration": -1 } }
+    { "kind": "apply_modifier", "params": { "target": "confidence", "op": "add", "value": 1, "duration": -1 } },
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_conf", "op": "add", "value": 0.05, "duration": -1, "source": "智囊团" } }
   ],
   "triggers": []
 }

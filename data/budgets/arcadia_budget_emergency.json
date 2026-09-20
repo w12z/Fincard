@@ -4,7 +4,6 @@
     "description":  "举债全力救济，先救人、后算账，把国家信用押上赌桌。",
     "budget":  26,
     "political_capital":  2,
-    "scale":  4,
     "effects":  [
                     {
                         "kind":  "adjust_indicator",

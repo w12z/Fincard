@@ -202,3 +202,28 @@
 - **内容**：卡牌/事件/内阁/援助/预算中所有以 `approval` 为目标的增减效果**改指向 `confidence`**（共 25 个数据文件），保留原有内容强度与"民心"维度；`example_card` 的分支演示（else 分支）随之变为加信心，功能不受影响。
 - 结果：情绪维度统一为单一的「市场信心 confidence」。
 
+## 19. 经济模型再调整：预算与增长解耦、弱化并外部化锚回归、修正债务率口径
+
+针对经济评审结论做的三项结构性调整：
+
+- **预算不再直接驱动经济**：删除 `gdp_stim`/`infl_stim`/`conf_stim`/`debt_spend` 四个"预算规模"系数与所有 `× 预算规模` 项；移除 `state.budget_scale`、预算档位的 `scale` 字段、`rules.base_budget_scale`、`BudgetPlanDef.scale` 及预算选项信息中的 `scale`。经济变化改为**完全由卡牌/事件/内阁/援助的 `effects` 驱动**——预算只有被实际花出去打出卡牌才起作用，作用由该卡自身效果决定。债务的自动支出通道一并移除，改由税收收入、利息负担与显式卡牌效果决定。
+- **弱化并外部化锚回归**：`infl_anchor` 0.3→0.1、`u_revert` 0.08→0.05、`conf_anchor` 0.2→0.1，市场自然回归明显变慢。新增**按剧本系数覆盖**机制：剧本 JSON 可用 `economy_overrides` 覆盖任意经济系数（`ScenarioDef` 解析，`EconomyModel.apply_coefficient_overrides` 在开局时重置为基准再套用覆盖；`EconomyBuilder` 的方程改为实时读取系数，使覆盖生效且可跨剧本复位）。示例国（市场/自由，0.15/0.07/0.12）与阿卡迪亚（干预主义，0.05/0.03/0.05）已作为示范（占位值）。
+- **修正债务率双口径不一致**：`_debt_ratio()` 现按 `bounds` 夹取后返回，方程、派生指标、UI 与胜负条件统一使用夹取后的债务率，消除"动力学用原始值、判定用夹取值"的分叉。另给 `adjust_indicator` 的 `percent` 增加目标校验：非 `gdp`/`debt` 目标使用 `percent` 时按绝对值处理并告警。
+
+验证：`godot --headless --editor --path . --quit` 与主场景运行无脚本错误；临时脚本实测系数覆盖按剧本正确生效并在切换剧本时复位（通用 0.1 → 示例 0.15 → 阿卡迪亚 0.05 → 再切回正确复位）。
+
+## 20. 经济系数全面可修正（数值肉鸽化）
+
+让"经济系数"与指标一样可被内容动态修改，服务于数值肉鸽的快速膨胀/爆炸：
+
+- **修正器新增作用域 `scope`**（`core/modifier.gd`）：`indicator`（默认，改指标最终值）与 `coefficient`（改经济系数）。`EffectResolver` 的 `apply_modifier`/`remove_modifier` 增加可选 `scope` 参数。
+- **`EconomyModel.coefficient(state, key)`**：系数 = 全局默认（`economy.json`）→ 剧本 `economy_overrides` → `scope: coefficient` 的修正器（ADD/MUL/OVERRIDE 依次叠加）。`EconomyBuilder` 所有方程改为实时调用该方法，因此**任何系数都可在运行时改变**，支持 `add`/`mul`/`override` 与限时/永久 `duration`。
+- **四个层次的系数来源**：全局默认（`economy.json`）、剧本覆盖（`economy_overrides`）、**国家精神**（剧本 `innate_modifiers`）、运行时内容（内阁 `modifiers`、改革卡/事件/援助的 `effects`）。
+- **剧本可覆盖指标硬边界**：`ScenarioDef` 解析 `bounds`，`EconomyModel` 增加 `base_bounds`/`reset_bounds()`/`apply_bounds_overrides()`；`[min,max]` 覆盖、`null` 移除边界，`start_run` 先复位再套用，跨剧本可正确复位（放开膨胀）。
+- **UI 与文案**：`labels.json` 增加 `coefficients` 中文名分区；`TextFormatter` 增加 `coefficient()` 与作用域感知的修正文案（前缀「系数·」）；`GameUI` 修正列表按作用域显示。
+- **示范**：`example_country` 增加国家精神「自由市场」（系数 `gdp_auto` +0.2，永久）；`arcadia_cab_braintrust` 增加系数修正（`gdp_conf` +0.05）。改革卡/事件/援助使用同一 `apply_modifier` + `scope: coefficient` 即可。
+
+验证：临时脚本确认——基准 `gdp_auto` 0.3 → 示例国国家精神 0.5 → 切至阿卡迪亚复位 0.3；剧本覆盖 `infl_anchor` 0.05 生效；内阁系数修正 `gdp_conf` 0.15→0.2；`bounds` 覆盖 `growth [-30,30]` 与复位均正确。全部 69 个 JSON 通过校验，Godot 导入与运行无脚本错误。
+
+
+

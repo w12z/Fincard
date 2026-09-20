@@ -134,8 +134,7 @@ godot --headless --path . --quit            # 启动主场景
   "trigger_iteration_limit": 0,
   "political_capital_per_turn": 0,
   "base_budget": 0,
-  "base_political_capital": 0,
-  "base_budget_scale": 0
+  "base_political_capital": 0
 }
 ```
 
@@ -165,26 +164,22 @@ godot --headless --path . --quit            # 启动主场景
     "gdp_rate_gap": 0.02,
     "gdp_tax_gap": 0.03,
     "gdp_crowd": 1.0,
-    "gdp_stim": 0.4,
 
-    "infl_anchor": 0.3,
+    "infl_anchor": 0.1,
     "infl_phillips": 0.15,
     "infl_demand": 0.1,
-    "infl_stim": 0.03,
     "infl_rate": 0.1,
 
     "u_okun": 0.25,
-    "u_revert": 0.08,
+    "u_revert": 0.05,
 
-    "debt_spend": 0.002,
     "debt_rev": 0.05,
     "debt_int_pass": 0.25,
 
     "conf_growth": 0.5,
     "conf_infl": 0.2,
     "conf_debt": 4.0,
-    "conf_stim": 0.1,
-    "conf_anchor": 0.2
+    "conf_anchor": 0.1
   },
   "bounds": {
     "inflation": [-20, 40],
@@ -200,12 +195,16 @@ godot --headless --path . --quit            # 启动主场景
 
 联动的表达式语义：
 
-- **GDP 增长率**（`growth`，每回合百分比）：潜在增长 `gdp_auto` + 信心敏感 `gdp_conf × (信心−50)/100` − 利率缺口敏感 `gdp_rate_gap × (利率−中性利率)` − 税率缺口敏感 `gdp_tax_gap × (税率−中性税率)` − 债务挤出 `gdp_crowd × max(0, 债务率−阈值)` + 财政刺激 `gdp_stim × 预算规模`。然后 **`ΔGDP = GDP ×增长率/100`**（乘法，不再是"金币式"线性加法）。
-- **通胀**（百分点）：锚定目标 `infl_anchor×(目标−通胀)` + 菲利普斯 → 需求拉动 → 财政刺激 − 利率反应（即可用的货币政策沟道：加息既拖增长又压通胀）。
+- **GDP 增长率**（`growth`，每回合百分比）：潜在增长 `gdp_auto` + 信心敏感 `gdp_conf × (信心−50)/100` − 利率缺口敏感 `gdp_rate_gap × (利率−中性利率)` − 税率缺口敏感 `gdp_tax_gap × (税率−中性税率)` − 债务挤出 `gdp_crowd × max(0, 债务率−阈值)`。然后 **`ΔGDP = GDP ×增长率/100`**（乘法，不再是"金币式"线性加法）。
+- **通胀**（百分点）：锚定目标 `infl_anchor×(目标−通胀)` + 菲利普斯 → 需求拉动 − 利率反应（即可用的货币政策沟道：加息既拖增长又压通胀）。
 - **失业率**（百分点）：`u_revert × (自然失业−失业)` − `u_okun × 增长率`。
-- **债务**（存量）：`Δ债务 = GDP × (赤字 − 收入 + 利息负担)`，其中赤字 `debt_spend×规模`、收入 `debt_rev×税率/100`、利息 `debt_int_pass×债务率×利率/100`——全部按 GDP 比例表达，债务率越大利息负担越重（债务螺旋通道）。
-- **信心**（0-100 点）：对增长、通胀、债务率、财政刺激响应，且向中性值回归。
+- **债务**（存量）：`Δ债务 = GDP × (− 收入 + 利息负担)`，其中收入 `debt_rev×税率/100`、利息 `debt_int_pass×债务率×利率/100`——全部按 GDP 比例表达，债务率越大利息负担越重（债务螺旋通道）。
+- **信心**（0-100 点）：对增长、通胀、债务率响应，且向中性值回归。
 - `bounds`：指标的硬上下限，tick 与任何效果调值都会被夹取（如失业非负、利率非负、情绪 0~100）。
+
+**预算不直接驱动经济**：选择预算档位只是确定财政预算与政治行动点的**池子**，不产生任何自动的增长/通胀/债务作用；经济变化全部来自卡牌/事件/内阁/援助/预算**自身的 `effects`**（即预算只有在被实际花出去打出卡牌时才起作用，且作用由该卡的效果决定）。因此原 `gdp_stim`/`infl_stim`/`conf_stim`/`debt_spend` 四个"预算规模"系数已移除。
+
+**回归锚是弱的、且可按国覆盖**：`infl_anchor`/`u_revert`/`conf_anchor` 默认值较弱（见上），表示市场自然修复很慢；不同国家可在剧本里用 `economy_overrides` 覆盖（见 4.6），例如市场化经济体自然回归更快、干预主义经济体更慢。
 
 只有国家在 `indicators` 中定义了某个 id，该指标才会被 tick 演化。派生指标自动生成：`growth`（每回合 GDP 增长率 %）、`debt_ratio`（债务/GDP）。
 
@@ -257,7 +256,6 @@ godot --headless --path . --quit            # 启动主场景
   "description": "说明",
   "budget": 0,
   "political_capital": 0,
-  "scale": 0,
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 0 } }
   ]
@@ -266,8 +264,8 @@ godot --headless --path . --quit            # 启动主场景
 
 - `budget`：下一年度的财政预算（按档位重设）。
 - `political_capital`：下一年度政治行动点的**大额补充**（累加）。
-- `scale`：预算规模（进入经济方程，用于债务/增长/通胀/信心的联动）。
 - `effects`：选定后立即施加（即"影响外界展望"）。
+- 预算档位**不进入经济方程**：它只决定预算/政治行动点的池子与一次性效果，不会自动推动增长、通胀或债务。
 
 ### 4.6 开局情形 / 国家 `data/scenarios/*.json`
 
@@ -280,8 +278,18 @@ godot --headless --path . --quit            # 启动主场景
   "indicators": { "gdp": 0, "inflation": 0, "debt": 0, "confidence": 0 },
   "event_pool": ["event_id"],
   "innate_modifiers": [
-    { "kind": "apply_modifier", "params": { "target": "gdp", "op": "add", "value": 0, "duration": -1 } }
+    { "kind": "apply_modifier", "params": { "target": "gdp", "op": "add", "value": 0, "duration": -1 } },
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.2, "duration": -1, "source": "国家精神·自由市场" } }
   ],
+  "economy_overrides": {
+    "infl_anchor": 0.15,
+    "u_revert": 0.07,
+    "conf_anchor": 0.12
+  },
+  "bounds": {
+    "inflation": [-50, 100],
+    "growth": [-30, 30]
+  },
   "budget_pool": ["budget_id"],
   "groups": ["group_id"],
   "scheduled_events": [
@@ -305,7 +313,10 @@ godot --headless --path . --quit            # 启动主场景
 - `conditions` 全部满足 → 胜利；`loss_conditions` 任一满足 → 失败。
 - `deadline_years`：超过该财年仍未达成 → 失败（`0` 表示不限时）。
 - `after_turn`（可选）：胜利条件自该回合**之后**才开始判定（`0` = 立即生效）。用于"先经历 scripted 剧情再判定胜利"的剧本（失败条件始终生效）。
-- `scheduled_events`（可选）：定时事件表，**到指定回合必定触发**（回合从 1 计），适合表现"历史剧本"（如大崩盘按 Suk 定时间爆发）。定时事件绕过事件组过滤，直接生效；随机事件池照常在非脚本回合抽取。
+- `scheduled_events`（可选）：定时事件表，**到指定回合必定触发**（回合从 1 计），适合表现"历史剧本"（如大崩盘按固定时间爆发）。定时事件绕过事件组过滤，直接生效；随机事件池照常在非脚本回合抽取。
+- `economy_overrides`（可选）：覆盖 `data/config/economy.json` 里的经济系数（只覆盖列出的键，其余用全局默认）。用于表达不同国家的制度差异，例如自然回归强度：市场化经济体可调高 `infl_anchor`/`u_revert`，干预主义经济体调低。
+- `innate_modifiers`（可选）：开局即施加的修正，用来表达**国家精神**。带 `scope: coefficient` 时改变经济系数（见第 5 节），带指标作用域时改指标；通常 `duration: -1`。
+- `bounds`（可选）：覆盖指标的硬上下限。值为 `[min, max]` 时覆盖；值为 `null` 时移除该指标的边界（用于放开通胀/增长的数值膨胀）。
 - 条件可引用派生指标（如 `growth`、`debt_ratio`）。
 
 ### 4.7 随机事件 `data/events/*.json`
@@ -417,9 +428,9 @@ godot --headless --path . --quit            # 启动主场景
 
 | kind | params |
 | --- | --- |
-| `adjust_indicator` | `target`, `amount` |
-| `apply_modifier` | `target`, `op`(`add`/`mul`/`override`), `value`, `duration`(正数=回合数，`-1`=永久) |
-| `remove_modifier` | `target`, `source` |
+| `adjust_indicator` | `target`, `amount`（可选 `percent`，见 4.4） |
+| `apply_modifier` | `target`, `op`(`add`/`mul`/`override`), `value`, `duration`(正数=回合数，`-1`=永久)，可选 `scope`(`indicator` 默认 / `coefficient`) |
+| `remove_modifier` | `target`, `source`（可选 `scope`） |
 | `draw_cards` | `count` |
 | `gain_budget` | `amount` |
 | `gain_political_capital` | `amount` |
@@ -458,6 +469,20 @@ override → 值 = value
 ```
 
 `EconomyModel.value(state, id)` 返回最终值；`state.indicators[id]` 为基础值。
+
+### 系数修正（`scope: "coefficient"`）
+
+修正器不仅能改指标，还能**在运行时改经济系数**——这是"数值肉鸽"快速膨胀的主要手段。给 `apply_modifier` 加 `"scope": "coefficient"`，`target` 填系数名（见 4.2 的系数总表），`op`/`value`/`duration` 语义相同：
+
+```json
+{ "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.5, "duration": -1, "source": "国家精神·重商主义" } }
+{ "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "conf_growth", "op": "mul", "value": 2.0, "duration": 4 } }
+```
+
+- `EconomyModel.coefficient(state, key)` = `base_coefficients`（`economy.json` 全局默认）→ 叠加剧本 `economy_overrides` → 再依次叠加 `scope: coefficient` 的修正器（ADD/MUL/OVERRIDE，按顺序）。
+- 因此系数可来自**四个层次**：全局默认（`economy.json`）、剧本覆盖（`economy_overrides`）、**国家精神**（剧本 `innate_modifiers`，通常 `duration: -1`）、以及**运行时内容**（内阁 `modifiers`、改革卡/事件/援助的 `effects`）。
+- 支持 `op: mul`（乘法，最容易造成爆炸式增长）与 `duration` 限时，实现"数值迅速改变"。
+- 系数修正会显示在 UI「生效中的修正」里，前缀「系数·」。
 
 **每回合政治行动点补充** = `rules.political_capital_per_turn` + `economy.value(state, "political_capital_gain")`。卡牌/内阁可对 `political_capital_gain` 施加修正器来提升每回合补充（该 id 无需在国家的 `indicators` 中定义，仅靠修正器即可生效）。
 
@@ -507,7 +532,7 @@ for event in events:
 - `pending_rewards`：待选财年奖励（每组含 `type` 与 `options`）
 - `run_status`：`RUNNING` / `WON` / `LOST`
 - `budget` / `political_capital`：当前年度资源池
-- `budget_plan` / `budget_scale`：本年度预算档位与规模
+- `budget_plan`：本年度预算档位
 - `year` / `turn_in_year` / `hand` / `indicators` / `prev_indicators` / `modifiers` / `cabinets` / `aids`
 
 **显示与描述**：`presentation/text_formatter.gd` 负责把 id 与效果翻译成中文：

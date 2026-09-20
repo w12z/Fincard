@@ -4,7 +4,6 @@
     "description":  "削减开支、坚守财政纪律，向债权人证明国家不会破产。",
     "budget":  8,
     "political_capital":  8,
-    "scale":  -1,
     "effects":  [
                     {
                         "kind":  "adjust_indicator",
