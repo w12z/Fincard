@@ -14,6 +14,20 @@ const PANEL_BG := Color("ffffff")
 const PANEL_BORDER := Color("d6e4f0")
 const CARD_BORDER := Color("9ec2f5")
 
+const TYPE_INVESTMENT := Color("2563b8")
+const TYPE_POLICY := Color("0e7d7a")
+const TYPE_REFORM := Color("7a3fb0")
+
+const TYPE_COLORS := {
+	"investment": TYPE_INVESTMENT,
+	"policy": TYPE_POLICY,
+	"reform": TYPE_REFORM,
+}
+
+
+static func card_type_color(type_id: StringName) -> Color:
+	return TYPE_COLORS.get(String(type_id), TYPE_INVESTMENT)
+
 
 static func build() -> Theme:
 	var theme := Theme.new()

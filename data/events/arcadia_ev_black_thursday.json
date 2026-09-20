@@ -1,0 +1,36 @@
+{
+    "id":  "arcadia_ev_black_thursday",
+    "title":  "黑色星期四",
+    "description":  "交易所开盘即遭抛售，行情板一片猩红。杠杆盘踩踏出逃，信心的堤坝在一个下午内溃决。",
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "gdp",
+                                       "amount":  -4.5,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  -10
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "inflation",
+                                       "amount":  -2
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "unemployment",
+                                       "amount":  4
+                                   }
+                    }
+                ]
+}

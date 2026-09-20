@@ -1,0 +1,24 @@
+{
+  "id": "arcadia_policy_bond_yield",
+  "display_name": "提高国债收益率",
+  "description": "以更高的国债收益率吸收市场资金，为过热的股市降温——政策立场持续数回合，到期后自然松动。",
+  "card_type": "policy",
+  "cost": 1,
+  "political_cost": 2,
+  "effects": [
+    { "kind": "apply_modifier", "params": { "target": "interest_rate", "op": "add", "value": 2, "duration": 4 } },
+    {
+      "kind": "branch",
+      "params": {
+        "condition": { "indicator": "confidence", "comparator": "gt", "value": 60 },
+        "then": [
+          { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -4 } },
+          { "kind": "apply_modifier", "params": { "target": "unemployment", "op": "add", "value": 1, "duration": 3 } }
+        ],
+        "else": [
+          { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -2 } }
+        ]
+      }
+    }
+  ]
+}

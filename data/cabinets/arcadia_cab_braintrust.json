@@ -1,0 +1,10 @@
+﻿{
+  "id": "arcadia_cab_braintrust",
+  "display_name": "智囊团首席顾问",
+  "description": "提供系统的复苏蓝图，长期提升增长与市场信心。",
+  "modifiers": [
+    { "kind": "apply_modifier", "params": { "target": "gdp", "op": "mul", "value": 1.01, "duration": -1 } },
+    { "kind": "apply_modifier", "params": { "target": "confidence", "op": "add", "value": 1, "duration": -1 } }
+  ],
+  "triggers": []
+}

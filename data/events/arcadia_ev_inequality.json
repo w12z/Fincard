@@ -1,0 +1,55 @@
+{
+    "id":  "arcadia_ev_inequality",
+    "display_name":  "分配失衡之问",
+    "title":  "分配失衡之问",
+    "description":  "电冰箱与汽车进入千家万户，但最富的百分之一攫取了近四分之一的国民收入，工会与知识分子开始发问。",
+    "choices":  [
+                    {
+                        "label":  "提高累进税率",
+                        "description":  "向金字塔顶端多收一分，安抚底层。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "tax_rate",
+                                                           "amount":  3
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  3
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  -2
+                                                       }
+                                        }
+                                    ]
+                    },
+                    {
+                        "label":  "维持现状",
+                        "description":  "繁荣的果实自然下渗——商人如此保证。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  -2
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  2
+                                                       }
+                                        }
+                                    ]
+                    }
+                ]
+}

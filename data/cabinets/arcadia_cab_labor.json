@@ -1,0 +1,12 @@
+{
+  "id": "arcadia_cab_labor",
+  "display_name": "劳工部长",
+  "description": "奔走于劳资之间，每回合推动就业与和解。",
+  "modifiers": [],
+  "triggers": [
+    { "on": "turn_ended", "effects": [
+      { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -1 } },
+      { "kind": "adjust_indicator", "params": { "target": "approval", "amount": 1 } }
+    ] }
+  ]
+}

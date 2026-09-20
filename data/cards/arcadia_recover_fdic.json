@@ -1,0 +1,27 @@
+{
+    "id":  "arcadia_recover_fdic",
+    "display_name":  "联邦存款保险",
+    "description":  "为储户存款提供政府担保，从根本上杜绝挤兑。",
+    "cost":  2,
+    "once_per_run":  true,
+    "effects":  [
+                    {
+                        "kind":  "apply_modifier",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "op":  "add",
+                                       "value":  3,
+                                       "duration":  -1
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "debt",
+                                       "amount":  1.5,
+                                       "percent":  true
+                                   }
+                    }
+                ],
+    "card_type":  "reform"
+}

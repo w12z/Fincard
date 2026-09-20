@@ -1,0 +1,11 @@
+{
+  "id": "arcadia_cab_fed",
+  "display_name": "联邦储备主席",
+  "description": "主张宽松货币，长期压低利率，为复苏提供廉价资金。",
+  "modifiers": [
+    { "kind": "apply_modifier", "params": { "target": "interest_rate", "op": "add", "value": -1, "duration": -1 } }
+  ],
+  "triggers": [
+    { "on": "turn_started", "effects": [ { "kind": "gain_political_capital", "params": { "amount": 1 } } ] }
+  ]
+}

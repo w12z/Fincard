@@ -1,10 +1,23 @@
 {
-  "id": "example_aid",
-  "display_name": "示例援助：紧急贷款",
-  "description": "样板外部援助，一次性使用。uses 为可用次数。",
-  "uses": 1,
-  "effects": [
-    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": -5 } },
-    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 3 } }
-  ]
+    "id":  "example_aid",
+    "display_name":  "示例援助：紧急贷款",
+    "description":  "样板外部援助，一次性使用。uses 为可用次数。",
+    "uses":  1,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "debt",
+                                       "amount":  -3.8,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  3
+                                   }
+                    }
+                ]
 }

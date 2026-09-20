@@ -1,0 +1,17 @@
+{
+    "id":  "arcadia_budget_moderate",
+    "display_name":  "稳健扩张案",
+    "description":  "适度赤字，兼顾救济与财政信誉。",
+    "budget":  14,
+    "political_capital":  5,
+    "scale":  1,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  1
+                                   }
+                    }
+                ]
+}

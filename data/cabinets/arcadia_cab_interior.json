@@ -1,0 +1,12 @@
+﻿{
+  "id": "arcadia_cab_interior",
+  "display_name": "内政部长",
+  "description": "持续推动公共工程，每回合带来产出，也要付出债务代价。",
+  "modifiers": [],
+  "triggers": [
+    { "on": "turn_ended", "effects": [
+      { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 0.3, "percent": true } },
+      { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 0.3, "percent": true } }
+    ] }
+  ]
+}

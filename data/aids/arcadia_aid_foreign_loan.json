@@ -1,0 +1,22 @@
+{
+    "id":  "arcadia_aid_foreign_loan",
+    "display_name":  "外国贷款",
+    "description":  "向友好国家举借外债，为本年度补充一笔预算。",
+    "uses":  1,
+    "effects":  [
+                    {
+                        "kind":  "gain_budget",
+                        "params":  {
+                                       "amount":  8
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "debt",
+                                       "amount":  3,
+                                       "percent":  true
+                                   }
+                    }
+                ]
+}

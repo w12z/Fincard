@@ -109,7 +109,7 @@ Fincard/
 2. 在 `data/` 下按第 4 节格式添加数据文件。
 3. 运行主场景（F6/F5）。启动后进入开局选择界面，选择国家即可开始。
 
-> 仓库已内置一套**可直接运行的样板数据**（文件名以 `example_` 开头，config 为 `rules.json` / `economy.json` / `reward_pools.json`）。启动后选择"示例国"即可试玩。所有数值都是占位示例，可自由替换；若清空数据目录，菜单会提示"未找到开局数据"。
+> 仓库内置两套可运行内容：**示例国**（`example_*`，演示 schema 的最小样板）与 **阿卡迪亚联邦**（`arcadia*`，以大萧条时期美国为原型的完整内容：3 个卡牌组共 16 张卡、6 名内阁、8 个事件、4 份预算案、3 项援助）。启动后在开局界面选择即可试玩。所有数值均可自由替换；若清空数据目录，菜单会提示"未找到开局数据"。
 
 命令行验证（可选）：
 
@@ -146,54 +146,75 @@ godot --headless --path . --quit            # 启动主场景
 - `political_capital_per_turn`：每回合政治行动点的基础小额补充（实际补充 = 此值 + `political_capital_gain` 的修正值）。
 - `base_*`：无预算档位时的兜底（也用于第一财年，若国家未定义初始值）。
 
-### 4.2 `data/config/economy.json`（经济联动系数，全部默认 0）
+### 4.2 `data/config/economy.json`（经济联动系数与指标边界）
+
+方程采用**配比语义**：GDP/债务为存量，所有流量以**占 GDP 的百分比**表达；通胀/失业/利率等百分点变量靠**回归锚**稳定（如失业向自然失业率回归、通胀向目标回归），并配硬上下限防止任何一环把系统拖飞。
 
 ```json
 {
   "coefficients": {
-    "natural_unemployment": 0,
-    "neutral_rate": 0,
-    "debt_threshold": 0,
-    "confidence_neutral": 0,
+    "natural_unemployment": 6,
+    "neutral_rate": 3,
+    "neutral_tax": 20,
+    "debt_threshold": 0.9,
+    "confidence_neutral": 50,
+    "inflation_target": 2,
 
-    "gdp_autonomy": 0,
-    "gdp_confidence": 0,
-    "gdp_rate": 0,
-    "gdp_crowding": 0,
-    "gdp_tax": 0,
-    "gdp_budget": 0,
+    "gdp_auto": 0.3,
+    "gdp_conf": 0.15,
+    "gdp_rate_gap": 0.02,
+    "gdp_tax_gap": 0.03,
+    "gdp_crowd": 1.0,
+    "gdp_stim": 0.4,
 
-    "inflation_persistence": 0,
-    "inflation_phillips": 0,
-    "inflation_overheat": 0,
-    "inflation_budget": 0,
-    "inflation_rate": 0,
+    "infl_anchor": 0.3,
+    "infl_phillips": 0.15,
+    "infl_demand": 0.1,
+    "infl_stim": 0.03,
+    "infl_rate": 0.1,
 
-    "unemployment_okun": 0,
-    "unemployment_reversion": 0,
+    "u_okun": 0.25,
+    "u_revert": 0.08,
 
-    "debt_spending": 0,
-    "debt_revenue": 0,
-    "debt_interest": 0,
+    "debt_spend": 0.002,
+    "debt_rev": 0.05,
+    "debt_int_pass": 0.25,
 
-    "confidence_growth": 0,
-    "confidence_inflation": 0,
-    "confidence_debt": 0,
-    "confidence_budget": 0,
-    "confidence_reversion": 0,
+    "conf_growth": 0.5,
+    "conf_infl": 0.2,
+    "conf_debt": 4.0,
+    "conf_stim": 0.1,
+    "conf_anchor": 0.2,
 
-    "approval_growth": 0,
-    "approval_inflation": 0,
-    "approval_unemployment": 0,
-    "approval_debt": 0
+    "appr_growth": 0.5,
+    "appr_infl": 0.08,
+    "appr_u": 0.15,
+    "appr_debt": 1.5,
+    "appr_anchor": 0.1
+  },
+  "bounds": {
+    "inflation": [-20, 40],
+    "unemployment": [0.5, 60],
+    "interest_rate": [0, 25],
+    "tax_rate": [0, 70],
+    "confidence": [0, 100],
+    "approval": [0, 100],
+    "debt_ratio": [0, 5],
+    "growth": [-8, 8]
   }
 }
 ```
 
-系数对应的方程在 `app/economy_builder.gd`，约定的指标 id 为：
-`gdp`、`inflation`、`unemployment`、`debt`、`confidence`、`approval`、`interest_rate`、`tax_rate`。
-只有国家在 `indicators` 中定义了某个 id，该指标才会被 tick 演化。派生指标自动生成：
-`growth`（GDP 增长率）、`debt_ratio`（债务/GDP）。
+联动的表达式语义：
+
+- **GDP 增长率**（`growth`，每回合百分比）：潜在增长 `gdp_auto` + 信心敏感 `gdp_conf × (信心−50)/100` − 利率缺口敏感 `gdp_rate_gap × (利率−中性利率)` − 税率缺口敏感 `gdp_tax_gap × (税率−中性税率)` − 债务挤出 `gdp_crowd × max(0, 债务率−阈值)` + 财政刺激 `gdp_stim × 预算规模`。然后 **`ΔGDP = GDP ×增长率/100`**（乘法，不再是"金币式"线性加法）。
+- **通胀**（百分点）：锚定目标 `infl_anchor×(目标−通胀)` + 菲利普斯 → 需求拉动 → 财政刺激 − 利率反应（即可用的货币政策沟道：加息既拖增长又压通胀）。
+- **失业率**（百分点）：`u_revert × (自然失业−失业)` − `u_okun × 增长率`。
+- **债务**（存量）：`Δ债务 = GDP × (赤字 − 收入 + 利息负担)`，其中赤字 `debt_spend×规模`、收入 `debt_rev×税率/100`、利息 `debt_int_pass×债务率×利率/100`——全部按 GDP 比例表达，债务率越大利息负担越重（债务螺旋通道）。
+- **信心/支持率**（0-100 点）：对增长、通胀、债务率、财政刺激响应，且向中性值回归。
+- `bounds`：指标的硬上下限，tick 与任何效果调值都会被夹取（如失业非负、利率非负、情绪 0~100）。
+
+只有国家在 `indicators` 中定义了某个 id，该指标才会被 tick 演化。派生指标自动生成：`growth`（每回合 GDP 增长率 %）、`debt_ratio`（债务/GDP）。
 
 ### 4.3 `data/config/reward_pools.json`（可选）
 
@@ -210,12 +231,12 @@ godot --headless --path . --quit            # 启动主场景
   "id": "card_id",
   "display_name": "标题（显示给玩家）",
   "description": "文本描述（显示给玩家）",
-  "group": "fiscal",
+  "card_type": "investment",
   "cost": 0,
   "political_cost": 0,
-  "tags": ["fiscal", "monetary"],
   "effects": [
-    { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 0 } },
+    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -1 } },
+    { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 3, "percent": true } },
     { "kind": "apply_modifier", "params": { "target": "inflation", "op": "mul", "value": 1.0, "duration": 3 } },
     {
       "kind": "adjust_indicator",
@@ -227,8 +248,12 @@ godot --headless --path . --quit            # 启动主场景
 ```
 
 - `cost` = 财政预算消耗，`political_cost` = 政治行动点消耗。
+- `card_type`（可选）：`investment` 投资与援助 / `policy` 政策 / `reform` 改革，缺省 `investment`；UI 按此中文名与分类色显示。
+- `once_per_run`（可选，`true`）：法案型卡牌，整局只能打出一次——打出后移除所有同名副本，不再回到牌库。**带永久性效果（`duration: -1` 或结构性法案）的卡牌建议都设为一次性**，可重复打出的持久改值会失控。
+- 可重复的政策卡如需"改利率/通胀"等，建议用**限时修正（`duration` 3~4 回合）**而不是永久改值，否则可无上限累加。
 - `display_name` = 标题，`description` = 文本描述；**具体作用由 `effects` 自动生成中文说明**（含具体数值），无需手写。
 - 效果可带可选 `condition`（指标条件）；UI 会显示为"若 通货膨胀 > 5，通货膨胀 -1"。`comparator` 取 `ge/le/gt/lt/eq`。
+- `adjust_indicator` 的 `percent: true` 表示数量按**占 GDP 的百分比**结算（用于 `gdp`、`debt` 这类存量目标）；对百分比类指标（通胀/失业/税率/信心等）不要加 `percent`。
 
 ### 4.5 年度预算档位 `data/budgets/*.json`
 
@@ -266,9 +291,13 @@ godot --headless --path . --quit            # 启动主场景
   ],
   "budget_pool": ["budget_id"],
   "groups": ["group_id"],
+  "scheduled_events": [
+    { "turn": 24, "event": "event_id" }
+  ],
   "goal": {
     "description": "目标描述",
     "deadline_years": 0,
+    "after_turn": 0,
     "conditions": [
       { "indicator": "debt_ratio", "comparator": "le", "value": 0 },
       { "indicator": "gdp", "comparator": "ge", "value": 0 }
@@ -282,6 +311,8 @@ godot --headless --path . --quit            # 启动主场景
 
 - `conditions` 全部满足 → 胜利；`loss_conditions` 任一满足 → 失败。
 - `deadline_years`：超过该财年仍未达成 → 失败（`0` 表示不限时）。
+- `after_turn`（可选）：胜利条件自该回合**之后**才开始判定（`0` = 立即生效）。用于"先经历 scripted 剧情再判定胜利"的剧本（失败条件始终生效）。
+- `scheduled_events`（可选）：定时事件表，**到指定回合必定触发**（回合从 1 计），适合表现"历史剧本"（如大崩盘按 Suk 定时间爆发）。定时事件绕过事件组过滤，直接生效；随机事件池照常在非脚本回合抽取。
 - 条件可引用派生指标（如 `growth`、`debt_ratio`）。
 
 ### 4.7 随机事件 `data/events/*.json`
@@ -399,6 +430,7 @@ godot --headless --path . --quit            # 启动主场景
 | `draw_cards` | `count` |
 | `gain_budget` | `amount` |
 | `gain_political_capital` | `amount` |
+| `branch` | `condition`, `then`(效果数组), `else`(效果数组，可省略) |
 
 任何效果都可附加可选 `condition` 字段（结构同目标条件），条件不满足时该效果不生效：
 
@@ -406,6 +438,21 @@ godot --headless --path . --quit            # 启动主场景
 { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": -1 },
   "condition": { "indicator": "inflation", "comparator": "gt", "value": 5 } }
 ```
+
+**分支效果**：`branch` 在条件成立与不成立时分别执行 `then` / `else` 两组效果，可嵌套（在 `then`/`else` 里再放 `branch`）以实现多路分支。单一条件的普通 conditional 效果是它的简写形式。
+
+```json
+{
+  "kind": "branch",
+  "params": {
+    "condition": { "indicator": "inflation", "comparator": "gt", "value": 5 },
+    "then": [ { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 1 } } ],
+    "else": [ { "kind": "adjust_indicator", "params": { "target": "approval", "amount": 1 } } ]
+  }
+}
+```
+
+UI 中显示为：`若 通货膨胀 > 5：国内生产总值 +1；否则：民众支持率 +1`。
 
 ### 修正器求值
 

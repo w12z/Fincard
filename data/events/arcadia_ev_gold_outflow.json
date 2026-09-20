@@ -1,0 +1,57 @@
+{
+    "id":  "arcadia_ev_gold_outflow",
+    "title":  "黄金外流",
+    "description":  "外国投资者与本国富人纷纷将资产兑换成黄金运往海外，储备告急。",
+    "choices":  [
+                    {
+                        "label":  "提高利率捍卫金本位",
+                        "description":  "以高息留住黄金，代价是信贷紧缩。",
+                        "effects":  [
+                                        {
+                                            "params":  {
+                                                           "target":  "interest_rate",
+                                                           "op":  "add",
+                                                           "value":  2,
+                                                           "duration":  3
+                                                       },
+                                            "kind":  "apply_modifier"
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "gdp",
+                                                           "amount":  -1.5,
+                                                           "percent":  true
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  2
+                                                       }
+                                        }
+                                    ]
+                    },
+                    {
+                        "label":  "限制黄金兑换",
+                        "description":  "管制资本流动，稳住储备但损害信誉。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  -3
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "inflation",
+                                                           "amount":  2
+                                                       }
+                                        }
+                                    ]
+                    }
+                ]
+}

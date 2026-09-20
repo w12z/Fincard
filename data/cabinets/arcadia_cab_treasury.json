@@ -1,0 +1,11 @@
+﻿{
+  "id": "arcadia_cab_treasury",
+  "display_name": "财政部长",
+  "description": "稳健理财，逐步重建财政信誉；每回合为你争取一点政治资本。",
+  "modifiers": [
+    { "kind": "apply_modifier", "params": { "target": "gdp", "op": "mul", "value": 1.005, "duration": -1 } }
+  ],
+  "triggers": [
+    { "on": "turn_started", "effects": [ { "kind": "gain_political_capital", "params": { "amount": 1 } } ] }
+  ]
+}

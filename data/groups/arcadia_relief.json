@@ -1,0 +1,11 @@
+{
+  "id": "arcadia_relief",
+  "type": "cards",
+  "display_name": "阿卡迪亚·救济组",
+  "members": [
+    "arcadia_relief_works",
+    "arcadia_relief_dole",
+    "arcadia_relief_ccc",
+    "arcadia_relief_farm"
+  ]
+}

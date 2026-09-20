@@ -112,10 +112,8 @@ func _start_turn() -> Array[Event]:
 		"year": state.year,
 	}))
 	_grant_turn_resources(events)
-	events.append_array(_schedule_event())
-	if state.pending_event != &"":
-		return events
 	events.append_array(_enter_main())
+	events.append_array(_schedule_event())
 	return events
 
 
@@ -131,6 +129,9 @@ func _schedule_event() -> Array[Event]:
 	var events: Array[Event] = []
 	if _scenario == null:
 		return events
+	var scheduled: StringName = _scenario.scheduled_events.get(state.turn, &"")
+	if scheduled != &"" and event_db.has(scheduled):
+		return _fire_event(scheduled)
 	var candidates: Array[StringName] = []
 	if not _scenario.event_pool.is_empty():
 		candidates = _scenario.event_pool.duplicate()
@@ -143,7 +144,11 @@ func _schedule_event() -> Array[Event]:
 			allowed.append(id)
 	if allowed.is_empty():
 		return events
-	var event_id: StringName = rng.pick(allowed)
+	return _fire_event(rng.pick(allowed))
+
+
+func _fire_event(event_id: StringName) -> Array[Event]:
+	var events: Array[Event] = []
 	var chosen: EconomyEventDef = event_db[event_id]
 	state.pending_event = event_id
 	state.pending_event_choices.clear()
@@ -175,7 +180,7 @@ func _resolve_event(params: Dictionary) -> Array[Event]:
 	events.append(Event.new(Event.Kind.EVENT_RESOLVED, {"event": definition.id}))
 	state.pending_event = &""
 	state.pending_event_choices.clear()
-	events.append_array(_enter_main())
+	events.append(turns.enter(TurnStateMachine.Phase.MAIN, state))
 	return events
 
 
@@ -226,8 +231,20 @@ func _play_card(params: Dictionary) -> Array[Event]:
 	events.append(Event.new(Event.Kind.CARD_PLAYED, {"card_id": card_id}))
 	for effect in card.effects:
 		events.append_array(resolver.resolve(effect, state, rng))
-	state.discard.append(card_id)
+	if card.once_per_run:
+		_remove_all_copies(card_id)
+	else:
+		state.discard.append(card_id)
 	return events
+
+
+func _remove_all_copies(card_id: StringName) -> void:
+	while state.hand.has(card_id):
+		state.hand.erase(card_id)
+	while state.deck.has(card_id):
+		state.deck.erase(card_id)
+	while state.discard.has(card_id):
+		state.discard.erase(card_id)
 
 
 func _use_aid(params: Dictionary) -> Array[Event]:
@@ -416,10 +433,14 @@ func _check_end_conditions() -> Array[Event]:
 	var events: Array[Event] = []
 	if _scenario == null or _scenario.goal == null:
 		return events
-	if _scenario.goal.is_failed(state, economy):
+	var goal := _scenario.goal
+	if goal.is_failed(state, economy):
 		state.run_status = GameState.RunStatus.LOST
 		events.append(Event.new(Event.Kind.RUN_LOST, {"reason": "loss_condition"}))
-	elif _scenario.goal.is_achieved(state, economy):
+		return events
+	if goal.after_turn > 0 and state.turn <= goal.after_turn:
+		return events
+	if goal.is_achieved(state, economy):
 		state.run_status = GameState.RunStatus.WON
 		events.append(Event.new(Event.Kind.RUN_WON, {"reason": "goal_achieved"}))
 	return events
@@ -486,7 +507,9 @@ func _build_year_end_rewards() -> Array[Dictionary]:
 	var option_count := int(rules.get("reward_option_count", 0))
 	if option_count <= 0:
 		return groups
-	_add_reward_group(groups, Reward.Type.CARD, card_reward_pool, option_count)
+	var card_groups := maxi(1, int(rules.get("card_reward_groups", 1)))
+	for i in card_groups:
+		_add_reward_group(groups, Reward.Type.CARD, card_reward_pool, option_count)
 	_add_reward_group(groups, Reward.Type.CABINET, cabinet_reward_pool, option_count)
 	_add_reward_group(groups, Reward.Type.AID, aid_reward_pool, option_count)
 	return groups

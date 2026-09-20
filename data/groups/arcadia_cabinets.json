@@ -1,0 +1,13 @@
+{
+  "id": "arcadia_cabinets",
+  "type": "cabinets",
+  "display_name": "阿卡迪亚内阁组",
+  "members": [
+    "arcadia_cab_treasury",
+    "arcadia_cab_fed",
+    "arcadia_cab_labor",
+    "arcadia_cab_agriculture",
+    "arcadia_cab_braintrust",
+    "arcadia_cab_interior"
+  ]
+}

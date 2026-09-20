@@ -1,0 +1,39 @@
+{
+    "id":  "arcadia_recover_tariff",
+    "display_name":  "关税壁垒",
+    "description":  "提高进口关税以保护本国工业与就业，代价是贸易萎缩与报复。",
+    "cost":  1,
+    "once_per_run":  true,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "gdp",
+                                       "amount":  -1.5,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "inflation",
+                                       "amount":  2
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "approval",
+                                       "amount":  2
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  -2
+                                   }
+                    }
+                ],
+    "card_type":  "policy"
+}

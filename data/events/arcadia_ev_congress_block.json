@@ -1,0 +1,68 @@
+{
+    "id":  "arcadia_ev_congress_block",
+    "title":  "国会阻挠",
+    "description":  "反对派与保守派法官联手，试图阻挠你的复苏立法。",
+    "choices":  [
+                    {
+                        "label":  "与反对派妥协",
+                        "description":  "换取部分法案通过，但内容被稀释。",
+                        "effects":  [
+                                        {
+                                            "kind":  "gain_political_capital",
+                                            "params":  {
+                                                           "amount":  3
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  1
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "gdp",
+                                                           "amount":  -0.8,
+                                                           "percent":  true
+                                                       }
+                                        }
+                                    ]
+                    },
+                    {
+                        "label":  "强硬推进议程",
+                        "description":  "动用一切政治资本硬闯，成果更大但树敌更多。",
+                        "effects":  [
+                                        {
+                                            "kind":  "gain_political_capital",
+                                            "params":  {
+                                                           "amount":  -4
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  2
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "gdp",
+                                                           "amount":  1.5,
+                                                           "percent":  true
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  -1
+                                                       }
+                                        }
+                                    ]
+                    }
+                ]
+}

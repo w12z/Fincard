@@ -1,0 +1,10 @@
+{
+  "id": "arcadia_aids",
+  "type": "aids",
+  "display_name": "阿卡迪亚援助组",
+  "members": [
+    "arcadia_aid_gold",
+    "arcadia_aid_foreign_loan",
+    "arcadia_aid_fireside"
+  ]
+}

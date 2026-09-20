@@ -1,0 +1,32 @@
+{
+    "id":  "arcadia_budget_emergency",
+    "display_name":  "紧急救济案",
+    "description":  "举债全力救济，先救人、后算账，把国家信用押上赌桌。",
+    "budget":  26,
+    "political_capital":  2,
+    "scale":  4,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "approval",
+                                       "amount":  2
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "debt",
+                                       "amount":  3,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  -3
+                                   }
+                    }
+                ]
+}

@@ -48,7 +48,7 @@ func _ready() -> void:
 	simulation.budget_db = budgets
 	simulation.group_db = groups
 	simulation.rules = rules
-	EconomyBuilder.build(simulation.economy, economy_config)
+	EconomyBuilder.build(simulation.economy, economy_config, rules)
 	_load_pools()
 
 

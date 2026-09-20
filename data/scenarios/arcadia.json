@@ -1,0 +1,84 @@
+{
+  "id": "arcadia",
+  "display_name": "阿卡迪亚联邦",
+  "description": "大崩盘前两年的阿卡迪亚：工厂满负荷开工，股市节节攀升，失业率处于历史低位。但投机狂热与分配失衡正在积累暗流——你的任期内将横亘那场大崩盘，而历史只会记得你是否把它带出萧条。",
+  "starting_deck": [
+    "arcadia_recover_tariff",
+    "arcadia_recover_tariff",
+    "arcadia_recover_trade",
+    "arcadia_recover_trade",
+    "arcadia_recover_open_market",
+    "arcadia_recover_open_market",
+    "arcadia_recover_open_market",
+    "arcadia_policy_bond_yield",
+    "arcadia_recover_sec",
+    "arcadia_recover_aaa",
+    "arcadia_reform_tax_wealth",
+    "arcadia_reform_tax_wealth",
+    "arcadia_reform_austerity",
+    "arcadia_reform_austerity",
+    "arcadia_reform_labor_rights",
+    "arcadia_relief_works",
+    "arcadia_relief_works",
+    "arcadia_relief_dole",
+    "arcadia_relief_ccc",
+    "arcadia_relief_farm"
+  ],
+  "indicators": {
+    "gdp": 128,
+    "inflation": 2,
+    "unemployment": 5,
+    "debt": 30,
+    "confidence": 70,
+    "approval": 55,
+    "interest_rate": 5,
+    "tax_rate": 25
+  },
+  "event_pool": [
+    "arcadia_ev_bank_run",
+    "arcadia_ev_dust_bowl",
+    "arcadia_ev_bonus_army",
+    "arcadia_ev_strike",
+    "arcadia_ev_gold_outflow",
+    "arcadia_ev_europe_default",
+    "arcadia_ev_farm_foreclosure",
+    "arcadia_ev_congress_block",
+    "arcadia_ev_speculation",
+    "arcadia_ev_inequality",
+    "arcadia_ev_farm_depression",
+    "arcadia_ev_war_debt"
+  ],
+  "scheduled_events": [
+    { "turn": 24, "event": "arcadia_ev_black_thursday" },
+    { "turn": 26, "event": "arcadia_ev_bank_panic" },
+    { "turn": 28, "event": "arcadia_ev_credit_freeze" }
+  ],
+  "innate_modifiers": [],
+  "budget_pool": [
+    "arcadia_budget_austerity",
+    "arcadia_budget_moderate",
+    "arcadia_budget_deficit",
+    "arcadia_budget_emergency"
+  ],
+  "groups": {
+    "cards": ["arcadia_relief", "arcadia_recovery", "arcadia_reform"],
+    "cabinets": ["arcadia_cabinets"],
+    "aids": ["arcadia_aids"],
+    "budgets": ["arcadia_budgets"],
+    "events": ["arcadia_events"]
+  },
+  "goal": {
+    "description": "撑过大崩盘，并在期限内重振经济：把 GDP 推回 135 以上、失业率压到 8 以下。",
+    "deadline_years": 6,
+    "after_turn": 28,
+    "conditions": [
+      { "indicator": "unemployment", "comparator": "le", "value": 8 },
+      { "indicator": "gdp", "comparator": "ge", "value": 135 }
+    ],
+    "loss_conditions": [
+      { "indicator": "inflation", "comparator": "lt", "value": -15 },
+      { "indicator": "approval", "comparator": "lt", "value": 0 },
+      { "indicator": "confidence", "comparator": "lt", "value": 0 }
+    ]
+  }
+}

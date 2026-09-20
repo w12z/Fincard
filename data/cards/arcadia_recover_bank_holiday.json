@@ -1,0 +1,47 @@
+{
+    "id":  "arcadia_recover_bank_holiday",
+    "display_name":  "银行假日",
+    "description":  "全国银行停业整顿，经审查后择优复业。恐慌越严重，果断行动带来的信心修复越显著。",
+    "card_type":  "investment",
+    "once_per_run":  true,
+    "cost":  1,
+    "political_cost":  2,
+    "effects":  [
+                    {
+                        "kind":  "branch",
+                        "params":  {
+                                       "condition":  {
+                                                         "indicator":  "confidence",
+                                                         "comparator":  "lt",
+                                                         "value":  45
+                                                     },
+                                       "then":  [
+                                                    {
+                                                        "kind":  "adjust_indicator",
+                                                        "params":  {
+                                                                       "target":  "confidence",
+                                                                       "amount":  8
+                                                                   }
+                                                    }
+                                                ],
+                                       "else":  [
+                                                    {
+                                                        "kind":  "adjust_indicator",
+                                                        "params":  {
+                                                                       "target":  "confidence",
+                                                                       "amount":  4
+                                                                   }
+                                                    }
+                                                ]
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "gdp",
+                                       "amount":  -1.5,
+                                       "percent":  true
+                                   }
+                    }
+                ]
+}

@@ -1,0 +1,32 @@
+{
+    "id":  "arcadia_recover_trade",
+    "display_name":  "互惠贸易协定",
+    "description":  "与贸易伙伴互相降低关税，为过剩产能打开出口市场。",
+    "cost":  2,
+    "once_per_run":  true,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "gdp",
+                                       "amount":  2.2,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "inflation",
+                                       "amount":  1
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  3
+                                   }
+                    }
+                ],
+    "card_type":  "policy"
+}

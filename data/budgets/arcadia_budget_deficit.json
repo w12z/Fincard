@@ -1,0 +1,32 @@
+{
+    "id":  "arcadia_budget_deficit",
+    "display_name":  "赤字支出案",
+    "description":  "以大规模赤字支出「泵水」，主动启动停滞的经济。",
+    "budget":  20,
+    "political_capital":  3,
+    "scale":  3,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "debt",
+                                       "amount":  1.5,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "inflation",
+                                       "amount":  1
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  -2
+                                   }
+                    }
+                ]
+}

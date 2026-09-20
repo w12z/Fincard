@@ -1,0 +1,22 @@
+{
+    "id":  "arcadia_aid_fireside",
+    "display_name":  "炉边谈话",
+    "description":  "通过广播直接向民众与市场喊话，稳住人心。",
+    "uses":  2,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "approval",
+                                       "amount":  4
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  4
+                                   }
+                    }
+                ]
+}

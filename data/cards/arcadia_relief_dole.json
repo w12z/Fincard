@@ -1,0 +1,45 @@
+{
+    "id":  "arcadia_relief_dole",
+    "display_name":  "直接救济金",
+    "description":  "向失业家庭直接发放现金与食物券——救济随拨款存续，停发即失效。",
+    "cost":  2,
+    "political_cost":  1,
+    "effects":  [
+                    {
+                        "kind":  "apply_modifier",
+                        "params":  {
+                                       "target":  "unemployment",
+                                       "op":  "add",
+                                       "value":  -1,
+                                       "duration":  3
+                                   }
+                    },
+                    {
+                        "kind":  "apply_modifier",
+                        "params":  {
+                                       "target":  "approval",
+                                       "op":  "add",
+                                       "value":  3,
+                                       "duration":  3
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "debt",
+                                       "amount":  1.5,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "apply_modifier",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "op":  "add",
+                                       "value":  -1,
+                                       "duration":  3
+                                   }
+                    }
+                ],
+    "card_type":  "investment"
+}

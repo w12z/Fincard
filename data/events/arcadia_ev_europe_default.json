@@ -1,0 +1,29 @@
+{
+    "id":  "arcadia_ev_europe_default",
+    "title":  "欧洲债务违约",
+    "description":  "欧洲多国宣布无力偿付战时债务，国际金融体系再度震荡。",
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "gdp",
+                                       "amount":  -1.5,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  -3
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "inflation",
+                                       "amount":  -1
+                                   }
+                    }
+                ]
+}

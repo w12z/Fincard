@@ -1,4 +1,9 @@
 {
+  "card_types": {
+    "investment": "投资与援助",
+    "policy": "政策",
+    "reform": "改革"
+  },
   "indicators": {
     "gdp": "国内生产总值",
     "inflation": "通货膨胀",

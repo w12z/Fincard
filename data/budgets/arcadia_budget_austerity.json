@@ -1,0 +1,24 @@
+{
+    "id":  "arcadia_budget_austerity",
+    "display_name":  "平衡预算案",
+    "description":  "削减开支、坚守财政纪律，向债权人证明国家不会破产。",
+    "budget":  8,
+    "political_capital":  8,
+    "scale":  -1,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  3
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "unemployment",
+                                       "amount":  1
+                                   }
+                    }
+                ]
+}

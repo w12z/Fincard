@@ -212,6 +212,8 @@ func _render_goal() -> void:
 		_goal_box.add_child(_wrapped("失败：%s" % TextFormatter.condition_text(_labels(), condition), UiTheme.NEGATIVE))
 	if goal.deadline_years > 0:
 		_goal_box.add_child(_colored("期限：第 %d 财年" % goal.deadline_years, UiTheme.WARNING))
+	if goal.after_turn > 0:
+		_goal_box.add_child(_colored("胜利判定：自第 %d 回合起" % (goal.after_turn + 1), UiTheme.WARNING))
 
 
 func _render_indicators() -> void:
@@ -294,13 +296,22 @@ func _render_hand() -> void:
 		var card: CardDef = controller.cards.get(card_id)
 		if card == null:
 			continue
-		var lines := PackedStringArray([card.display_name, "预算 %d · 政治 %d" % [card.cost, card.political_cost]])
+		var type_label := TextFormatter.card_type_name(_labels(), card.card_type)
+		var type_color := UiTheme.card_type_color(card.card_type)
+		var lines := PackedStringArray([
+			"［%s］%s" % [type_label, card.display_name],
+			"预算 %d · 政治 %d" % [card.cost, card.political_cost],
+		])
 		for effect in card.effects:
 			lines.append("· " + TextFormatter.effect_text(_labels(), effect))
 		var button := Button.new()
 		button.text = "\n".join(lines)
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		button.tooltip_text = _detail_text(card.description, card.effects, controller.simulation.groups_of("cards", card.id))
+		button.add_theme_color_override("font_color", type_color)
+		button.add_theme_color_override("font_hover_color", type_color)
+		button.add_theme_color_override("font_pressed_color", type_color)
+		button.add_theme_color_override("font_disabled_color", Color(type_color, 0.55))
+		button.tooltip_text = "［%s］\n%s" % [type_label, _detail_text(card.description, card.effects, controller.simulation.groups_of("cards", card.id))]
 		button.custom_minimum_size = Vector2(180, 0)
 		button.theme_type_variation = "CardButton"
 		button.disabled = _busy() or _state.run_status != GameState.RunStatus.RUNNING \
@@ -421,6 +432,13 @@ func _show_rewards() -> void:
 			var check := CheckBox.new()
 			check.text = reward.label
 			check.tooltip_text = _reward_detail(reward)
+			if reward.type == Reward.Type.CARD:
+				var reward_card: CardDef = controller.cards.get(reward.id)
+				if reward_card != null:
+					var reward_color := UiTheme.card_type_color(reward_card.card_type)
+					check.add_theme_color_override("font_color", reward_color)
+					check.add_theme_color_override("font_hover_color", reward_color)
+					check.add_theme_color_override("font_pressed_color", reward_color)
 			check.button_group = button_group
 			var gi := group_index
 			var oi := option_index
@@ -654,7 +672,10 @@ func _reward_detail(reward: Reward) -> String:
 		Reward.Type.CARD:
 			var card: CardDef = controller.cards.get(reward.id)
 			if card != null:
-				return _detail_text(card.description, card.effects, controller.simulation.groups_of("cards", card.id))
+				return "［%s］\n%s" % [
+					TextFormatter.card_type_name(_labels(), card.card_type),
+					_detail_text(card.description, card.effects, controller.simulation.groups_of("cards", card.id)),
+				]
 		Reward.Type.CABINET:
 			var cabinet: CabinetDef = controller.cabinets.get(reward.id)
 			if cabinet != null:

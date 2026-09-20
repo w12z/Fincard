@@ -1,0 +1,34 @@
+{
+    "id":  "arcadia_reform_social_security",
+    "display_name":  "社会保障法",
+    "description":  "建立养老金与失业保险制度，为老弱失业者提供长期安全网。",
+    "cost":  3,
+    "once_per_run":  true,
+    "effects":  [
+                    {
+                        "kind":  "apply_modifier",
+                        "params":  {
+                                       "target":  "approval",
+                                       "op":  "add",
+                                       "value":  3,
+                                       "duration":  -1
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "unemployment",
+                                       "amount":  -1
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "debt",
+                                       "amount":  2.2,
+                                       "percent":  true
+                                   }
+                    }
+                ],
+    "card_type":  "reform"
+}

@@ -1,0 +1,63 @@
+{
+    "id":  "arcadia_ev_speculation",
+    "title":  "股市投机狂热",
+    "description":  "擦鞋童都在谈论股票，保证金账户爆炸式增长，交易所门庭若市。",
+    "choices":  [
+                    {
+                        "label":  "收紧保证金监管",
+                        "description":  "给狂热降温，华尔街抱怨束缚手脚。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  -3
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "gdp",
+                                                           "amount":  -0.8,
+                                                           "percent":  true
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  -1
+                                                       }
+                                        }
+                                    ]
+                    },
+                    {
+                        "label":  "放任繁荣",
+                        "description":  "水涨船高，人人受益——但愿如此。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  4
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "gdp",
+                                                           "amount":  1.5,
+                                                           "percent":  true
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "inflation",
+                                                           "amount":  1
+                                                       }
+                                        }
+                                    ]
+                    }
+                ]
+}

@@ -1,0 +1,39 @@
+{
+    "id":  "arcadia_reform_austerity",
+    "display_name":  "削减联邦开支",
+    "description":  "压缩政府支出以平衡预算、安抚债权人，代价是紧缩之痛。",
+    "cost":  0,
+    "once_per_run":  true,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "debt",
+                                       "amount":  -3.8,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "unemployment",
+                                       "amount":  2
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "approval",
+                                       "amount":  -3
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  1
+                                   }
+                    }
+                ],
+    "card_type":  "reform"
+}

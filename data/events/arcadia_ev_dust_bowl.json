@@ -1,0 +1,56 @@
+{
+    "id":  "arcadia_ev_dust_bowl",
+    "title":  "尘暴",
+    "description":  "干旱与狂风卷起黑土，遮天蔽日，中西部农田颗粒无收，农民举家西迁。",
+    "choices":  [
+                    {
+                        "label":  "联邦赈灾与安置",
+                        "description":  "拨款救济灾民并协助迁徙。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  3
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "debt",
+                                                           "amount":  1.5,
+                                                           "percent":  true
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "unemployment",
+                                                           "amount":  -1
+                                                       }
+                                        }
+                                    ]
+                    },
+                    {
+                        "label":  "交由州政府自理",
+                        "description":  "联邦不越权，但灾区怨声载道。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  -3
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "gdp",
+                                                           "amount":  -1.5,
+                                                           "percent":  true
+                                                       }
+                                        }
+                                    ]
+                    }
+                ]
+}

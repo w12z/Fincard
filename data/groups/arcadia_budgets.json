@@ -1,0 +1,11 @@
+{
+  "id": "arcadia_budgets",
+  "type": "budgets",
+  "display_name": "阿卡迪亚预算组",
+  "members": [
+    "arcadia_budget_austerity",
+    "arcadia_budget_moderate",
+    "arcadia_budget_deficit",
+    "arcadia_budget_emergency"
+  ]
+}

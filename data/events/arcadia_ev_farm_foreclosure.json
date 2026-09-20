@@ -1,0 +1,56 @@
+{
+    "id":  "arcadia_ev_farm_foreclosure",
+    "title":  "农民断赎潮",
+    "description":  "农产品价格暴跌，大量农场因无力还贷被银行强制收回。",
+    "choices":  [
+                    {
+                        "label":  "立法暂停农场赎回",
+                        "description":  "给农民喘息之机，但债权人利益受损。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  3
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  -1
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "debt",
+                                                           "amount":  0.8,
+                                                           "percent":  true
+                                                       }
+                                        }
+                                    ]
+                    },
+                    {
+                        "label":  "维持市场清算",
+                        "description":  "尊重契约，让低效农场被淘汰。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  -3
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "gdp",
+                                                           "amount":  0.8,
+                                                           "percent":  true
+                                                       }
+                                        }
+                                    ]
+                    }
+                ]
+}

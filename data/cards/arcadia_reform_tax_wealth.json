@@ -1,0 +1,31 @@
+{
+    "id":  "arcadia_reform_tax_wealth",
+    "display_name":  "富人税",
+    "description":  "大幅提高高收入者与遗产税率，让富人多担一分。",
+    "cost":  0,
+    "once_per_run":  true,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "tax_rate",
+                                       "amount":  5
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "approval",
+                                       "amount":  2
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  -3
+                                   }
+                    }
+                ],
+    "card_type":  "reform"
+}

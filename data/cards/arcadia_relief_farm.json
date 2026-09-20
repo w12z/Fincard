@@ -1,0 +1,40 @@
+{
+    "id":  "arcadia_relief_farm",
+    "display_name":  "农业停耕补贴",
+    "description":  "补贴农民减耕休耕，以抬升暴跌的农产品价格。",
+    "cost":  2,
+    "political_cost":  1,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "inflation",
+                                       "amount":  2
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "gdp",
+                                       "amount":  0.8,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "approval",
+                                       "amount":  1
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "debt",
+                                       "amount":  0.8,
+                                       "percent":  true
+                                   }
+                    }
+                ],
+    "card_type":  "investment"
+}

@@ -1,0 +1,43 @@
+{
+    "id":  "arcadia_relief_ccc",
+    "display_name":  "民间资源保护队",
+    "description":  "招募失业青年从事造林与水土保持，营地随拨款存续，林林留下长期资产。",
+    "cost":  2,
+    "political_cost":  1,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "unemployment",
+                                       "amount":  -1
+                                   }
+                    },
+                    {
+                        "kind":  "apply_modifier",
+                        "params":  {
+                                       "target":  "unemployment",
+                                       "op":  "add",
+                                       "value":  -2,
+                                       "duration":  3
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "gdp",
+                                       "amount":  1.5,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "apply_modifier",
+                        "params":  {
+                                       "target":  "approval",
+                                       "op":  "add",
+                                       "value":  1,
+                                       "duration":  3
+                                   }
+                    }
+                ],
+    "card_type":  "investment"
+}

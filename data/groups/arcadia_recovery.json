@@ -1,0 +1,16 @@
+{
+  "id": "arcadia_recovery",
+  "type": "cards",
+  "display_name": "阿卡迪亚·复兴组",
+  "members": [
+    "arcadia_recover_bank_holiday",
+    "arcadia_recover_fdic",
+    "arcadia_recover_gold",
+    "arcadia_recover_open_market",
+    "arcadia_recover_tariff",
+    "arcadia_recover_trade",
+    "arcadia_recover_sec",
+    "arcadia_recover_aaa",
+    "arcadia_policy_bond_yield"
+  ]
+}

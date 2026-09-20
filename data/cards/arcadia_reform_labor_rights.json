@@ -1,0 +1,39 @@
+{
+    "id":  "arcadia_reform_labor_rights",
+    "display_name":  "劳工权利法",
+    "description":  "承认工会集体谈判权，设定最低工资与最高工时。",
+    "cost":  2,
+    "once_per_run":  true,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "approval",
+                                       "amount":  3
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  -2
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "gdp",
+                                       "amount":  0.8,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "unemployment",
+                                       "amount":  -1
+                                   }
+                    }
+                ],
+    "card_type":  "reform"
+}

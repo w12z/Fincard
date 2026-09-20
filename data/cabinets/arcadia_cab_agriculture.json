@@ -1,0 +1,11 @@
+{
+  "id": "arcadia_cab_agriculture",
+  "display_name": "农业部长",
+  "description": "稳定农产品价格，争取广大的农村选票。",
+  "modifiers": [
+    { "kind": "apply_modifier", "params": { "target": "inflation", "op": "add", "value": 1, "duration": -1 } }
+  ],
+  "triggers": [
+    { "on": "year_started", "effects": [ { "kind": "adjust_indicator", "params": { "target": "approval", "amount": 2 } } ] }
+  ]
+}

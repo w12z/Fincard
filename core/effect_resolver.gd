@@ -26,8 +26,29 @@ func resolve(effect: Effect, state: GameState, rng: Rng) -> Array[Event]:
 			return _gain_resource(effect.params, state, &"budget")
 		Effect.Kind.GAIN_POLITICAL_CAPITAL:
 			return _gain_resource(effect.params, state, &"political_capital")
+		Effect.Kind.BRANCH:
+			return _resolve_branch(effect.params, state, rng)
 		_:
 			return []
+
+
+func _resolve_branch(params: Dictionary, state: GameState, rng: Rng) -> Array[Event]:
+	var raw_condition = params.get("condition")
+	if raw_condition is Dictionary and economy != null:
+		if Condition.from_dict(raw_condition).evaluate(state, economy):
+			return _resolve_effects(params.get("then", []), state, rng)
+		return _resolve_effects(params.get("else", []), state, rng)
+	return _resolve_effects(params.get("then", []), state, rng)
+
+
+func _resolve_effects(raw_list: Variant, state: GameState, rng: Rng) -> Array[Event]:
+	if not (raw_list is Array):
+		return []
+	var events: Array[Event] = []
+	for raw in raw_list:
+		if raw is Dictionary:
+			events.append_array(resolve(Effect.from_dict(raw), state, rng))
+	return events
 
 
 func _apply_modifier(params: Dictionary, state: GameState) -> Array[Event]:
@@ -68,8 +89,14 @@ func _remove_modifier(params: Dictionary, state: GameState) -> Array[Event]:
 func _adjust_indicator(params: Dictionary, state: GameState) -> Array[Event]:
 	var target := StringName(params.get("target", ""))
 	var delta := float(params.get("amount", 0.0))
+	if bool(params.get("percent", false)):
+		var gdp := float(state.indicators.get(&"gdp", 0.0))
+		delta = delta / 100.0 * gdp
 	var previous := float(state.indicators.get(target, 0.0))
 	state.indicators[target] = previous + delta
+	if economy != null:
+		economy.clamp_indicator(state, target)
+	delta = float(state.indicators.get(target, 0.0)) - previous
 	return [Event.new(Event.Kind.INDICATOR_CHANGED, {
 		"indicator": target,
 		"previous": previous,

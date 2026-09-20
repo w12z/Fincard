@@ -1,0 +1,37 @@
+{
+    "id":  "arcadia_recover_open_market",
+    "display_name":  "公开市场操作",
+    "description":  "央行买入国债向银行体系投放流动性——可反复使用的货币政策工具，效果持续数回合。",
+    "cost":  1,
+    "political_cost":  2,
+    "effects":  [
+                    {
+                        "kind":  "apply_modifier",
+                        "params":  {
+                                       "target":  "interest_rate",
+                                       "op":  "add",
+                                       "value":  -2,
+                                       "duration":  3
+                                   }
+                    },
+                    {
+                        "kind":  "apply_modifier",
+                        "params":  {
+                                       "target":  "inflation",
+                                       "op":  "add",
+                                       "value":  2,
+                                       "duration":  3
+                                   }
+                    },
+                    {
+                        "kind":  "apply_modifier",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "op":  "add",
+                                       "value":  2,
+                                       "duration":  3
+                                   }
+                    }
+                ],
+    "card_type":  "policy"
+}

@@ -1,0 +1,22 @@
+{
+  "id": "arcadia_events",
+  "type": "events",
+  "display_name": "阿卡迪亚事件组",
+  "members": [
+    "arcadia_ev_bank_run",
+    "arcadia_ev_dust_bowl",
+    "arcadia_ev_bonus_army",
+    "arcadia_ev_strike",
+    "arcadia_ev_gold_outflow",
+    "arcadia_ev_europe_default",
+    "arcadia_ev_farm_foreclosure",
+    "arcadia_ev_congress_block",
+    "arcadia_ev_speculation",
+    "arcadia_ev_inequality",
+    "arcadia_ev_farm_depression",
+    "arcadia_ev_war_debt",
+    "arcadia_ev_black_thursday",
+    "arcadia_ev_bank_panic",
+    "arcadia_ev_credit_freeze"
+  ]
+}

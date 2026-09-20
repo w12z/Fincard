@@ -1,0 +1,29 @@
+{
+    "id":  "arcadia_ev_credit_freeze",
+    "title":  "信贷冻结",
+    "description":  "银行惜贷现金，商界信誉一夜归零，企业资金链接连断裂，工厂大规模裁员。",
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "gdp",
+                                       "amount":  -7.5,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "unemployment",
+                                       "amount":  7
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "inflation",
+                                       "amount":  -3
+                                   }
+                    }
+                ]
+}

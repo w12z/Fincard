@@ -1,0 +1,32 @@
+{
+    "id":  "arcadia_recover_aaa",
+    "display_name":  "农业调整法",
+    "description":  "以配额限制农产品产量，强行提振崩溃的农产品价格。",
+    "cost":  2,
+    "once_per_run":  true,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "inflation",
+                                       "amount":  3
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "gdp",
+                                       "amount":  0.8,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "approval",
+                                       "amount":  -1
+                                   }
+                    }
+                ],
+    "card_type":  "reform"
+}

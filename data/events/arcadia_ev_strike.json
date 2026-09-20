@@ -1,0 +1,55 @@
+{
+    "id":  "arcadia_ev_strike",
+    "title":  "罢工潮",
+    "description":  "纺织厂与煤矿工人相继罢工，要求加薪、缩短工时并承认工会。",
+    "choices":  [
+                    {
+                        "label":  "承认工会并出面调停",
+                        "description":  "以谈判平息工潮，代价是资本的不安。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  3
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  -3
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "inflation",
+                                                           "amount":  1
+                                                       }
+                                        }
+                                    ]
+                    },
+                    {
+                        "label":  "派国民警卫队",
+                        "description":  "强制复工，产出恢复但民怨积聚。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  -4
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "gdp",
+                                                           "amount":  0.8,
+                                                           "percent":  true
+                                                       }
+                                        }
+                                    ]
+                    }
+                ]
+}

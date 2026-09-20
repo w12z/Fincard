@@ -8,6 +8,7 @@ enum Kind {
 	DRAW_CARDS,
 	GAIN_BUDGET,
 	GAIN_POLITICAL_CAPITAL,
+	BRANCH,
 	CUSTOM,
 }
 
@@ -18,6 +19,7 @@ const KIND_NAMES := {
 	"draw_cards": Kind.DRAW_CARDS,
 	"gain_budget": Kind.GAIN_BUDGET,
 	"gain_political_capital": Kind.GAIN_POLITICAL_CAPITAL,
+	"branch": Kind.BRANCH,
 	"custom": Kind.CUSTOM,
 }
 

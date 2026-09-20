@@ -1,0 +1,56 @@
+{
+    "id":  "arcadia_ev_farm_depression",
+    "title":  "农业的漫长萧条",
+    "description":  "战后农产品价格长期低迷，农民负债累累，农村要求联邦出手。",
+    "choices":  [
+                    {
+                        "label":  "农产品平价补贴",
+                        "description":  "财政出钱托住农产品价格。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "inflation",
+                                                           "amount":  1
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "debt",
+                                                           "amount":  1.5,
+                                                           "percent":  true
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  2
+                                                       }
+                                        }
+                                    ]
+                    },
+                    {
+                        "label":  "让市场自行出清",
+                        "description":  "不干预市场，低效农场自然淘汰。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  -2
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "gdp",
+                                                           "amount":  -0.8,
+                                                           "percent":  true
+                                                       }
+                                        }
+                                    ]
+                    }
+                ]
+}

@@ -2,6 +2,7 @@
   "draw_per_turn": 4,
   "turns_per_year": 12,
   "reward_option_count": 3,
+  "card_reward_groups": 2,
   "trigger_iteration_limit": 8,
   "political_capital_per_turn": 1,
   "base_budget": 10,

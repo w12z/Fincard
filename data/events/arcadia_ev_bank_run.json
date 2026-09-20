@@ -1,0 +1,49 @@
+{
+    "id":  "arcadia_ev_bank_run",
+    "title":  "银行挤兑",
+    "description":  "又一家大银行传出坏账，储户在门前排起长队，恐慌正在蔓延。",
+    "choices":  [
+                    {
+                        "label":  "动用联邦资金担保",
+                        "description":  "以国家信用为银行兜底，止住恐慌。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  6
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "debt",
+                                                           "amount":  2.2,
+                                                           "percent":  true
+                                                       }
+                                        }
+                                    ]
+                    },
+                    {
+                        "label":  "让银行自行清算",
+                        "description":  "市场的问题交给市场，但储户将血本无归。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  -8
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "gdp",
+                                                           "amount":  -2.2,
+                                                           "percent":  true
+                                                       }
+                                        }
+                                    ]
+                    }
+                ]
+}

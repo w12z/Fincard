@@ -1,0 +1,40 @@
+{
+    "id":  "arcadia_recover_gold",
+    "display_name":  "放弃金本位",
+    "description":  "解除货币与黄金的固定挂钩，为扩张性货币政策腾出空间。",
+    "cost":  2,
+    "once_per_run":  true,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "inflation",
+                                       "amount":  4
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "gdp",
+                                       "amount":  2.2,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  -3
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "debt",
+                                       "amount":  0.8,
+                                       "percent":  true
+                                   }
+                    }
+                ],
+    "card_type":  "policy"
+}

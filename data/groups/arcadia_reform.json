@@ -1,0 +1,11 @@
+{
+  "id": "arcadia_reform",
+  "type": "cards",
+  "display_name": "阿卡迪亚·改革组",
+  "members": [
+    "arcadia_reform_social_security",
+    "arcadia_reform_tax_wealth",
+    "arcadia_reform_labor_rights",
+    "arcadia_reform_austerity"
+  ]
+}

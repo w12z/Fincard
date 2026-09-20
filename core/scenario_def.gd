@@ -11,6 +11,7 @@ var innate_modifiers: Array[Effect] = []
 var goal: GoalDef
 var budget_pool: Array[StringName] = []
 var groups: Dictionary = {}
+var scheduled_events: Dictionary = {}
 
 
 static func from_dict(data: Dictionary) -> ScenarioDef:
@@ -47,4 +48,9 @@ static func from_dict(data: Dictionary) -> ScenarioDef:
 				for group_id in raw_list:
 					list.append(StringName(group_id))
 			scenario.groups[String(key)] = list
+	var raw_scheduled = data.get("scheduled_events", [])
+	if raw_scheduled is Array:
+		for entry in raw_scheduled:
+			if entry is Dictionary and entry.has("event"):
+				scenario.scheduled_events[int(entry.get("turn", 0))] = StringName(entry.get("event", ""))
 	return scenario

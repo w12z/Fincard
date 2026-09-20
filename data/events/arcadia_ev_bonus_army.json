@@ -1,0 +1,55 @@
+{
+    "id":  "arcadia_ev_bonus_army",
+    "title":  "退伍军人请愿",
+    "description":  "数万名退伍军人携家带口聚集首都，要求提前发放服役补助金。",
+    "choices":  [
+                    {
+                        "label":  "提前发放补助金",
+                        "description":  "花钱买安定，也换来拥戴。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  5
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "debt",
+                                                           "amount":  2.2,
+                                                           "percent":  true
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "inflation",
+                                                           "amount":  1
+                                                       }
+                                        }
+                                    ]
+                    },
+                    {
+                        "label":  "清场驱散",
+                        "description":  "以强力维持秩序，但画面传遍全国。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  -6
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  -2
+                                                       }
+                                        }
+                                    ]
+                    }
+                ]
+}

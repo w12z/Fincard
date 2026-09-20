@@ -1,0 +1,30 @@
+{
+    "id":  "arcadia_aid_gold",
+    "display_name":  "动用黄金储备",
+    "description":  "抛售部分黄金换取现金，缓解燃眉之急。",
+    "uses":  1,
+    "effects":  [
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "debt",
+                                       "amount":  -3.8,
+                                       "percent":  true
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "amount":  3
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "inflation",
+                                       "amount":  1
+                                   }
+                    }
+                ]
+}

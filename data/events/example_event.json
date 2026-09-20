@@ -1,21 +1,37 @@
 {
-  "id": "example_event",
-  "title": "示例事件：国际市场波动",
-  "description": "样板事件，带两个选项。有 choices 时必须由玩家抉择。这里用限时修正而非永久改值，避免反复触发后失控。",
-  "choices": [
-    {
-      "label": "加息应对",
-      "description": "短期抑制通胀，但压低增长。",
-      "effects": [
-        { "kind": "apply_modifier", "params": { "target": "interest_rate", "op": "add", "value": 2, "duration": 3 } }
-      ]
-    },
-    {
-      "label": "按兵不动",
-      "description": "保增长，容忍短期通胀。",
-      "effects": [
-        { "kind": "apply_modifier", "params": { "target": "inflation", "op": "add", "value": 1, "duration": 3 } }
-      ]
-    }
-  ]
+    "id":  "example_event",
+    "title":  "示例事件：国际市场波动",
+    "description":  "样板事件，带两个选项。有 choices 时必须由玩家抉择。这里用限时修正而非永久改值，避免反复触发后失控。",
+    "choices":  [
+                    {
+                        "label":  "加息应对",
+                        "description":  "短期抑制通胀，但压低增长。",
+                        "effects":  [
+                                        {
+                                            "kind":  "apply_modifier",
+                                            "params":  {
+                                                           "target":  "interest_rate",
+                                                           "op":  "add",
+                                                           "value":  2,
+                                                           "duration":  3
+                                                       }
+                                        }
+                                    ]
+                    },
+                    {
+                        "label":  "按兵不动",
+                        "description":  "保增长，容忍短期通胀。",
+                        "effects":  [
+                                        {
+                                            "kind":  "apply_modifier",
+                                            "params":  {
+                                                           "target":  "inflation",
+                                                           "op":  "add",
+                                                           "value":  1,
+                                                           "duration":  3
+                                                       }
+                                        }
+                                    ]
+                    }
+                ]
 }

@@ -1,0 +1,26 @@
+{
+    "id":  "arcadia_recover_sec",
+    "display_name":  "证券交易监管",
+    "description":  "设立证券监管机构，禁止操纵与欺诈，重建投资者信心。",
+    "cost":  1,
+    "once_per_run":  true,
+    "effects":  [
+                    {
+                        "kind":  "apply_modifier",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "op":  "add",
+                                       "value":  2,
+                                       "duration":  -1
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "approval",
+                                       "amount":  2
+                                   }
+                    }
+                ],
+    "card_type":  "reform"
+}

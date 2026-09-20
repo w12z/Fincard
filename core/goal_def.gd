@@ -3,6 +3,7 @@ extends RefCounted
 
 var description: String
 var deadline_years: int
+var after_turn: int
 var conditions: Array[Condition] = []
 var loss_conditions: Array[Condition] = []
 
@@ -27,6 +28,7 @@ static func from_dict(data: Dictionary) -> GoalDef:
 	var goal := GoalDef.new()
 	goal.description = data.get("description", "")
 	goal.deadline_years = int(data.get("deadline_years", 0))
+	goal.after_turn = int(data.get("after_turn", 0))
 	for raw in data.get("conditions", []):
 		goal.conditions.append(Condition.from_dict(raw))
 	for raw in data.get("loss_conditions", []):

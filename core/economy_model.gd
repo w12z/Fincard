@@ -5,6 +5,7 @@ var indicator_ids: Array[StringName] = []
 var derived_ids: Array[StringName] = []
 var equations: Dictionary = {}
 var derived: Dictionary = {}
+var bounds: Dictionary = {}
 
 
 func register_indicator(id: StringName) -> void:
@@ -16,6 +17,20 @@ func register_derived(id: StringName, compute: Callable) -> void:
 	derived[id] = compute
 	if not derived_ids.has(id):
 		derived_ids.append(id)
+
+
+func set_bounds(id: StringName, min_value: float, max_value: float) -> void:
+	bounds[id] = [min_value, max_value]
+
+
+func clamp_indicator(state: GameState, id: StringName) -> void:
+	var pair: Array = bounds.get(id, [])
+	if pair.is_empty():
+		return
+	var raw := float(state.indicators.get(id, 0.0))
+	var clamped := clampf(raw, float(pair[0]), float(pair[1]))
+	if not is_equal_approx(raw, clamped):
+		state.indicators[id] = clamped
 
 
 func tick(state: GameState, rng: Rng) -> Array[Event]:
@@ -64,10 +79,17 @@ func value(state: GameState, id: StringName) -> float:
 
 func _change(state: GameState, id: StringName, delta: float, events: Array[Event]) -> void:
 	var previous := float(state.indicators.get(id, 0.0))
-	state.indicators[id] = previous + delta
+	var current := previous + delta
+	var pair: Array = bounds.get(id, [])
+	if not pair.is_empty():
+		current = clampf(current, float(pair[0]), float(pair[1]))
+		delta = current - previous
+		if delta == 0.0:
+			return
+	state.indicators[id] = current
 	events.append(Event.new(Event.Kind.INDICATOR_CHANGED, {
 		"indicator": id,
 		"previous": previous,
-		"current": previous + delta,
+		"current": current,
 		"delta": delta,
 	}))

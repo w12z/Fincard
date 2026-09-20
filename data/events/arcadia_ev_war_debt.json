@@ -1,0 +1,63 @@
+{
+    "id":  "arcadia_ev_war_debt",
+    "title":  "战债之争",
+    "description":  "欧洲盟国再次恳请减免战时债务，财政部与国会各执一词。",
+    "choices":  [
+                    {
+                        "label":  "减免盟国战债",
+                        "description":  "以大度换取欧洲市场与善意。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  2
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "gdp",
+                                                           "amount":  0.8,
+                                                           "percent":  true
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  -2
+                                                       }
+                                        }
+                                    ]
+                    },
+                    {
+                        "label":  "坚持全额收回",
+                        "description":  "一分都不能少，哪怕冻结欧洲贸易。",
+                        "effects":  [
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "approval",
+                                                           "amount":  1
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "confidence",
+                                                           "amount":  -2
+                                                       }
+                                        },
+                                        {
+                                            "kind":  "adjust_indicator",
+                                            "params":  {
+                                                           "target":  "gdp",
+                                                           "amount":  -0.8,
+                                                           "percent":  true
+                                                       }
+                                        }
+                                    ]
+                    }
+                ]
+}

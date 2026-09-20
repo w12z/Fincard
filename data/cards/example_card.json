@@ -1,17 +1,69 @@
 {
-  "id": "example_card",
-  "display_name": "示例政策：调整税率",
-  "description": "短期提高税率以增加收入，代价是暂时压低市场信心；若通胀偏高，还能顺带压低通胀。",
-  "cost": 1,
-  "political_cost": 1,
-  "tags": ["fiscal"],
-  "effects": [
-    { "kind": "apply_modifier", "params": { "target": "tax_rate", "op": "add", "value": 2, "duration": 2 } },
-    { "kind": "apply_modifier", "params": { "target": "confidence", "op": "add", "value": -1, "duration": 2 } },
-    {
-      "kind": "adjust_indicator",
-      "params": { "target": "inflation", "amount": -1 },
-      "condition": { "indicator": "inflation", "comparator": "gt", "value": 5 }
-    }
-  ]
+    "id":  "example_card",
+    "display_name":  "示例政策：调整税率",
+    "description":  "样板卡牌，演示条件效果与分支效果：税率加成固定；若通胀偏高则压通胀，否则提振信心。",
+    "card_type":  "policy",
+    "cost":  1,
+    "political_cost":  1,
+    "effects":  [
+                    {
+                        "kind":  "apply_modifier",
+                        "params":  {
+                                       "target":  "tax_rate",
+                                       "op":  "add",
+                                       "value":  2,
+                                       "duration":  2
+                                   }
+                    },
+                    {
+                        "kind":  "apply_modifier",
+                        "params":  {
+                                       "target":  "confidence",
+                                       "op":  "add",
+                                       "value":  -1,
+                                       "duration":  2
+                                   }
+                    },
+                    {
+                        "kind":  "adjust_indicator",
+                        "params":  {
+                                       "target":  "inflation",
+                                       "amount":  -1
+                                   },
+                        "condition":  {
+                                          "indicator":  "inflation",
+                                          "comparator":  "gt",
+                                          "value":  5
+                                      }
+                    },
+                    {
+                        "kind":  "branch",
+                        "params":  {
+                                       "condition":  {
+                                                         "indicator":  "inflation",
+                                                         "comparator":  "gt",
+                                                         "value":  5
+                                                     },
+                                       "then":  [
+                                                    {
+                                                        "kind":  "adjust_indicator",
+                                                        "params":  {
+                                                                       "target":  "gdp",
+                                                                       "amount":  0.8,
+                                                                       "percent":  true
+                                                                   }
+                                                    }
+                                                ],
+                                       "else":  [
+                                                    {
+                                                        "kind":  "adjust_indicator",
+                                                        "params":  {
+                                                                       "target":  "approval",
+                                                                       "amount":  1
+                                                                   }
+                                                    }
+                                                ]
+                                   }
+                    }
+                ]
 }
