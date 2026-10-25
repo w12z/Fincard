@@ -1,11 +1,8 @@
 {
-  "id": "example_cabinet",
-  "display_name": "示例内阁：财政顾问",
-  "description": "样板内阁。modifiers 为任命时生效的永久修正，triggers 为被动监听。",
+  "id": "example_cabinet", "display_name": "发展顾问",
+  "description": "每月潜在增长提高 0.08 个百分点，每个财年补充 3 预算。",
   "modifiers": [
-    { "kind": "apply_modifier", "params": { "target": "gdp", "op": "mul", "value": 1.005, "duration": -1 } }
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.08, "duration": -1, "source": "发展顾问" } }
   ],
-  "triggers": [
-    { "on": "turn_started", "effects": [ { "kind": "gain_political_capital", "params": { "amount": 1 } } ] }
-  ]
+  "triggers": [ { "on": "year_started", "effects": [ { "kind": "gain_budget", "params": { "amount": 3 } } ] } ]
 }

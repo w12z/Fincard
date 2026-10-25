@@ -1,39 +1,10 @@
 {
-    "id":  "arcadia_reform_labor_rights",
-    "display_name":  "劳工权利法",
-    "description":  "承认工会集体谈判权，设定最低工资与最高工时。",
-    "cost":  2,
-    "once_per_run":  true,
-    "effects":  [
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "confidence",
-                                       "amount":  3
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "confidence",
-                                       "amount":  -2
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "gdp",
-                                       "amount":  0.8,
-                                       "percent":  true
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "unemployment",
-                                       "amount":  -1
-                                   }
-                    }
-                ],
-    "card_type":  "reform"
+  "id": "arcadia_reform_labor_rights", "display_name": "劳工权利法",
+  "description": "永久法案：改善劳资关系，让就业在危机后更快恢复。",
+  "card_type": "reform", "once_per_run": true, "cost": 4, "political_cost": 3,
+  "effects": [
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 4 } },
+    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -1 } },
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "u_revert", "op": "add", "value": 0.02, "duration": -1, "source": "劳工权利法" } }
+  ]
 }

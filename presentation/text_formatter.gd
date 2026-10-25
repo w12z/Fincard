@@ -85,6 +85,8 @@ static func _effect_body(labels: Dictionary, effect: Effect) -> String:
 	var params := effect.params
 	match effect.kind:
 		Effect.Kind.ADJUST_INDICATOR:
+			if bool(params.get("percent", false)):
+				return "%s %s%%（按当前 GDP）" % [indicator(labels, StringName(params.get("target", ""))), signed(float(params.get("amount", 0.0)))]
 			return "%s %s" % [
 				indicator(labels, StringName(params.get("target", ""))),
 				signed(float(params.get("amount", 0.0))),

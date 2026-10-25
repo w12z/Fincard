@@ -1,63 +1,15 @@
 {
-    "id":  "arcadia_ev_war_debt",
-    "title":  "战债之争",
-    "description":  "欧洲盟国再次恳请减免战时债务，财政部与国会各执一词。",
-    "choices":  [
-                    {
-                        "label":  "减免盟国战债",
-                        "description":  "以大度换取欧洲市场与善意。",
-                        "effects":  [
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "confidence",
-                                                           "amount":  2
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "gdp",
-                                                           "amount":  0.8,
-                                                           "percent":  true
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "confidence",
-                                                           "amount":  -2
-                                                       }
-                                        }
-                                    ]
-                    },
-                    {
-                        "label":  "坚持全额收回",
-                        "description":  "一分都不能少，哪怕冻结欧洲贸易。",
-                        "effects":  [
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "confidence",
-                                                           "amount":  1
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "confidence",
-                                                           "amount":  -2
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "gdp",
-                                                           "amount":  -0.8,
-                                                           "percent":  true
-                                                       }
-                                        }
-                                    ]
-                    }
-                ]
+  "id": "arcadia_ev_war_debt", "title": "战债之争", "cooldown": 10,
+  "description": "盟国恳请减免战债。减债能够换取贸易，但需要本国财政承担损失。",
+  "choices": [
+    { "label": "减免盟国战债", "effects": [
+      { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 1, "percent": true } },
+      { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 2, "percent": true } },
+      { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 1 } }
+    ] },
+    { "label": "坚持收回战债", "effects": [
+      { "kind": "adjust_indicator", "params": { "target": "debt", "amount": -1, "percent": true } },
+      { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -0.5, "percent": true } }
+    ] }
+  ]
 }

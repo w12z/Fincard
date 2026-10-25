@@ -1,16 +1,9 @@
 {
-    "id":  "example_budget",
-    "display_name":  "示例预算：稳健",
-    "description":  "样板预算档位。budget 重设下年财政预算，political_capital 为下年政治行动点的大额补充。",
-    "budget":  10,
-    "political_capital":  5,
-    "effects":  [
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "confidence",
-                                       "amount":  1
-                                   }
-                    }
-                ]
+  "id": "example_budget", "display_name": "民生发展案",
+  "description": "新手推荐：为每月政策提供充足预算，增加相当于 GDP 4% 的债务。",
+  "budget": 32, "political_capital": 6,
+  "effects": [
+    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 4, "percent": true } },
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 2 } }
+  ]
 }

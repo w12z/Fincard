@@ -15,7 +15,11 @@ func _init(seed_value: int) -> void:
 func next_int(max_exclusive: int) -> int:
 	if max_exclusive <= 0:
 		return 0
-	return (_next_u64() & _POSITIVE_MASK) % max_exclusive
+	return ((_next_u64() & _POSITIVE_MASK) >> 16) % max_exclusive
+
+
+func next_float() -> float:
+	return float((_next_u64() & _POSITIVE_MASK) >> 16) / float(1 << 47)
 
 
 func pick(array: Array) -> Variant:

@@ -6,6 +6,9 @@ var title: String
 var description: String
 var effects: Array[Effect] = []
 var choices: Array[EventChoice] = []
+var min_turn: int = 1
+var max_turn: int = 0
+var cooldown: int = 6
 
 
 func has_choices() -> bool:
@@ -17,6 +20,9 @@ static func from_dict(data: Dictionary) -> EconomyEventDef:
 	event.id = StringName(data.get("id", ""))
 	event.title = data.get("title", "")
 	event.description = data.get("description", "")
+	event.min_turn = int(data.get("min_turn", 1))
+	event.max_turn = int(data.get("max_turn", 0))
+	event.cooldown = int(data.get("cooldown", 6))
 	for raw in data.get("effects", []):
 		event.effects.append(Effect.from_dict(raw))
 	for raw in data.get("choices", []):

@@ -7,15 +7,16 @@ static func load_dir(path: String, factory: Callable) -> Dictionary:
 	var dir := DirAccess.open(path)
 	if dir == null:
 		return db
-	dir.list_dir_begin()
-	var file := dir.get_next()
-	while file != "":
-		if not dir.current_is_dir() and file.ends_with(".json"):
+	var files := dir.get_files()
+	files.sort()
+	for file in files:
+		if file.ends_with(".json"):
 			var data = ConfigLoader.load_json(path.path_join(file))
 			if data is Dictionary:
 				var definition = factory.call(data)
 				if definition != null and "id" in definition:
+					if db.has(definition.id):
+						push_error("Duplicate content ID: %s (%s)" % [definition.id, file])
+						continue
 					db[definition.id] = definition
-		file = dir.get_next()
-	dir.list_dir_end()
 	return db

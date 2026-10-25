@@ -1,49 +1,36 @@
 {
-  "id": "example_country",
-  "display_name": "示例国",
-  "description": "样板开局情形。包含初始牌组、经济状态、事件池、初始资源与最终目标。",
+  "id": "example_country", "display_name": "新港共和国 · 入门",
+  "description": "三年发展计划：在有限预算内投资、稳就业、控通胀。推荐首次游玩；每个财年可领取两张新卡、一个内阁及一项援助。",
   "starting_deck": [
-    "example_card",
-    "example_card",
-    "example_card",
-    "example_card",
-    "example_card"
+    "starter_infrastructure", "starter_infrastructure", "starter_infrastructure",
+    "starter_small_business", "starter_small_business", "starter_small_business",
+    "starter_training", "starter_training", "example_card", "starter_efficiency"
   ],
-  "indicators": {
-    "gdp": 100,
-    "inflation": 3,
-    "unemployment": 6,
-    "debt": 60,
-    "confidence": 50,
-    "interest_rate": 3,
-    "tax_rate": 20
-  },
-  "event_pool": ["example_event"],
+  "indicators": { "gdp": 100, "inflation": 3, "unemployment": 7, "debt": 55, "confidence": 50, "interest_rate": 3, "tax_rate": 20 },
+  "event_pool": ["example_event", "starter_export", "starter_supply"],
   "innate_modifiers": [
-    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.2, "duration": -1, "source": "国家精神·自由市场" } }
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.1, "duration": -1, "source": "国家精神·创业活力" } }
   ],
-  "economy_overrides": {
-    "infl_anchor": 0.15,
-    "conf_anchor": 0.12,
-    "u_revert": 0.07
-  },
-  "budget_pool": ["example_budget"],
+  "economy_overrides": { "infl_anchor": 0.15, "conf_anchor": 0.1, "u_revert": 0.06 },
+  "budget_pool": ["example_budget", "arcadia_budget_austerity", "arcadia_budget_deficit"],
   "groups": {
-    "cards": ["example_card_group"],
-    "cabinets": ["example_cabinet_group"],
-    "aids": ["example_aid_group"],
-    "budgets": ["example_budget_group"],
-    "events": ["example_event_group"]
+    "cards": ["example_card_group"], "cabinets": ["example_cabinet_group"],
+    "aids": ["example_aid_group"], "budgets": ["example_budget_group", "arcadia_budgets"], "events": ["example_event_group"]
   },
   "goal": {
-    "description": "样板目标：把 GDP 提升到 110 以上，同时把通胀控制在 5 以下。",
-    "deadline_years": 5,
+    "description": "三年内实现 GDP ≥ 135、失业率 ≤ 6、通胀 ≤ 6；最早在第二财年获胜。",
+    "deadline_years": 3, "after_turn": 12,
     "conditions": [
-      { "indicator": "gdp", "comparator": "ge", "value": 110 },
-      { "indicator": "inflation", "comparator": "le", "value": 5 }
+      { "indicator": "gdp", "comparator": "ge", "value": 135 },
+      { "indicator": "unemployment", "comparator": "le", "value": 6 },
+      { "indicator": "inflation", "comparator": "le", "value": 6 }
     ],
     "loss_conditions": [
-      { "indicator": "inflation", "comparator": "gt", "value": 20 }
+      { "indicator": "inflation", "comparator": "ge", "value": 15 },
+      { "indicator": "inflation", "comparator": "le", "value": -10 },
+      { "indicator": "confidence", "comparator": "le", "value": 10 },
+      { "indicator": "debt_ratio", "comparator": "ge", "value": 1.5 },
+      { "indicator": "unemployment", "comparator": "ge", "value": 25 }
     ]
   }
 }

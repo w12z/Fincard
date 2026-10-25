@@ -1,11 +1,8 @@
 {
-  "id": "arcadia_cab_agriculture",
-  "display_name": "农业部长",
-  "description": "稳定农产品价格，争取广大的农村选票。",
+  "id": "arcadia_cab_agriculture", "display_name": "农业部长",
+  "description": "稳定型：加快物价向 2% 回归，每个财年信心增加 3。",
   "modifiers": [
-    { "kind": "apply_modifier", "params": { "target": "inflation", "op": "add", "value": 1, "duration": -1 } }
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "infl_anchor", "op": "add", "value": 0.04, "duration": -1, "source": "农业部长" } }
   ],
-  "triggers": [
-    { "on": "year_started", "effects": [ { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 2 } } ] }
-  ]
+  "triggers": [ { "on": "year_started", "effects": [ { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 3 } } ] } ]
 }

@@ -1,39 +1,11 @@
 {
-    "id":  "arcadia_reform_austerity",
-    "display_name":  "削减联邦开支",
-    "description":  "压缩政府支出以平衡预算、安抚债权人，代价是紧缩之痛。",
-    "cost":  0,
-    "once_per_run":  true,
-    "effects":  [
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "debt",
-                                       "amount":  -3.8,
-                                       "percent":  true
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "unemployment",
-                                       "amount":  2
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "confidence",
-                                       "amount":  -3
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "confidence",
-                                       "amount":  1
-                                   }
-                    }
-                ],
-    "card_type":  "reform"
+  "id": "arcadia_reform_austerity", "display_name": "财政整顿",
+  "description": "可重复的债务管理：削减非必要开支并回补预算，但会损害就业与信心。",
+  "card_type": "reform", "cost": 0, "political_cost": 2,
+  "effects": [
+    { "kind": "gain_budget", "params": { "amount": 3 } },
+    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": -4, "percent": true } },
+    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 1 } },
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -3 } }
+  ]
 }

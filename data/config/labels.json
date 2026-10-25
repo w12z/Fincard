@@ -14,7 +14,9 @@
     "tax_rate": "税率",
     "growth": "经济增长率",
     "debt_ratio": "债务率",
-    "political_capital_gain": "每回合政治行动点增益"
+    "political_capital_gain": "每回合政治行动点增益",
+    "market_protection": "证券监管保护",
+    "bank_protection": "存款保险保护"
   },
   "resources": {
     "budget": "财政预算",
@@ -39,6 +41,7 @@
     "u_okun": "奥肯强度",
     "u_revert": "失业回归速度",
     "debt_rev": "税收收入系数",
+    "debt_spend": "基础公共支出比例",
     "debt_int_pass": "利息负担系数",
     "conf_growth": "增长提振信心",
     "conf_infl": "通胀打压信心",

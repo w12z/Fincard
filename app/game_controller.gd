@@ -39,7 +39,8 @@ func _ready() -> void:
 	rules = ConfigLoader.load_json(RULES_PATH)
 	economy_config = ConfigLoader.load_json(ECONOMY_PATH)
 	labels = ConfigLoader.load_json(LABELS_PATH)
-	simulation = Simulation.new(seed_value)
+	# Zero means a fresh run; nonzero seeds remain reproducible for tests.
+	simulation = Simulation.new(seed_value if seed_value != 0 else int(Time.get_unix_time_from_system() * 1000))
 	simulation.card_db = cards
 	simulation.scenario_db = scenarios
 	simulation.event_db = events
@@ -57,6 +58,9 @@ func available_scenarios() -> Array:
 
 
 func start_run(scenario_id: StringName) -> Array[Event]:
+	if seed_value == 0:
+		simulation.state.seed_value = int(Time.get_unix_time_from_system() * 1000)
+		simulation.rng = Rng.new(simulation.state.seed_value)
 	return simulation.start_run(scenario_id)
 
 

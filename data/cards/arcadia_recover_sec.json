@@ -1,26 +1,9 @@
 {
-    "id":  "arcadia_recover_sec",
-    "display_name":  "证券交易监管",
-    "description":  "设立证券监管机构，禁止操纵与欺诈，重建投资者信心。",
-    "cost":  1,
-    "once_per_run":  true,
-    "effects":  [
-                    {
-                        "kind":  "apply_modifier",
-                        "params":  {
-                                       "target":  "confidence",
-                                       "op":  "add",
-                                       "value":  2,
-                                       "duration":  -1
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "confidence",
-                                       "amount":  2
-                                   }
-                    }
-                ],
-    "card_type":  "reform"
+  "id": "arcadia_recover_sec", "display_name": "证券交易监管",
+  "description": "永久法案：建立监管机构，提升长期信心，并减轻股灾冲击。",
+  "card_type": "reform", "once_per_run": true, "cost": 3, "political_cost": 2,
+  "effects": [
+    { "kind": "apply_modifier", "params": { "target": "confidence", "op": "add", "value": 4, "duration": -1, "source": "证券监管" } },
+    { "kind": "apply_modifier", "params": { "target": "market_protection", "op": "override", "value": 1, "duration": -1, "source": "证券监管" } }
+  ]
 }

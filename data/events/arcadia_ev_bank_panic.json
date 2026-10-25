@@ -1,63 +1,24 @@
 {
-    "id":  "arcadia_ev_bank_panic",
-    "title":  "恐慌蔓延·银行倒闭潮",
-    "description":  "股市崩塌后存款人蜂拥提现，中小银行接连关门，恐慌正沿州界蔓延。",
-    "choices":  [
-                    {
-                        "label":  "紧急注资救助银行",
-                        "description":  "以预算为银行体系背书，挤出恐慌但债台高筑。",
-                        "effects":  [
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "debt",
-                                                           "amount":  3.8,
-                                                           "percent":  true
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "confidence",
-                                                           "amount":  4
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "unemployment",
-                                                           "amount":  3
-                                                       }
-                                        }
-                                    ]
-                    },
-                    {
-                        "label":  "放任银行倒闭",
-                        "description":  "道德风险交给市场清算，代价是全面恐慌。",
-                        "effects":  [
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "confidence",
-                                                           "amount":  -12
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "gdp",
-                                                           "amount":  -4.5,
-                                                           "percent":  true
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "unemployment",
-                                                           "amount":  7
-                                                       }
-                                        }
-                                    ]
-                    }
-                ]
+  "id": "arcadia_ev_bank_panic", "title": "恐慌蔓延·银行倒闭潮",
+  "description": "储户蜂拥提现。存款保险可以显著降低救助成本与失业损失。",
+  "choices": [
+    { "label": "紧急注资救助银行", "description": "承担债务，阻止恐慌扩散。", "effects": [
+      { "kind": "branch", "params": {
+        "condition": { "indicator": "bank_protection", "comparator": "ge", "value": 1 },
+        "then": [
+          { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 3, "percent": true } },
+          { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 1 } }
+        ], "else": [
+          { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 8, "percent": true } },
+          { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 3 } }
+        ]
+      } },
+      { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -4 } }
+    ] },
+    { "label": "放任银行倒闭", "description": "不承担救助债务，但引发全面恐慌。", "effects": [
+      { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -14 } },
+      { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -6, "percent": true } },
+      { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 5 } }
+    ] }
+  ]
 }

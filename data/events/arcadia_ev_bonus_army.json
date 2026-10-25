@@ -1,55 +1,15 @@
 {
-    "id":  "arcadia_ev_bonus_army",
-    "title":  "退伍军人请愿",
-    "description":  "数万名退伍军人携家带口聚集首都，要求提前发放服役补助金。",
-    "choices":  [
-                    {
-                        "label":  "提前发放补助金",
-                        "description":  "花钱买安定，也换来拥戴。",
-                        "effects":  [
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "confidence",
-                                                           "amount":  5
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "debt",
-                                                           "amount":  2.2,
-                                                           "percent":  true
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "inflation",
-                                                           "amount":  1
-                                                       }
-                                        }
-                                    ]
-                    },
-                    {
-                        "label":  "清场驱散",
-                        "description":  "以强力维持秩序，但画面传遍全国。",
-                        "effects":  [
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "confidence",
-                                                           "amount":  -6
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "confidence",
-                                                           "amount":  -2
-                                                       }
-                                        }
-                                    ]
-                    }
-                ]
+  "id": "arcadia_ev_bonus_army", "title": "退伍军人请愿", "min_turn": 25, "cooldown": 10,
+  "description": "退伍军人要求提前发放补偿金。",
+  "choices": [
+    { "label": "提前发放补偿金", "effects": [
+      { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 4 } },
+      { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 3, "percent": true } },
+      { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": 0.5 } }
+    ] },
+    { "label": "维持原有发放日期", "effects": [
+      { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -4 } },
+      { "kind": "gain_political_capital", "params": { "amount": 1 } }
+    ] }
+  ]
 }

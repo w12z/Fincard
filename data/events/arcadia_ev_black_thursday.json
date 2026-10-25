@@ -1,36 +1,20 @@
 {
-    "id":  "arcadia_ev_black_thursday",
-    "title":  "黑色星期四",
-    "description":  "交易所开盘即遭抛售，行情板一片猩红。杠杆盘踩踏出逃，信心的堤坝在一个下午内溃决。",
-    "effects":  [
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "gdp",
-                                       "amount":  -4.5,
-                                       "percent":  true
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "confidence",
-                                       "amount":  -10
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "inflation",
-                                       "amount":  -2
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "unemployment",
-                                       "amount":  4
-                                   }
-                    }
-                ]
+  "id": "arcadia_ev_black_thursday", "title": "黑色星期四",
+  "description": "交易所被抛单淹没。已通过证券监管法案可减轻冲击；随后六个月仍将承受衰退压力。",
+  "effects": [
+    { "kind": "branch", "params": {
+      "condition": { "indicator": "market_protection", "comparator": "ge", "value": 1 },
+      "then": [
+        { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -4, "percent": true } },
+        { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -8 } },
+        { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 2 } }
+      ], "else": [
+        { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -8, "percent": true } },
+        { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -16 } },
+        { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 4 } }
+      ]
+    } },
+    { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": -2 } },
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": -0.6, "duration": 6, "source": "股灾余波" } }
+  ]
 }

@@ -1,31 +1,10 @@
 {
-    "id":  "arcadia_reform_tax_wealth",
-    "display_name":  "富人税",
-    "description":  "大幅提高高收入者与遗产税率，让富人多担一分。",
-    "cost":  0,
-    "once_per_run":  true,
-    "effects":  [
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "tax_rate",
-                                       "amount":  5
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "confidence",
-                                       "amount":  2
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "confidence",
-                                       "amount":  -3
-                                   }
-                    }
-                ],
-    "card_type":  "reform"
+  "id": "arcadia_reform_tax_wealth", "display_name": "财富税",
+  "description": "永久法案：向高收入者加税，立即回收债务，但长期略微拖累增长。",
+  "card_type": "reform", "once_per_run": true, "cost": 0, "political_cost": 3,
+  "effects": [
+    { "kind": "adjust_indicator", "params": { "target": "tax_rate", "amount": 4 } },
+    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": -5, "percent": true } },
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -2 } }
+  ]
 }

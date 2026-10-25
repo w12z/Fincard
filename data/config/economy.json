@@ -1,41 +1,18 @@
 {
   "coefficients": {
-    "natural_unemployment": 6,
-    "neutral_rate": 3,
-    "neutral_tax": 20,
-    "debt_threshold": 0.9,
-    "confidence_neutral": 50,
-    "inflation_target": 2,
-
-    "gdp_auto": 0.3,
-    "gdp_conf": 0.15,
-    "gdp_rate_gap": 0.02,
-    "gdp_tax_gap": 0.03,
-    "gdp_crowd": 1.0,
-
-    "infl_anchor": 0.1,
-    "infl_phillips": 0.15,
-    "infl_demand": 0.1,
-    "infl_rate": 0.1,
-
-    "u_okun": 0.25,
-    "u_revert": 0.05,
-
-    "debt_rev": 0.05,
-    "debt_int_pass": 0.25,
-
-    "conf_growth": 0.5,
-    "conf_infl": 0.2,
-    "conf_debt": 4.0,
-    "conf_anchor": 0.1
+    "natural_unemployment": 6, "neutral_rate": 3, "neutral_tax": 20,
+    "debt_threshold": 0.9, "confidence_neutral": 50, "inflation_target": 2,
+    "gdp_auto": 0.18, "gdp_conf": 1.2, "gdp_rate_gap": 0.06,
+    "gdp_tax_gap": 0.015, "gdp_crowd": 0.8,
+    "infl_anchor": 0.12, "infl_phillips": 0.06, "infl_demand": 0.12, "infl_rate": 0.07,
+    "u_okun": 0.45, "u_revert": 0.04,
+    "debt_spend": 0.003, "debt_rev": 0.02, "debt_int_pass": 0.0833333333,
+    "conf_growth": 0.6, "conf_infl": 0.12, "conf_debt": 3, "conf_anchor": 0.08
   },
   "bounds": {
-    "inflation": [-20, 40],
-    "unemployment": [0.5, 60],
-    "interest_rate": [0, 25],
-    "tax_rate": [0, 70],
-    "confidence": [0, 100],
-    "debt_ratio": [0, 5],
-    "growth": [-8, 8]
+    "gdp": [1, 1000000], "debt": [0, 1000000],
+    "inflation": [-20, 40], "unemployment": [0.5, 60],
+    "interest_rate": [0, 25], "tax_rate": [0, 70], "confidence": [0, 100],
+    "debt_ratio": [0, 1000000], "growth": [-8, 8]
   }
 }

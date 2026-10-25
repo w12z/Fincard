@@ -12,7 +12,7 @@ var scenario_coefficients: Dictionary = {}
 
 
 func set_scenario_coefficients(overrides: Dictionary) -> void:
-	scenario_coefficients = overrides
+	scenario_coefficients = overrides.duplicate()
 
 
 func coefficient(state: GameState, key: StringName) -> float:
@@ -101,6 +101,11 @@ func tick(state: GameState, rng: Rng) -> Array[Event]:
 	return events
 
 
+func refresh_derived(state: GameState) -> void:
+	for id in derived_ids:
+		state.indicators[id] = float(derived[id].call(state, self))
+
+
 func value(state: GameState, id: StringName) -> float:
 	var result := float(state.indicators.get(id, 0.0))
 	for modifier in state.modifiers:
@@ -113,6 +118,9 @@ func value(state: GameState, id: StringName) -> float:
 				result *= modifier.value
 			Modifier.Op.OVERRIDE:
 				result = modifier.value
+	var pair: Array = bounds.get(id, [])
+	if pair.size() == 2:
+		result = clampf(result, float(pair[0]), float(pair[1]))
 	return result
 
 

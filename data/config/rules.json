@@ -5,6 +5,7 @@
   "card_reward_groups": 2,
   "trigger_iteration_limit": 8,
   "political_capital_per_turn": 1,
-  "base_budget": 10,
-  "base_political_capital": 5
+  "random_event_chance": 0.35,
+  "base_budget": 32,
+  "base_political_capital": 6
 }

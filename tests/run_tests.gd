@@ -1,0 +1,327 @@
+extends SceneTree
+
+var controller: GameController
+var failures: int = 0
+
+
+func _initialize() -> void:
+	call_deferred("_run")
+
+
+func _expect(ok: bool, message: String) -> void:
+	if not ok:
+		failures += 1
+		push_error(message)
+
+
+func _new_run(scenario: StringName, seed_value: int = 1) -> Simulation:
+	controller.simulation.rng = Rng.new(seed_value)
+	controller.simulation.state.seed_value = seed_value
+	controller.simulation.start_run(scenario)
+	return controller.simulation
+
+
+func _setup(sim: Simulation) -> void:
+	sim.apply_command(Command.choose_budget(sim.state.pending_budget_plans[0]))
+	sim.apply_command(Command.choose_reward([]))
+	if sim.state.pending_event != &"":
+		sim.apply_command(Command.resolve_event(0))
+
+
+func _run() -> void:
+	controller = GameController.new()
+	controller.seed_value = 1
+	root.add_child(controller)
+	_test_content()
+	_test_rules()
+	_test_economy()
+	await _test_ui()
+	var sample_count := 100
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--seeds="):
+			sample_count = maxi(1, int(arg.trim_prefix("--seeds=")))
+	for scenario in [&"example_country", &"arcadia"]:
+		for policy in ["passive", "random", "planned"]:
+			var wins := 0
+			var turns := 0
+			var min_turn := 1000
+			var max_turn := 0
+			for seed_value in range(1, sample_count + 1):
+				var result := _autoplay(scenario, seed_value, policy)
+				wins += int(result["won"])
+				turns += int(result["turn"])
+				if result["won"]:
+					min_turn = mini(min_turn, result["turn"])
+					max_turn = maxi(max_turn, result["turn"])
+			print("BALANCE %s %s wins=%d/%d mean_turn=%.1f win_turns=%d..%d" % [scenario, policy, wins, sample_count, float(turns) / sample_count, min_turn, max_turn])
+			if policy == "passive":
+				_expect(wins == 0, "Passive play must not win: %s" % scenario)
+			if policy == "planned":
+				_expect(wins >= sample_count * (0.9 if scenario == &"example_country" else 0.65), "Planned play win rate too low: %s" % scenario)
+	print("TESTS %s (%d failures)" % ["PASS" if failures == 0 else "FAIL", failures])
+	controller.free()
+	quit(0 if failures == 0 else 1)
+
+
+func _test_content() -> void:
+	var databases := {"cards": controller.cards, "events": controller.events, "cabinets": controller.cabinets, "aids": controller.aids, "budgets": controller.budgets}
+	for group in controller.groups.values():
+		for id in group.members:
+			_expect(databases[String(group.type)].has(id), "Missing group member %s" % id)
+	for scenario in controller.scenarios.values():
+		for id in scenario.starting_deck:
+			_expect(controller.cards.has(id), "Missing starter %s" % id)
+		for id in scenario.event_pool:
+			_expect(controller.events.has(id), "Missing event %s" % id)
+		for id in scenario.scheduled_events.values():
+			_expect(controller.events.has(id), "Missing scheduled event %s" % id)
+		for id in scenario.budget_pool:
+			_expect(controller.budgets.has(id), "Missing budget %s" % id)
+		for ids in scenario.groups.values():
+			for id in ids:
+				_expect(controller.groups.has(id), "Missing scenario group %s" % id)
+	_expect(controller.events.size() == 19, "All 19 events must load without duplicate IDs")
+	_expect(controller.cards.size() == 22, "All 22 cards must load")
+
+
+func _test_rules() -> void:
+	var sim := _new_run(&"arcadia")
+	var original := sim.state.budget
+	_expect(sim.apply_command(Command.end_turn()).is_empty(), "Cannot end turn during opening setup")
+	_expect(sim.state.turn == 0 and sim.state.budget == original, "Rejected command mutated state")
+	_setup(sim)
+	# An event must block both cards and aid, even if MAIN is the current phase.
+	sim._fire_event(&"arcadia_ev_bank_run")
+	sim.state.hand.assign([&"arcadia_relief_ccc"])
+	sim.state.budget = 20
+	sim.state.political_capital = 20
+	_expect(sim.apply_command(Command.play_card(&"arcadia_relief_ccc")).is_empty(), "Cannot play during event")
+	sim._gain_aid(&"arcadia_aid_fireside")
+	_expect(sim.apply_command(Command.use_aid(&"arcadia_aid_fireside")).is_empty(), "Cannot use aid during event")
+	sim.apply_command(Command.resolve_event(0))
+	sim.state.hand.assign([&"arcadia_recover_sec", &"arcadia_recover_sec"])
+	sim.state.deck.append(&"arcadia_recover_sec")
+	sim.apply_command(Command.play_card(&"arcadia_recover_sec"))
+	_expect(not sim.state.hand.has(&"arcadia_recover_sec") and not sim.state.deck.has(&"arcadia_recover_sec"), "Law must remove all copies")
+	_expect(not sim._reward_available(Reward.Type.CARD, &"arcadia_recover_sec"), "Enacted law must not return as reward")
+	sim.state.deck.append(&"arcadia_recover_fdic")
+	_expect(not sim._reward_available(Reward.Type.CARD, &"arcadia_recover_fdic"), "Owned law must not duplicate in rewards")
+	# Duration 1 lasts for exactly the current settlement.
+	sim.state.modifiers.clear()
+	sim.resolver.resolve(Effect.from_dict({"kind": "apply_modifier", "params": {"target": "interest_rate", "op": "add", "value": -100, "duration": 1}}), sim.state, sim.rng)
+	_expect(sim.economy.value(sim.state, &"interest_rate") == 0, "Effective values must respect bounds")
+	sim.apply_command(Command.end_turn())
+	_expect(sim.state.modifiers.is_empty(), "One-turn modifier must expire")
+	# Cabinet turn-end effects must happen before goals, not next month.
+	sim = _new_run(&"example_country")
+	_setup(sim)
+	sim.state.turn = 13
+	sim.state.indicators[&"gdp"] = 135.01
+	sim.state.indicators[&"unemployment"] = 6.1
+	sim.state.indicators[&"inflation"] = 2
+	sim.economy.scenario_coefficients[&"gdp_auto"] = -0.1
+	sim.economy.scenario_coefficients[&"gdp_conf"] = 0
+	sim.economy.scenario_coefficients[&"u_okun"] = 0
+	sim._appoint_cabinet(&"arcadia_cab_labor")
+	sim._appoint_cabinet(&"arcadia_cab_interior")
+	sim.apply_command(Command.end_turn())
+	_expect(sim.state.run_status == GameState.RunStatus.WON, "Cabinet must settle before victory check")
+	var snapshot := sim.state.indicators.duplicate(true)
+	_expect(sim.apply_command(Command.end_turn()).is_empty(), "Finished runs reject commands")
+	_expect(snapshot == sim.state.indicators, "Finished state must be frozen")
+	# Zero-confidence failure is reachable after clamping, including direct effects.
+	sim = _new_run(&"arcadia")
+	_setup(sim)
+	sim.state.indicators[&"confidence"] = 11
+	sim._fire_event(&"arcadia_ev_bank_run")
+	sim.apply_command(Command.resolve_event(1))
+	_expect(sim.state.run_status == GameState.RunStatus.LOST, "Event failure must be checked immediately")
+	# State is clean across runs and all starting derived values are initialized.
+	sim = _new_run(&"example_country")
+	_expect(sim.state.cabinets.is_empty() and sim.state.aids.is_empty(), "Restart must clear inventory")
+	_expect(is_equal_approx(sim.economy.value(sim.state, &"debt_ratio"), 0.55), "Opening state must initialize debt ratio")
+	var offered_laws: Array[StringName] = []
+	for group in sim._build_year_end_rewards():
+		for option: Reward in group["options"]:
+			if option.type == Reward.Type.CARD and sim.card_db[option.id].once_per_run:
+				_expect(not offered_laws.has(option.id), "Law cannot be offered in both card groups")
+				offered_laws.append(option.id)
+	# A goal achieved on the last month takes precedence over the deadline.
+	_setup(sim)
+	sim.state.year = 3
+	sim.state.turn = 35
+	sim.state.turn_in_year = 12
+	sim.state.indicators[&"gdp"] = 150
+	sim.state.indicators[&"unemployment"] = 3
+	sim.state.indicators[&"inflation"] = 2
+	sim.apply_command(Command.end_turn())
+	_expect(sim.state.run_status == GameState.RunStatus.WON, "Final-month victory must beat deadline")
+	sim = _new_run(&"example_country")
+	_setup(sim)
+	sim.state.year = 3
+	sim.state.turn = 35
+	sim.state.turn_in_year = 12
+	sim.state.indicators[&"gdp"] = 90
+	sim.apply_command(Command.end_turn())
+	_expect(sim.state.run_status == GameState.RunStatus.LOST and sim.state.flags.get("loss_reason") == "deadline", "Deadline must end unfinished runs")
+	var r1 := Rng.new(42)
+	var r2 := Rng.new(42)
+	for i in 100:
+		_expect(r1.next_int(1000) == r2.next_int(1000), "RNG must be reproducible")
+
+
+func _test_economy() -> void:
+	var sim := _new_run(&"arcadia")
+	_setup(sim)
+	sim.state.indicators[&"debt"] = 0
+	sim.state.indicators[&"tax_rate"] = 70
+	sim.economy.tick(sim.state, sim.rng)
+	_expect(sim.state.indicators[&"debt"] >= 0, "Debt must not become negative")
+	sim.state.modifiers.clear()
+	sim.resolver.resolve(Effect.from_dict({"kind": "apply_modifier", "params": {"scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 100, "duration": -1}}), sim.state, sim.rng)
+	var before := float(sim.state.indicators[&"gdp"])
+	sim.economy.tick(sim.state, sim.rng)
+	_expect(sim.state.indicators[&"gdp"] <= before * 1.080001, "Actual growth must respect its cap")
+	# Scheduled crises override probability, with no random-event interference.
+	sim.rules["random_event_chance"] = 0
+	for turn_number in [24, 26, 28]:
+		sim.state.turn = turn_number
+		sim._schedule_event()
+		_expect(sim.state.pending_event == sim.scenario_db[&"arcadia"].scheduled_events[turn_number], "Scheduled crisis missing")
+	sim.rules["random_event_chance"] = 0.35
+
+
+func _test_ui() -> void:
+	var ui := GameUI.new()
+	ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.add_child(ui)
+	ui.setup(controller, &"example_country")
+	await process_frame
+	await process_frame
+	_expect(ui._log.get_global_rect().end.x <= root.get_visible_rect().end.x + 1, "All three UI columns must fit")
+	_expect(ui._log.size.y > 300, "Event log must have usable vertical space")
+	_expect(ui._overlay_root.get_child(0).size.y <= root.get_visible_rect().size.y, "Scrollable modal must fit viewport")
+	_expect(ui._overlay_root.visible, "Opening budget UI must be visible")
+	ui._dispatch(Command.choose_budget(&"example_budget"))
+	_expect(ui._overlay_root.visible, "Rewards UI must be visible")
+	ui._dispatch(Command.choose_reward([]))
+	if controller.simulation.state.pending_event != &"":
+		ui._dispatch(Command.resolve_event(0))
+	_expect(not ui._end_turn_button.disabled, "End turn must be available in main phase")
+	_expect(ui._deck_label.text != "", "Deck counts must be visible")
+	ui._dispatch(Command.end_turn())
+	ui.free()
+
+
+func _autoplay(scenario: StringName, seed_value: int, policy: String) -> Dictionary:
+	var sim := _new_run(scenario, seed_value)
+	var bot_rng := Rng.new(seed_value + 100000)
+	var steps := 0
+	while sim.state.run_status == GameState.RunStatus.RUNNING and steps < 1000:
+		steps += 1
+		var state := sim.state
+		if not state.pending_budget_plans.is_empty():
+			var plan: StringName = state.pending_budget_plans[0]
+			if policy == "random":
+				plan = bot_rng.pick(state.pending_budget_plans)
+			elif policy == "planned":
+				plan = &"example_budget" if scenario == &"example_country" else &"arcadia_budget_moderate"
+			sim.apply_command(Command.choose_budget(plan))
+		elif not state.pending_rewards.is_empty():
+			var picks: Array = []
+			for group in state.pending_rewards:
+				var pick := -1
+				if policy != "passive":
+					pick = bot_rng.next_int(group["options"].size())
+					if policy == "planned":
+						var best := -INF
+						for i in group["options"].size():
+							var reward: Reward = group["options"][i]
+							var score := _reward_score(sim, reward)
+							if score > best:
+								best = score
+								pick = i
+				picks.append(pick)
+			sim.apply_command(Command.choose_reward(picks))
+		elif state.pending_event != &"":
+			var definition: EconomyEventDef = sim.event_db[state.pending_event]
+			var choice := 0
+			if policy == "random":
+				choice = bot_rng.next_int(definition.choices.size())
+			elif policy == "planned":
+				var best := -INF
+				for i in definition.choices.size():
+					var score := _effects_score(sim, definition.choices[i].effects)
+					if score > best:
+						best = score
+						choice = i
+			sim.apply_command(Command.resolve_event(choice))
+		else:
+			if policy != "passive":
+				for entry in state.aids.duplicate():
+					var aid: AidDef = entry["def"]
+					if policy == "random" or (aid.id == &"arcadia_aid_fireside" and sim.economy.value(state, &"confidence") < 45) or (aid.id != &"arcadia_aid_fireside" and state.budget < 6):
+						sim.apply_command(Command.use_aid(aid.id))
+				var best_card: StringName = &""
+				var best_score := 0.0
+				for id in state.hand:
+					var card: CardDef = sim.card_db[id]
+					if state.budget < card.cost or state.political_capital < card.political_cost:
+						continue
+					var score := bot_rng.next_float() + 0.01 if policy == "random" else _effects_score(sim, card.effects) / (1 + card.cost * 0.2 + card.political_cost * 0.1)
+					if score > best_score:
+						best_score = score
+						best_card = id
+				if best_card != &"":
+					sim.apply_command(Command.play_card(best_card))
+			# One card per month is deliberately a simple baseline, not an optimal solver.
+			sim.apply_command(Command.end_turn())
+		for value in state.indicators.values():
+			_expect(is_finite(float(value)), "Non-finite economy value")
+	_expect(steps < 1000, "Run stalled: %s seed %d" % [scenario, seed_value])
+	return {"won": sim.state.run_status == GameState.RunStatus.WON, "turn": sim.state.turn}
+
+
+func _reward_score(sim: Simulation, reward: Reward) -> float:
+	if reward.type == Reward.Type.CARD:
+		var card: CardDef = sim.card_db[reward.id]
+		return _effects_score(sim, card.effects) / (1 + card.cost * 0.2)
+	if reward.type == Reward.Type.CABINET:
+		var priorities := {&"arcadia_cab_braintrust": 6, &"arcadia_cab_interior": 5, &"arcadia_cab_labor": 4, &"arcadia_cab_fed": 3, &"arcadia_cab_treasury": 2, &"arcadia_cab_agriculture": 1}
+		return float(priorities.get(reward.id, 1))
+	return 3.0 if reward.id == &"arcadia_aid_foreign_loan" else 2.0
+
+
+func _effects_score(sim: Simulation, effects: Array) -> float:
+	var score := 0.0
+	for effect: Effect in effects:
+		if effect.condition != null and not effect.condition.evaluate(sim.state, sim.economy):
+			continue
+		var p := effect.params
+		if effect.kind == Effect.Kind.BRANCH:
+			var condition := Condition.from_dict(p.get("condition", {}))
+			var nested: Array[Effect] = []
+			for raw in p.get("then" if condition.evaluate(sim.state, sim.economy) else "else", []):
+				nested.append(Effect.from_dict(raw))
+			score += _effects_score(sim, nested)
+		elif effect.kind == Effect.Kind.GAIN_BUDGET:
+			score += float(p.get("amount", 0)) * (0.5 if sim.state.budget < 8 else 0.1)
+		elif effect.kind == Effect.Kind.GAIN_POLITICAL_CAPITAL:
+			score += float(p.get("amount", 0)) * (0.6 if sim.state.political_capital < 4 else 0.15)
+		elif effect.kind == Effect.Kind.ADJUST_INDICATOR or effect.kind == Effect.Kind.APPLY_MODIFIER:
+			var amount := float(p.get("amount", p.get("value", 0)))
+			var target := StringName(p.get("target", ""))
+			if p.get("scope", "") == "coefficient":
+				score += amount * (35 if target == &"gdp_auto" else 100)
+				continue
+			var current := sim.economy.value(sim.state, target)
+			match target:
+				&"gdp": score += amount * 2.5
+				&"unemployment": score -= amount * (2 if current > 7 else 0.3)
+				&"confidence": score += amount * (0.5 if current < 45 else 0.15)
+				&"inflation": score += (absf(current - 2) - absf(current + amount - 2)) * 0.6
+				&"debt": score -= amount * (1 if sim.economy.value(sim.state, &"debt_ratio") > 0.9 else 0.15)
+				&"interest_rate": score -= amount * 0.4
+				&"tax_rate": score -= amount * 0.1
+				&"bank_protection", &"market_protection": score += 7 if sim.state.turn < 24 else 0.5
+	return score

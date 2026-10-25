@@ -54,7 +54,8 @@ func _build() -> void:
 	_header.add_theme_constant_override("separation", 16)
 	root.add_child(_header)
 
-	var split := HSplitContainer.new()
+	var split := HBoxContainer.new()
+	split.add_theme_constant_override("separation", 12)
 	split.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(split)
 
@@ -74,13 +75,19 @@ func _build() -> void:
 	var center := VBoxContainer.new()
 	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	split.add_child(center)
-	var hand_section := _make_section(center, "手牌")
+	var hand_section := _make_section(center, "手牌", true)
 	hand_section.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var hand_scroll := ScrollContainer.new()
+	hand_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	hand_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	hand_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	hand_section.add_child(hand_scroll)
 	_hand_box = HFlowContainer.new()
+	_hand_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_hand_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_hand_box.add_theme_constant_override("h_separation", 8)
 	_hand_box.add_theme_constant_override("v_separation", 8)
-	hand_section.add_child(_hand_box)
+	hand_scroll.add_child(_hand_box)
 
 	var footer := HBoxContainer.new()
 	footer.add_theme_constant_override("separation", 16)
@@ -98,7 +105,7 @@ func _build() -> void:
 	var right := VBoxContainer.new()
 	right.custom_minimum_size = Vector2(320, 0)
 	split.add_child(right)
-	var log_section := _make_section(right, "事件日志")
+	var log_section := _make_section(right, "事件日志", true)
 	log_section.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_log = RichTextLabel.new()
 	_log.bbcode_enabled = true
@@ -117,9 +124,14 @@ func _build_overlay() -> void:
 	_overlay_root.visible = false
 	add_child(_overlay_root)
 
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(660, 650)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_overlay_root.add_child(scroll)
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(500, 0)
-	_overlay_root.add_child(panel)
+	panel.custom_minimum_size = Vector2(630, 0)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(panel)
 
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 20)
@@ -134,8 +146,10 @@ func _build_overlay() -> void:
 	margin.add_child(_overlay_box)
 
 
-func _make_section(parent: Control, title: String) -> VBoxContainer:
+func _make_section(parent: Control, title: String, expand: bool = false) -> VBoxContainer:
 	var panel := PanelContainer.new()
+	if expand:
+		panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	parent.add_child(panel)
 	var margin := MarginContainer.new()
 	margin.add_theme_constant_override("margin_left", 10)
@@ -166,6 +180,8 @@ func _render() -> void:
 	_render_cabinets()
 	_render_aids()
 	_render_hand()
+	_deck_label.text = "牌库 %d · 弃牌 %d · 手牌 %d" % [_state.deck.size(), _state.discard.size(), _state.hand.size()]
+	_end_turn_button.disabled = _busy() or _state.run_status != GameState.RunStatus.RUNNING
 	_render_log()
 	_render_overlay()
 
@@ -207,7 +223,8 @@ func _render_goal() -> void:
 	if goal.description != "":
 		_goal_box.add_child(_wrapped(goal.description, UiTheme.MUTED))
 	for condition in goal.conditions:
-		_goal_box.add_child(_wrapped("达成：%s" % TextFormatter.condition_text(_labels(), condition), UiTheme.POSITIVE))
+		var achieved := condition.evaluate(_state, controller.simulation.economy)
+		_goal_box.add_child(_wrapped("%s %s" % ["✓" if achieved else "○", TextFormatter.condition_text(_labels(), condition)], UiTheme.POSITIVE if achieved else UiTheme.MUTED))
 	for condition in goal.loss_conditions:
 		_goal_box.add_child(_wrapped("失败：%s" % TextFormatter.condition_text(_labels(), condition), UiTheme.NEGATIVE))
 	if goal.deadline_years > 0:
@@ -227,6 +244,7 @@ func _render_indicators() -> void:
 				TextFormatter.indicator(_labels(), id),
 				TextFormatter.fmt(controller.simulation.economy.value(_state, id)),
 			]))
+	_indicators_box.add_child(_wrapped("每回合 = 1 个月；增长率为月增长。债务率 1.00 = GDP 的 100%。", UiTheme.MUTED))
 	var derived := controller.simulation.economy.derived_ids
 	if not derived.is_empty():
 		_indicators_box.add_child(_colored("—— 派生 ——", UiTheme.WARNING))
@@ -303,6 +321,8 @@ func _render_hand() -> void:
 			"［%s］%s" % [type_label, card.display_name],
 			"预算 %d · 政治 %d" % [card.cost, card.political_cost],
 		])
+		if card.once_per_run:
+			lines.append("【法案：整局仅一次】")
 		for effect in card.effects:
 			lines.append("· " + TextFormatter.effect_text(_labels(), effect))
 		var button := Button.new()
@@ -378,7 +398,7 @@ func _show_event() -> void:
 
 func _show_budget() -> void:
 	var title := Label.new()
-	title.text = "确定下一年度预算"
+	title.text = "确定第 %d 财年预算" % (_state.year if _state.flags.get("opening_setup", false) else _state.year + 1)
 	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", UiTheme.ACCENT)
 	_overlay_box.add_child(title)
@@ -418,10 +438,11 @@ func _show_budget() -> void:
 func _show_rewards() -> void:
 	_reward_selection.clear()
 	var title := Label.new()
-	title.text = "财年总结 · 奖励"
+	title.text = "年度筹备 · 每组可选一项"
 	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", UiTheme.ACCENT)
 	_overlay_box.add_child(title)
+	_overlay_box.add_child(_wrapped("两组新卡、内阁和援助分别领取；不需要的卡牌可跳过。向下滚动查看全部选项。", UiTheme.MUTED, 460.0))
 	for group_index in range(_state.pending_rewards.size()):
 		var group: Dictionary = _state.pending_rewards[group_index]
 		var group_title := _label(str(TYPE_LABELS.get(group.get("type"), "奖励")))
@@ -477,6 +498,10 @@ func _show_result() -> void:
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.custom_minimum_size = Vector2(460, 0)
 	_overlay_box.add_child(info)
+	if not won:
+		var reason := "任期结束，尚未满足全部目标。" if _state.flags.get("loss_reason", "") == "deadline" else "经济指标触发失败条件。"
+		_overlay_box.add_child(_wrapped(reason, UiTheme.NEGATIVE, 460.0))
+	_overlay_box.add_child(_label("复盘种子：%d · 总回合：%d" % [_state.seed_value, _state.turn]))
 	var back := Button.new()
 	back.text = "返回菜单"
 	back.custom_minimum_size = Vector2(0, 36)
@@ -579,7 +604,7 @@ func _describe(event: Event) -> String:
 		Event.Kind.RUN_WON:
 			return "[b][color=green]%s！[/color][/b]" % name
 		Event.Kind.RUN_LOST:
-			return "[b][color=red]%s：%s[/color][/b]" % [name, params.get("reason", "")]
+			return "[b][color=red]%s：%s[/color][/b]" % [name, "任期结束" if params.get("reason", "") == "deadline" else "触发经济崩溃条件"]
 	return ""
 
 

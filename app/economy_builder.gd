@@ -15,7 +15,7 @@ static func build(economy: EconomyModel, config: Dictionary, rules: Dictionary) 
 		return gdp * g_rate / 100.0
 
 	economy.equations[&"inflation"] = func(state: GameState, model: EconomyModel, _rng: Rng) -> float:
-		var g_rate := model.value(state, &"growth")
+		var g_rate := EconomyBuilder._growth_rate(state, model)
 		return model.coefficient(state, &"infl_anchor") * (model.coefficient(state, &"inflation_target") - model.value(state, &"inflation")) \
 			+ model.coefficient(state, &"infl_phillips") * (model.coefficient(state, &"natural_unemployment") - model.value(state, &"unemployment")) \
 			+ model.coefficient(state, &"infl_demand") * g_rate \
@@ -23,20 +23,20 @@ static func build(economy: EconomyModel, config: Dictionary, rules: Dictionary) 
 
 	economy.equations[&"unemployment"] = func(state: GameState, model: EconomyModel, _rng: Rng) -> float:
 		return model.coefficient(state, &"u_revert") * (model.coefficient(state, &"natural_unemployment") - model.value(state, &"unemployment")) \
-			- model.coefficient(state, &"u_okun") * model.value(state, &"growth")
+			- model.coefficient(state, &"u_okun") * EconomyBuilder._growth_rate(state, model)
 
 	economy.equations[&"debt"] = func(state: GameState, model: EconomyModel, _rng: Rng) -> float:
 		var gdp := model.value(state, &"gdp")
 		var ratio := EconomyBuilder._debt_ratio(state, model)
 		var revenue := model.coefficient(state, &"debt_rev") * (model.value(state, &"tax_rate") / 100.0)
 		var burden := model.coefficient(state, &"debt_int_pass") * ratio * (model.value(state, &"interest_rate") / 100.0)
-		return gdp * (-revenue + burden)
+		return gdp * (model.coefficient(state, &"debt_spend") - revenue + burden)
 
 	economy.equations[&"confidence"] = func(state: GameState, model: EconomyModel, _rng: Rng) -> float:
 		var threshold := model.coefficient(state, &"debt_threshold")
 		var crowding := maxf(0.0, EconomyBuilder._debt_ratio(state, model) - threshold)
-		return model.coefficient(state, &"conf_growth") * model.value(state, &"growth") \
-			- model.coefficient(state, &"conf_infl") * model.value(state, &"inflation") \
+		return model.coefficient(state, &"conf_growth") * EconomyBuilder._growth_rate(state, model) \
+			- model.coefficient(state, &"conf_infl") * absf(model.value(state, &"inflation") - model.coefficient(state, &"inflation_target")) \
 			- model.coefficient(state, &"conf_debt") * crowding \
 			+ model.coefficient(state, &"conf_anchor") * (model.coefficient(state, &"confidence_neutral") - model.value(state, &"confidence"))
 
@@ -57,11 +57,13 @@ static func build(economy: EconomyModel, config: Dictionary, rules: Dictionary) 
 static func _growth_rate(state: GameState, model: EconomyModel) -> float:
 	var threshold := model.coefficient(state, &"debt_threshold")
 	var crowding := maxf(0.0, EconomyBuilder._debt_ratio(state, model) - threshold)
-	return model.coefficient(state, &"gdp_auto") \
+	var rate := model.coefficient(state, &"gdp_auto") \
 		+ model.coefficient(state, &"gdp_conf") * (model.value(state, &"confidence") - model.coefficient(state, &"confidence_neutral")) / 100.0 \
 		- model.coefficient(state, &"gdp_rate_gap") * (model.value(state, &"interest_rate") - model.coefficient(state, &"neutral_rate")) \
 		- model.coefficient(state, &"gdp_tax_gap") * (model.value(state, &"tax_rate") - model.coefficient(state, &"neutral_tax")) \
 		- model.coefficient(state, &"gdp_crowd") * crowding
+	var pair: Array = model.bounds.get(&"growth", [])
+	return clampf(rate, float(pair[0]), float(pair[1])) if pair.size() == 2 else rate
 
 
 static func _debt_ratio(state: GameState, model: EconomyModel) -> float:

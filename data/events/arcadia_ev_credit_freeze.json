@@ -1,29 +1,11 @@
 {
-    "id":  "arcadia_ev_credit_freeze",
-    "title":  "信贷冻结",
-    "description":  "银行惜贷现金，商界信誉一夜归零，企业资金链接连断裂，工厂大规模裁员。",
-    "effects":  [
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "gdp",
-                                       "amount":  -7.5,
-                                       "percent":  true
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "unemployment",
-                                       "amount":  7
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "inflation",
-                                       "amount":  -3
-                                   }
-                    }
-                ]
+  "id": "arcadia_ev_credit_freeze", "title": "信贷冻结",
+  "description": "银行惜贷、工厂裁员。必须通过投资和就业政策推动复苏。",
+  "effects": [
+    { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -7, "percent": true } },
+    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 5 } },
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -6 } },
+    { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": -2 } },
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": -0.5, "duration": 6, "source": "信贷冻结" } }
+  ]
 }

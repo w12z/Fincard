@@ -58,6 +58,7 @@ func _populate() -> void:
 	for scenario in scenarios:
 		var button := Button.new()
 		button.text = "%s\n%s" % [scenario.display_name, scenario.description]
+		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.custom_minimum_size = Vector2(560, 64)
 		button.theme_type_variation = "CardButton"

@@ -1,0 +1,14 @@
+{
+  "id": "starter_supply", "title": "供应链中断",
+  "description": "港口延误推高成本，需在财政和产出间作出选择。",
+  "choices": [
+    { "label": "补贴替代物流", "description": "以举债避免产出受损。", "effects": [
+      { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 2, "percent": true } },
+      { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": 0.4 } }
+    ] },
+    { "label": "等待恢复", "description": "节省财政，承担短期损失。", "effects": [
+      { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -1, "percent": true } },
+      { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -2 } }
+    ] }
+  ]
+}

@@ -55,14 +55,19 @@ func start_run(scenario_id: StringName) -> Array[Event]:
 	events.append(Event.new(Event.Kind.RUN_STARTED, {"scenario": _scenario.id}))
 	for effect in _scenario.innate_modifiers:
 		events.append_array(resolver.resolve(effect, state, rng))
+	economy.refresh_derived(state)
 	state.year = 1
 	state.flags["opening_setup"] = true
 	events.append_array(_offer_budget_or_finish())
-	return trigger_engine.process(events, state, resolver, rng, _iteration_limit())
+	return events
 
 
 func apply_command(command: Command) -> Array[Event]:
 	var events: Array[Event] = []
+	if state.run_status != GameState.RunStatus.RUNNING:
+		return events
+	if command.kind in [Command.Kind.PLAY_CARD, Command.Kind.USE_AID, Command.Kind.END_TURN] and not _can_act():
+		return events
 	match command.kind:
 		Command.Kind.PLAY_CARD:
 			events = _play_card(command.params)
@@ -76,7 +81,16 @@ func apply_command(command: Command) -> Array[Event]:
 			events = _choose_budget(command.params)
 		Command.Kind.CHOOSE_REWARD:
 			events = _choose_reward(command.params)
-	return trigger_engine.process(events, state, resolver, rng, _iteration_limit())
+	if command.kind in [Command.Kind.PLAY_CARD, Command.Kind.USE_AID, Command.Kind.RESOLVE_EVENT]:
+		events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
+		economy.refresh_derived(state)
+		events.append_array(_check_end_conditions(false))
+	return events
+
+
+func _can_act() -> bool:
+	return turns.phase == TurnStateMachine.Phase.MAIN and state.pending_event == &"" \
+		and state.pending_budget_plans.is_empty() and state.pending_rewards.is_empty()
 
 
 func _reset_state() -> void:
@@ -114,8 +128,10 @@ func _start_turn() -> Array[Event]:
 		"year": state.year,
 	}))
 	_grant_turn_resources(events)
+	events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
 	events.append_array(_enter_main())
 	events.append_array(_schedule_event())
+	economy.refresh_derived(state)
 	return events
 
 
@@ -134,6 +150,8 @@ func _schedule_event() -> Array[Event]:
 	var scheduled: StringName = _scenario.scheduled_events.get(state.turn, &"")
 	if scheduled != &"" and event_db.has(scheduled):
 		return _fire_event(scheduled)
+	if rng.next_float() >= float(rules.get("random_event_chance", 0.35)):
+		return events
 	var candidates: Array[StringName] = []
 	if not _scenario.event_pool.is_empty():
 		candidates = _scenario.event_pool.duplicate()
@@ -143,6 +161,12 @@ func _schedule_event() -> Array[Event]:
 	var allowed: Array[StringName] = []
 	for id in candidates:
 		if event_db.has(id) and _member_allowed("events", id):
+			var definition: EconomyEventDef = event_db[id]
+			if state.turn < definition.min_turn or (definition.max_turn > 0 and state.turn > definition.max_turn):
+				continue
+			var last_turn := int(state.flags.get("event_last:" + String(id), -1000))
+			if state.turn - last_turn <= definition.cooldown:
+				continue
 			allowed.append(id)
 	if allowed.is_empty():
 		return events
@@ -152,6 +176,7 @@ func _schedule_event() -> Array[Event]:
 func _fire_event(event_id: StringName) -> Array[Event]:
 	var events: Array[Event] = []
 	var chosen: EconomyEventDef = event_db[event_id]
+	state.flags["event_last:" + String(event_id)] = state.turn
 	state.pending_event = event_id
 	state.pending_event_choices.clear()
 	for choice in chosen.choices:
@@ -197,8 +222,10 @@ func _end_turn() -> Array[Event]:
 		state.discard.append(card_id)
 	state.hand.clear()
 	events.append_array(economy.tick(state, rng))
-	events.append_array(_advance_modifiers())
 	events.append(Event.new(Event.Kind.TURN_ENDED, {"turn": state.turn}))
+	events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
+	events.append_array(_advance_modifiers())
+	economy.refresh_derived(state)
 	events.append_array(_check_end_conditions())
 	if state.run_status != GameState.RunStatus.RUNNING:
 		return events
@@ -234,6 +261,7 @@ func _play_card(params: Dictionary) -> Array[Event]:
 	for effect in card.effects:
 		events.append_array(resolver.resolve(effect, state, rng))
 	if card.once_per_run:
+		state.flags["enacted:" + String(card_id)] = true
 		_remove_all_copies(card_id)
 	else:
 		state.discard.append(card_id)
@@ -270,12 +298,15 @@ func _use_aid(params: Dictionary) -> Array[Event]:
 func _end_year() -> Array[Event]:
 	var events: Array[Event] = []
 	events.append(Event.new(Event.Kind.YEAR_ENDED, {"year": state.year}))
+	events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
+	economy.refresh_derived(state)
 	events.append_array(_check_end_conditions())
 	if state.run_status != GameState.RunStatus.RUNNING:
 		return events
 	var deadline := _scenario.goal.deadline_years if _scenario.goal != null else 0
 	if deadline > 0 and state.year >= deadline:
 		state.run_status = GameState.RunStatus.LOST
+		state.flags["loss_reason"] = "deadline"
 		events.append(Event.new(Event.Kind.RUN_LOST, {"reason": "deadline"}))
 		return events
 	events.append_array(_offer_budget_or_finish())
@@ -294,6 +325,11 @@ func _choose_budget(params: Dictionary) -> Array[Event]:
 	state.pending_budget_plans.clear()
 	events.append(Event.new(Event.Kind.BUDGET_CHOSEN, {"plan": plan_id}))
 	events.append_array(_grant_year_resources(plan))
+	events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
+	economy.refresh_derived(state)
+	events.append_array(_check_end_conditions(false))
+	if state.run_status != GameState.RunStatus.RUNNING:
+		return events
 	events.append_array(_offer_rewards_or_finish())
 	return events
 
@@ -353,6 +389,7 @@ func _finish_year_setup() -> Array[Event]:
 	if state.flags.get("opening_setup", false):
 		state.flags.erase("opening_setup")
 		events.append(Event.new(Event.Kind.YEAR_STARTED, {"year": state.year}))
+		events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
 		events.append_array(_start_turn())
 		return events
 	events.append_array(_advance_year())
@@ -373,6 +410,8 @@ func _choose_reward(params: Dictionary) -> Array[Event]:
 		events.append_array(_grant_reward(options[pick]))
 	state.pending_rewards.clear()
 	events.append(Event.new(Event.Kind.REWARD_CHOSEN, {"picks": picks}))
+	events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
+	economy.refresh_derived(state)
 	events.append_array(_finish_year_setup())
 	return events
 
@@ -382,12 +421,15 @@ func _advance_year() -> Array[Event]:
 	state.turn_in_year = 0
 	state.year += 1
 	events.append(Event.new(Event.Kind.YEAR_STARTED, {"year": state.year}))
+	events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
 	events.append_array(_start_turn())
 	return events
 
 
 func _grant_reward(reward: Reward) -> Array[Event]:
 	var events: Array[Event] = []
+	if not _reward_available(reward.type, reward.id):
+		return events
 	match reward.type:
 		Reward.Type.CARD:
 			state.deck.append(reward.id)
@@ -428,16 +470,17 @@ func _gain_aid(aid_id: StringName) -> Array[Event]:
 	return events
 
 
-func _check_end_conditions() -> Array[Event]:
+func _check_end_conditions(allow_win: bool = true) -> Array[Event]:
 	var events: Array[Event] = []
-	if _scenario == null or _scenario.goal == null:
+	if state.run_status != GameState.RunStatus.RUNNING or _scenario == null or _scenario.goal == null:
 		return events
 	var goal := _scenario.goal
 	if goal.is_failed(state, economy):
 		state.run_status = GameState.RunStatus.LOST
+		state.flags["loss_reason"] = "loss_condition"
 		events.append(Event.new(Event.Kind.RUN_LOST, {"reason": "loss_condition"}))
 		return events
-	if goal.after_turn > 0 and state.turn <= goal.after_turn:
+	if not allow_win or (goal.after_turn > 0 and state.turn <= goal.after_turn):
 		return events
 	if goal.is_achieved(state, economy):
 		state.run_status = GameState.RunStatus.WON
@@ -517,6 +560,14 @@ func _add_reward_group(groups: Array[Dictionary], type: int, pool: Array[StringN
 	var available: Array[StringName] = []
 	for id in pool:
 		if _reward_available(type, id):
+			if type == Reward.Type.CARD and card_db[id].once_per_run:
+				var already_offered := false
+				for group in groups:
+					for option: Reward in group["options"]:
+						if option.type == type and option.id == id:
+							already_offered = true
+				if already_offered:
+					continue
 			available.append(id)
 	if available.is_empty():
 		return
@@ -533,6 +584,9 @@ func _add_reward_group(groups: Array[Dictionary], type: int, pool: Array[StringN
 func _reward_available(type: int, id: StringName) -> bool:
 	match type:
 		Reward.Type.CARD:
+			if card_db.has(id) and card_db[id].once_per_run:
+				if state.flags.get("enacted:" + String(id), false) or state.deck.has(id) or state.hand.has(id) or state.discard.has(id):
+					return false
 			return card_db.has(id) and _member_allowed("cards", id)
 		Reward.Type.CABINET:
 			for cabinet in state.cabinets:

@@ -1,32 +1,10 @@
 {
-    "id":  "arcadia_recover_aaa",
-    "display_name":  "农业调整法",
-    "description":  "以配额限制农产品产量，强行提振崩溃的农产品价格。",
-    "cost":  2,
-    "once_per_run":  true,
-    "effects":  [
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "inflation",
-                                       "amount":  3
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "gdp",
-                                       "amount":  0.8,
-                                       "percent":  true
-                                   }
-                    },
-                    {
-                        "kind":  "adjust_indicator",
-                        "params":  {
-                                       "target":  "confidence",
-                                       "amount":  -1
-                                   }
-                    }
-                ],
-    "card_type":  "reform"
+  "id": "arcadia_recover_aaa", "display_name": "农业调整法",
+  "description": "永久法案：稳定农价并推动农业生产率，需承担补贴债务。",
+  "card_type": "reform", "once_per_run": true, "cost": 3, "political_cost": 2,
+  "effects": [
+    { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": 1.5 } },
+    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 2, "percent": true } },
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.08, "duration": -1, "source": "农业调整法" } }
+  ]
 }

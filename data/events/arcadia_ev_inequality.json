@@ -1,55 +1,14 @@
 {
-    "id":  "arcadia_ev_inequality",
-    "display_name":  "分配失衡之问",
-    "title":  "分配失衡之问",
-    "description":  "电冰箱与汽车进入千家万户，但最富的百分之一攫取了近四分之一的国民收入，工会与知识分子开始发问。",
-    "choices":  [
-                    {
-                        "label":  "提高累进税率",
-                        "description":  "向金字塔顶端多收一分，安抚底层。",
-                        "effects":  [
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "tax_rate",
-                                                           "amount":  3
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "confidence",
-                                                           "amount":  3
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "confidence",
-                                                           "amount":  -2
-                                                       }
-                                        }
-                                    ]
-                    },
-                    {
-                        "label":  "维持现状",
-                        "description":  "繁荣的果实自然下渗——商人如此保证。",
-                        "effects":  [
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "confidence",
-                                                           "amount":  -2
-                                                       }
-                                        },
-                                        {
-                                            "kind":  "adjust_indicator",
-                                            "params":  {
-                                                           "target":  "confidence",
-                                                           "amount":  2
-                                                       }
-                                        }
-                                    ]
-                    }
-                ]
+  "id": "arcadia_ev_inequality", "title": "分配失衡之问", "cooldown": 10,
+  "description": "繁荣的果实分配不均，工会要求临时增加累进税负。",
+  "choices": [
+    { "label": "临时提高累进税率", "effects": [
+      { "kind": "apply_modifier", "params": { "target": "tax_rate", "op": "add", "value": 3, "duration": 6, "source": "临时累进税" } },
+      { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 3 } }
+    ] },
+    { "label": "维持现状", "effects": [
+      { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -2 } },
+      { "kind": "gain_political_capital", "params": { "amount": 1 } }
+    ] }
+  ]
 }
