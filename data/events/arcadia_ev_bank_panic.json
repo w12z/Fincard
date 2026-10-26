@@ -1,6 +1,6 @@
 {
   "id": "arcadia_ev_bank_panic", "title": "恐慌蔓延·银行倒闭潮",
-  "description": "储户蜂拥提现。存款保险可以显著降低救助成本与失业损失。",
+  "description": "储户蜂拥提现，多家银行濒临倒闭。存款保险可降低救助成本与失业损失。",
   "choices": [
     { "label": "紧急注资救助银行", "description": "承担债务，阻止恐慌扩散。", "effects": [
       { "kind": "branch", "params": {

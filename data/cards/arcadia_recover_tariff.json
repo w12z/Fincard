@@ -1,6 +1,6 @@
 {
   "id": "arcadia_recover_tariff", "display_name": "临时保护关税",
-  "description": "保护国内就业并回收部分收入；报复性关税使产出下降。可重复使用。",
+  "description": "保护国内就业并增加关税收入，贸易报复导致产出下降。",
   "card_type": "policy", "cost": 1, "political_cost": 1,
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -0.5, "percent": true } },

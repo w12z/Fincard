@@ -1,6 +1,6 @@
 {
   "id": "arcadia_cab_braintrust", "display_name": "智囊团首席顾问",
-  "description": "长期增长型：提高每月潜在增长 0.1 个百分点，并提供 2 点持续信心。",
+  "description": "潜在月增长率 +0.1 个百分点，市场信心 +2。任职期间持续生效。",
   "modifiers": [
     { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.1, "duration": -1, "source": "智囊团" } },
     { "kind": "apply_modifier", "params": { "target": "confidence", "op": "add", "value": 2, "duration": -1, "source": "智囊团" } }

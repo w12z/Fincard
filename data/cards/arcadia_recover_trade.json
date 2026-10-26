@@ -1,6 +1,6 @@
 {
   "id": "arcadia_recover_trade", "display_name": "互惠贸易协定",
-  "description": "永久法案：打开出口市场，并长期提高潜在增长。整局仅可通过一次。",
+  "description": "永久法案：打开出口市场，长期提高潜在增长。",
   "card_type": "policy", "once_per_run": true, "cost": 4, "political_cost": 3,
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 2, "percent": true } },

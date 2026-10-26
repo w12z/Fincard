@@ -18,6 +18,11 @@
     "market_protection": "证券监管保护",
     "bank_protection": "存款保险保护"
   },
+  "statuses": {
+    "executive_mandate": "行政授权：每回合首张牌免政治成本",
+    "earmarked_funds": "专项拨款：每回合首张投资预算 -2",
+    "policy_synergy": "政策联动：每回合第三张牌后抽2张"
+  },
   "resources": {
     "budget": "财政预算",
     "political_capital": "政治行动点"

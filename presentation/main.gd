@@ -26,7 +26,15 @@ func _show_menu() -> void:
 	var menu := ScenarioMenu.new()
 	_swap(menu)
 	menu.setup(controller)
-	menu.start_requested.connect(_on_start_requested)
+	menu.country_selected.connect(_show_country_profile)
+
+
+func _show_country_profile(scenario_id: StringName) -> void:
+	var profile := CountryProfile.new()
+	_swap(profile)
+	profile.start_requested.connect(_on_start_requested)
+	profile.back_requested.connect(_show_menu)
+	profile.setup(controller, scenario_id)
 
 
 func _on_start_requested(scenario_id: StringName) -> void:
@@ -38,6 +46,7 @@ func _on_start_requested(scenario_id: StringName) -> void:
 
 func _swap(screen: Control) -> void:
 	if _screen != null:
+		remove_child(_screen)
 		_screen.queue_free()
 	_screen = screen
 	screen.set_anchors_preset(Control.PRESET_FULL_RECT)

@@ -1,6 +1,6 @@
 {
   "id": "arcadia_budget_austerity", "display_name": "平衡预算案",
-  "description": "预算较少，政治支持较多，回收相当于 GDP 3% 的债务；适合偿债与改革。",
+  "description": "缩减预算以换取政治支持，偿还相当于 GDP 3% 的债务。",
   "budget": 24, "political_capital": 8,
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "debt", "amount": -3, "percent": true } },

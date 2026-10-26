@@ -2,6 +2,7 @@ class_name EffectResolver
 extends RefCounted
 
 var economy: EconomyModel
+var status_db: Dictionary = {}
 
 
 func resolve(effect: Effect, state: GameState, rng: Rng) -> Array[Event]:
@@ -22,6 +23,15 @@ func resolve(effect: Effect, state: GameState, rng: Rng) -> Array[Event]:
 			return _gain_resource(effect.params, state, &"political_capital")
 		Effect.Kind.BRANCH:
 			return _resolve_branch(effect.params, state, rng)
+		Effect.Kind.GRANT_STATUS:
+			var id := StringName(effect.params.get("status", ""))
+			if not status_db.has(id):
+				push_error("Unknown status: %s" % id)
+				return []
+			if state.statuses.has(id):
+				return []
+			state.statuses.append(id)
+			return [Event.new(Event.Kind.STATUS_GAINED, {"status": id})]
 		_:
 			return []
 

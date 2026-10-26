@@ -1,6 +1,6 @@
 {
   "id": "arcadia_ev_speculation", "title": "股市投机狂热", "max_turn": 23, "cooldown": 6,
-  "description": "保证金账户迅速增长。放任繁荣能获得即时收益，却会埋下持续六个月的脆弱性。",
+  "description": "保证金账户迅速增长，借贷炒股盛行。投机推高短期产出，却让市场在未来六个月更加脆弱。",
   "choices": [
     { "label": "收紧保证金监管", "effects": [
       { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -2 } },

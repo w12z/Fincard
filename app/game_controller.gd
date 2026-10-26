@@ -8,6 +8,7 @@ const CABINET_DIR := "res://data/cabinets"
 const AID_DIR := "res://data/aids"
 const BUDGET_DIR := "res://data/budgets"
 const GROUP_DIR := "res://data/groups"
+const STATUS_DIR := "res://data/statuses"
 const RULES_PATH := "res://data/config/rules.json"
 const REWARD_POOLS_PATH := "res://data/config/reward_pools.json"
 const ECONOMY_PATH := "res://data/config/economy.json"
@@ -26,6 +27,7 @@ var groups: Dictionary = {}
 var rules: Dictionary = {}
 var economy_config: Dictionary = {}
 var labels: Dictionary = {}
+var statuses: Dictionary = {}
 
 
 func _ready() -> void:
@@ -36,6 +38,7 @@ func _ready() -> void:
 	aids = DataLoader.load_dir(AID_DIR, func(d): return AidDef.from_dict(d))
 	budgets = DataLoader.load_dir(BUDGET_DIR, func(d): return BudgetPlanDef.from_dict(d))
 	groups = DataLoader.load_dir(GROUP_DIR, func(d): return GroupDef.from_dict(d))
+	statuses = DataLoader.load_dir(STATUS_DIR, func(d): return StatusDef.from_dict(d))
 	rules = ConfigLoader.load_json(RULES_PATH)
 	economy_config = ConfigLoader.load_json(ECONOMY_PATH)
 	labels = ConfigLoader.load_json(LABELS_PATH)
@@ -48,6 +51,8 @@ func _ready() -> void:
 	simulation.aid_db = aids
 	simulation.budget_db = budgets
 	simulation.group_db = groups
+	simulation.status_db = statuses
+	simulation.resolver.status_db = statuses
 	simulation.rules = rules
 	EconomyBuilder.build(simulation.economy, economy_config, rules)
 	_load_pools()

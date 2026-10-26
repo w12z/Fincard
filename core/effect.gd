@@ -10,6 +10,7 @@ enum Kind {
 	GAIN_POLITICAL_CAPITAL,
 	BRANCH,
 	CUSTOM,
+	GRANT_STATUS,
 }
 
 const KIND_NAMES := {
@@ -21,6 +22,7 @@ const KIND_NAMES := {
 	"gain_political_capital": Kind.GAIN_POLITICAL_CAPITAL,
 	"branch": Kind.BRANCH,
 	"custom": Kind.CUSTOM,
+	"grant_status": Kind.GRANT_STATUS,
 }
 
 var kind: int

@@ -1,6 +1,6 @@
 {
   "id": "arcadia_cab_interior", "display_name": "内政部长",
-  "description": "基建型：每月增加 GDP 0.15%，同时增加相当于 GDP 0.2% 的债务。",
+  "description": "每月 GDP +0.15%，债务增加相当于 GDP 0.2% 的数额。",
   "modifiers": [],
   "triggers": [
     { "on": "turn_ended", "effects": [

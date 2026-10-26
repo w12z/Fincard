@@ -1,6 +1,6 @@
 {
   "id": "example_country", "display_name": "新港共和国 · 入门",
-  "description": "三年发展计划：在有限预算内投资、稳就业、控通胀。推荐首次游玩；每个财年可领取两张新卡、一个内阁及一项援助。",
+  "description": "新港共和国正推行三年发展计划。基础设施建设与小企业投资带来新的就业机会，财政压力和物价上涨也随之而来。政府需要在经济扩张与财政稳定之间取得平衡。",
   "starting_deck": [
     "starter_infrastructure", "starter_infrastructure", "starter_infrastructure",
     "starter_small_business", "starter_small_business", "starter_small_business",

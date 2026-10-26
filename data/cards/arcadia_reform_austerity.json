@@ -1,6 +1,6 @@
 {
   "id": "arcadia_reform_austerity", "display_name": "财政整顿",
-  "description": "可重复的债务管理：削减非必要开支并回补预算，但会损害就业与信心。",
+  "description": "削减非必要开支，偿还债务并补充预算，就业与市场信心受损。",
   "card_type": "reform", "cost": 0, "political_cost": 2,
   "effects": [
     { "kind": "gain_budget", "params": { "amount": 3 } },

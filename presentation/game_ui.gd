@@ -15,6 +15,7 @@ var _state: GameState
 
 var _header: HBoxContainer
 var _goal_box: VBoxContainer
+var _statuses_box: VBoxContainer
 var _indicators_box: VBoxContainer
 var _modifiers_box: VBoxContainer
 var _cabinets_box: VBoxContainer
@@ -67,6 +68,7 @@ func _build() -> void:
 	left.add_theme_constant_override("separation", 8)
 	left_scroll.add_child(left)
 	_goal_box = _make_section(left, "最终目标")
+	_statuses_box = _make_section(left, "特殊能力")
 	_indicators_box = _make_section(left, "经济指标")
 	_modifiers_box = _make_section(left, "生效中的修正")
 	_cabinets_box = _make_section(left, "内阁")
@@ -175,6 +177,7 @@ func _render() -> void:
 	_state = controller.simulation.state
 	_render_header()
 	_render_goal()
+	_render_statuses()
 	_render_indicators()
 	_render_modifiers()
 	_render_cabinets()
@@ -244,15 +247,39 @@ func _render_indicators() -> void:
 				TextFormatter.indicator(_labels(), id),
 				TextFormatter.fmt(controller.simulation.economy.value(_state, id)),
 			]))
-	_indicators_box.add_child(_wrapped("每回合 = 1 个月；增长率为月增长。债务率 1.00 = GDP 的 100%。", UiTheme.MUTED))
+	_indicators_box.tooltip_text = "每回合为一个月。经济增长率为月增长率。\n债务率 1.00 = GDP 的 100%。"
 	var derived := controller.simulation.economy.derived_ids
 	if not derived.is_empty():
-		_indicators_box.add_child(_colored("—— 派生 ——", UiTheme.WARNING))
+		_indicators_box.add_child(_colored("综合指标", UiTheme.WARNING))
 		for id in derived:
 			_indicators_box.add_child(_label("%s：%s" % [
 				TextFormatter.indicator(_labels(), id),
 				TextFormatter.fmt(controller.simulation.economy.value(_state, id)),
 			]))
+
+
+func _render_statuses() -> void:
+	_clear(_statuses_box)
+	if _state.statuses.is_empty():
+		_statuses_box.add_child(_label("（无）"))
+		return
+	_statuses_box.add_child(_label("本回合已出 %d 张牌" % _state.cards_played_this_turn))
+	var icons := HFlowContainer.new()
+	icons.add_theme_constant_override("h_separation", 6)
+	icons.add_theme_constant_override("v_separation", 6)
+	_statuses_box.add_child(icons)
+	for id in _state.statuses:
+		var status: StatusDef = controller.statuses.get(id)
+		if status == null:
+			continue
+		var badge := Button.new()
+		badge.theme_type_variation = "StatusBadge"
+		badge.custom_minimum_size = Vector2(60, 62)
+		badge.text = "%s\n%s" % [status.icon, StatusRules.counter(status, _state)]
+		badge.tooltip_text = "%s · 永久能力\n%s\n%s" % [status.display_name, status.description, StatusRules.progress(status, _state)]
+		var color := UiTheme.TYPE_REFORM if StatusRules.ready(status, _state) else UiTheme.MUTED
+		badge.add_theme_color_override("font_color", color)
+		icons.add_child(badge)
 
 
 func _render_modifiers() -> void:
@@ -317,14 +344,23 @@ func _render_hand() -> void:
 			continue
 		var type_label := TextFormatter.card_type_name(_labels(), card.card_type)
 		var type_color := UiTheme.card_type_color(card.card_type)
+		var costs := controller.simulation.card_costs(card_id)
+		var budget_text := str(costs["budget"])
+		var political_text := str(costs["political"])
+		if int(costs["budget"]) != card.cost:
+			budget_text += "（原%d）" % card.cost
+		if int(costs["political"]) != card.political_cost:
+			political_text += "（原%d）" % card.political_cost
 		var lines := PackedStringArray([
 			"［%s］%s" % [type_label, card.display_name],
-			"预算 %d · 政治 %d" % [card.cost, card.political_cost],
+			"预算 %s · 政治 %s" % [budget_text, political_text],
 		])
 		if card.once_per_run:
-			lines.append("【法案：整局仅一次】")
+			lines.append("法案 · 限通过一次")
 		for effect in card.effects:
 			lines.append("· " + TextFormatter.effect_text(_labels(), effect))
+		for id in costs["sources"]:
+			lines.append("★ " + controller.statuses[id].display_name + "减免")
 		var button := Button.new()
 		button.text = "\n".join(lines)
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -336,7 +372,8 @@ func _render_hand() -> void:
 		button.custom_minimum_size = Vector2(180, 0)
 		button.theme_type_variation = "CardButton"
 		button.disabled = _busy() or _state.run_status != GameState.RunStatus.RUNNING \
-			or _state.budget < card.cost or _state.political_capital < card.political_cost
+			or (int(costs["budget"]) > 0 and _state.budget < int(costs["budget"])) \
+			or (int(costs["political"]) > 0 and _state.political_capital < int(costs["political"]))
 		button.pressed.connect(func() -> void: _dispatch(Command.play_card(card_id)))
 		_hand_box.add_child(button)
 
@@ -373,7 +410,7 @@ func _show_event() -> void:
 		_overlay_box.add_child(_wrapped(definition.description, UiTheme.TEXT, 460.0))
 	if _state.pending_event_choices.is_empty():
 		if definition != null and not definition.effects.is_empty():
-			_overlay_box.add_child(_colored("具体作用", UiTheme.ACCENT_DARK))
+			_overlay_box.add_child(_colored("影响", UiTheme.ACCENT_DARK))
 			_overlay_box.add_child(_wrapped(TextFormatter.effects_text(_labels(), definition.effects), UiTheme.TEXT, 460.0))
 		var cont := Button.new()
 		cont.text = "继续"
@@ -402,11 +439,6 @@ func _show_budget() -> void:
 	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", UiTheme.ACCENT)
 	_overlay_box.add_child(title)
-	var hint := _label("预算与政治行动点将在下个财年全程作为出牌消耗。")
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint.add_theme_color_override("font_color", UiTheme.MUTED)
-	hint.custom_minimum_size = Vector2(460, 0)
-	_overlay_box.add_child(hint)
 	_budget_selection = _state.pending_budget_plans[0]
 	var button_group := ButtonGroup.new()
 	for index in range(_state.pending_budget_plans.size()):
@@ -442,7 +474,6 @@ func _show_rewards() -> void:
 	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", UiTheme.ACCENT)
 	_overlay_box.add_child(title)
-	_overlay_box.add_child(_wrapped("两组新卡、内阁和援助分别领取；不需要的卡牌可跳过。向下滚动查看全部选项。", UiTheme.MUTED, 460.0))
 	for group_index in range(_state.pending_rewards.size()):
 		var group: Dictionary = _state.pending_rewards[group_index]
 		var group_title := _label(str(TYPE_LABELS.get(group.get("type"), "奖励")))
@@ -490,16 +521,16 @@ func _show_rewards() -> void:
 func _show_result() -> void:
 	var won := _state.run_status == GameState.RunStatus.WON
 	var title := Label.new()
-	title.text = "目标达成！" if won else "计划失败"
+	title.text = "目标达成" if won else "计划失败"
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", UiTheme.POSITIVE if won else UiTheme.NEGATIVE)
 	_overlay_box.add_child(title)
-	var info := _label("第 %d 财年结束 · %s" % [_state.year, _indicator_summary()])
+	var info := _label("第 %d 财年 · %s" % [_state.year, _indicator_summary()])
 	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info.custom_minimum_size = Vector2(460, 0)
 	_overlay_box.add_child(info)
 	if not won:
-		var reason := "任期结束，尚未满足全部目标。" if _state.flags.get("loss_reason", "") == "deadline" else "经济指标触发失败条件。"
+		var reason := "任期届满，目标未达成。" if _state.flags.get("loss_reason", "") == "deadline" else "经济危机导致计划终止。"
 		_overlay_box.add_child(_wrapped(reason, UiTheme.NEGATIVE, 460.0))
 	_overlay_box.add_child(_label("复盘种子：%d · 总回合：%d" % [_state.seed_value, _state.turn]))
 	var back := Button.new()
@@ -593,6 +624,8 @@ func _describe(event: Event) -> String:
 			return "%s：%s" % [name, _display_name(controller.aids, params.get("aid", &""))]
 		Event.Kind.AID_GAINED:
 			return "%s：%s" % [name, _display_name(controller.aids, params.get("aid", &""))]
+		Event.Kind.STATUS_GAINED, Event.Kind.STATUS_TRIGGERED:
+			return "[color=#7a3fb0]%s：%s[/color]" % ["获得能力" if event.kind == Event.Kind.STATUS_GAINED else "能力触发", _display_name(controller.statuses, params.get("status", &""))]
 		Event.Kind.BUDGET_OFFERED:
 			return name
 		Event.Kind.BUDGET_CHOSEN:
@@ -660,7 +693,7 @@ func _colored(text: String, color: Color) -> Label:
 	return label
 
 
-func _wrapped(text: String, color: Color, width: float = 220.0) -> Label:
+func _wrapped(text: String, color: Color, width: float = 200.0) -> Label:
 	var label := _colored(text, color)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.custom_minimum_size = Vector2(width, 0)
@@ -690,11 +723,11 @@ func _reward_detail(reward: Reward) -> String:
 func _detail_text(description: String, effects: Array, group_ids: Array = []) -> String:
 	var parts := PackedStringArray()
 	if not group_ids.is_empty():
-		parts.append("所属组：%s" % _group_names(group_ids))
+		parts.append("类别：%s" % _group_names(group_ids))
 	if description != "":
 		parts.append(description)
 	if not effects.is_empty():
-		parts.append("具体作用：" + TextFormatter.effects_text(_labels(), effects))
+		parts.append(TextFormatter.effects_text(_labels(), effects))
 	return "\n".join(parts)
 
 

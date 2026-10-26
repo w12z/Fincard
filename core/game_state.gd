@@ -26,6 +26,10 @@ var pending_event: StringName = &""
 var pending_event_choices: Array[Dictionary] = []
 var pending_rewards: Array[Dictionary] = []
 var flags: Dictionary = {}
+var statuses: Array[StringName] = []
+var cards_played_this_turn: int = 0
+var investments_played_this_turn: int = 0
+var statuses_triggered_this_turn: Array[StringName] = []
 
 
 func draw_card(rng: Rng) -> bool:

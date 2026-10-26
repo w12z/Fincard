@@ -1,7 +1,7 @@
 {
   "id": "arcadia",
   "display_name": "阿卡迪亚联邦 · 危机",
-  "description": "大崩盘前两年的阿卡迪亚：工厂满负荷开工，股市节节攀升，失业率处于历史低位。但投机狂热与分配失衡正在积累暗流——你的任期内将横亘那场大崩盘，而历史只会记得你是否把它带出萧条。",
+  "description": "阿卡迪亚联邦正处于繁荣顶峰：工厂满负荷开工，股市节节攀升，失业率降至历史低位。繁荣之下，投机、信贷扩张与分配失衡不断积累。两年后，一场金融崩盘将席卷全国。",
   "starting_deck": [
     "arcadia_recover_tariff",
     "arcadia_recover_trade",
@@ -66,7 +66,7 @@
     "events": ["arcadia_events"]
   },
   "goal": {
-    "description": "撑过第 24、26、28 回合的危机，六年内实现 GDP ≥ 210、失业率 ≤ 6、信心 ≥ 45。最早在第四财年获胜。",
+    "description": "六年内实现 GDP ≥ 210、失业率 ≤ 6、信心 ≥ 45；最早在第四财年获胜。",
     "deadline_years": 6,
     "after_turn": 36,
     "conditions": [

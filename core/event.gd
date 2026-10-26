@@ -26,6 +26,8 @@ enum Kind {
 	RUN_WON,
 	RUN_LOST,
 	CUSTOM,
+	STATUS_GAINED,
+	STATUS_TRIGGERED,
 }
 
 const KIND_NAMES := {
@@ -53,6 +55,8 @@ const KIND_NAMES := {
 	"run_won": Kind.RUN_WON,
 	"run_lost": Kind.RUN_LOST,
 	"custom": Kind.CUSTOM,
+	"status_gained": Kind.STATUS_GAINED,
+	"status_triggered": Kind.STATUS_TRIGGERED,
 }
 
 var kind: int

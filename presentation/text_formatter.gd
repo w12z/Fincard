@@ -122,6 +122,8 @@ static func _effect_body(labels: Dictionary, effect: Effect) -> String:
 			if else_text == "":
 				return "若 %s：%s" % [branch_condition, then_text]
 			return "若 %s：%s；否则：%s" % [branch_condition, then_text, else_text]
+		Effect.Kind.GRANT_STATUS:
+			return "【永久能力】" + _lookup(labels, "statuses", StringName(params.get("status", "")))
 	return "未知效果"
 
 

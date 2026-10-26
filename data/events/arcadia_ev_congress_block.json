@@ -1,6 +1,6 @@
 {
   "id": "arcadia_ev_congress_block", "title": "国会阻挠", "cooldown": 8,
-  "description": "反对派要求你在妥协与推进政策之间选择。政治行动点不足时，强推只会造成透支。",
+  "description": "反对派阻挠改革法案，要求政府作出让步。强行推动表决将消耗额外的政治支持。",
   "choices": [
     { "label": "与反对派妥协", "effects": [
       { "kind": "gain_political_capital", "params": { "amount": 2 } },

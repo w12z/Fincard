@@ -48,6 +48,7 @@ static func build() -> Theme:
 	theme.set_color("font_color", "Button", TEXT)
 	theme.set_color("font_hover_color", "Button", ACCENT_DARK)
 	theme.set_color("font_pressed_color", "Button", ACCENT_DARK)
+	theme.set_color("font_focus_color", "Button", ACCENT_DARK)
 	theme.set_color("font_disabled_color", "Button", MUTED)
 
 	theme.set_type_variation("PrimaryButton", "Button")
@@ -59,6 +60,7 @@ static func build() -> Theme:
 	theme.set_color("font_color", "PrimaryButton", Color("ffffff"))
 	theme.set_color("font_hover_color", "PrimaryButton", Color("ffffff"))
 	theme.set_color("font_pressed_color", "PrimaryButton", Color("ffffff"))
+	theme.set_color("font_focus_color", "PrimaryButton", Color("ffffff"))
 	theme.set_color("font_disabled_color", "PrimaryButton", Color("eef3fb"))
 
 	theme.set_type_variation("CardButton", "Button")
@@ -74,6 +76,19 @@ static func build() -> Theme:
 	theme.set_color("font_color", "CheckBox", TEXT)
 	theme.set_color("font_hover_color", "CheckBox", ACCENT_DARK)
 	theme.set_color("font_pressed_color", "CheckBox", ACCENT_DARK)
+
+	theme.set_type_variation("CountryButton", "Button")
+	theme.set_stylebox("normal", "CountryButton", _panel_style(PANEL_BG, PANEL_BORDER, 18, 1, 0))
+	theme.set_stylebox("hover", "CountryButton", _panel_style(Color("f5f9ff"), ACCENT, 18, 2, 0))
+	theme.set_stylebox("pressed", "CountryButton", _panel_style(Color("e8f0fc"), ACCENT_DARK, 18, 2, 0))
+	theme.set_stylebox("focus", "CountryButton", _panel_style(Color(0, 0, 0, 0), ACCENT, 18, 2, 0))
+	theme.set_type_variation("CountryPanel", "PanelContainer")
+	theme.set_stylebox("panel", "CountryPanel", _panel_style(PANEL_BG, PANEL_BORDER, 18, 1, 24))
+	theme.set_type_variation("StatusBadge", "Button")
+	theme.set_stylebox("normal", "StatusBadge", _button_style(Color("f3ecfc"), Color("d1b8eb"), 10, 8, 10))
+	theme.set_stylebox("hover", "StatusBadge", _button_style(Color("eadcf8"), TYPE_REFORM, 10, 8, 10))
+	theme.set_stylebox("pressed", "StatusBadge", _button_style(Color("eadcf8"), TYPE_REFORM, 10, 8, 10))
+	theme.set_color("font_hover_color", "StatusBadge", TYPE_REFORM)
 
 	return theme
 

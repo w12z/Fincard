@@ -1,6 +1,6 @@
 {
   "id": "arcadia_ev_credit_freeze", "title": "信贷冻结",
-  "description": "银行惜贷、工厂裁员。必须通过投资和就业政策推动复苏。",
+  "description": "银行收紧贷款，企业融资中断。工厂削减产能，大批工人失业。",
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -7, "percent": true } },
     { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 5 } },

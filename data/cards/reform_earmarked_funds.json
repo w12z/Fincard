@@ -1,0 +1,7 @@
+{
+  "id": "reform_earmarked_funds",
+  "display_name": "专项发展基金",
+  "description": "永久获得专项拨款：每回合首张投资与援助类卡牌的预算成本 -2，最低为 0。",
+  "card_type": "reform", "cost": 4, "political_cost": 2, "once_per_run": true,
+  "effects": [ { "kind": "grant_status", "params": { "status": "earmarked_funds" } } ]
+}

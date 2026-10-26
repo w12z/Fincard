@@ -81,7 +81,14 @@ func _test_content() -> void:
 			for id in ids:
 				_expect(controller.groups.has(id), "Missing scenario group %s" % id)
 	_expect(controller.events.size() == 19, "All 19 events must load without duplicate IDs")
-	_expect(controller.cards.size() == 22, "All 22 cards must load")
+	_expect(controller.cards.size() == 25, "All 25 cards must load")
+	_expect(controller.statuses.size() == 3, "All special abilities must load")
+	for card: CardDef in controller.cards.values():
+		for effect: Effect in card.effects:
+			if effect.kind == Effect.Kind.GRANT_STATUS:
+				_expect(controller.statuses.has(StringName(effect.params.get("status", ""))), "Ability card must reference an existing status")
+	for status: StatusDef in controller.statuses.values():
+		_expect(status.rule in [&"first_card_political_free", &"first_investment_discount", &"third_card_draw"], "Status must have an implemented rule")
 
 
 func _test_rules() -> void:
@@ -266,7 +273,8 @@ func _autoplay(scenario: StringName, seed_value: int, policy: String) -> Diction
 				var best_score := 0.0
 				for id in state.hand:
 					var card: CardDef = sim.card_db[id]
-					if state.budget < card.cost or state.political_capital < card.political_cost:
+					var costs := sim.card_costs(id)
+					if (int(costs["budget"]) > 0 and state.budget < int(costs["budget"])) or (int(costs["political"]) > 0 and state.political_capital < int(costs["political"])):
 						continue
 					var score := bot_rng.next_float() + 0.01 if policy == "random" else _effects_score(sim, card.effects) / (1 + card.cost * 0.2 + card.political_cost * 0.1)
 					if score > best_score:
@@ -308,6 +316,10 @@ func _effects_score(sim: Simulation, effects: Array) -> float:
 			score += float(p.get("amount", 0)) * (0.5 if sim.state.budget < 8 else 0.1)
 		elif effect.kind == Effect.Kind.GAIN_POLITICAL_CAPITAL:
 			score += float(p.get("amount", 0)) * (0.6 if sim.state.political_capital < 4 else 0.15)
+		elif effect.kind == Effect.Kind.GRANT_STATUS:
+			# This conservative one-card/month bot cannot exploit full combo value.
+			var ability_scores := {"executive_mandate": 2.5, "earmarked_funds": 2.5, "policy_synergy": 0.5}
+			score += float(ability_scores.get(String(p.get("status", "")), 0))
 		elif effect.kind == Effect.Kind.ADJUST_INDICATOR or effect.kind == Effect.Kind.APPLY_MODIFIER:
 			var amount := float(p.get("amount", p.get("value", 0)))
 			var target := StringName(p.get("target", ""))

@@ -1,6 +1,6 @@
 {
   "id": "arcadia_cab_fed", "display_name": "联邦储备主席",
-  "description": "货币型：持续降低利率 1 点，每个财年提供 3 政治行动点。",
+  "description": "任职期间利率 -1 个百分点，每财年补充 3 政治行动点。",
   "modifiers": [
     { "kind": "apply_modifier", "params": { "target": "interest_rate", "op": "add", "value": -1, "duration": -1, "source": "联储主席" } }
   ],

@@ -1,6 +1,6 @@
 {
   "id": "example_event", "title": "国际市场波动",
-  "description": "进口价格上涨。可以暂时加息，也可以接受物价冲击以保持信心。",
+  "description": "国际市场价格上涨，进口成本攀升，国内物价承受上行压力。",
   "choices": [
     { "label": "加息稳价", "description": "暂时放慢增长。", "effects": [
       { "kind": "apply_modifier", "params": { "target": "interest_rate", "op": "add", "value": 1.5, "duration": 3, "source": "进口价格波动" } },

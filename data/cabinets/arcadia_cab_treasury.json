@@ -1,6 +1,6 @@
 {
   "id": "arcadia_cab_treasury", "display_name": "财政部长",
-  "description": "财政型：每个财年补充 4 预算，每月偿还相当于 GDP 0.15% 的债务。",
+  "description": "每财年补充 4 预算，每月偿还相当于 GDP 0.15% 的债务。",
   "modifiers": [],
   "triggers": [
     { "on": "year_started", "effects": [ { "kind": "gain_budget", "params": { "amount": 4 } } ] },

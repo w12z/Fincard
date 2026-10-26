@@ -1,6 +1,6 @@
 {
   "id": "arcadia_relief_ccc", "display_name": "民间资源保护队",
-  "description": "以较低成本改善就业、信心和基础设施，适合持续复苏。",
+  "description": "组织失业者参与林地与水土保护工程，改善就业、信心和基础设施。",
   "card_type": "investment", "cost": 3, "political_cost": 1,
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -1 } },

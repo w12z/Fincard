@@ -2,5 +2,5 @@
   "id": "example_card_group",
   "type": "cards",
   "display_name": "发展政策",
-  "members": ["example_card", "starter_infrastructure", "starter_small_business", "starter_training", "starter_efficiency"]
+  "members": ["example_card", "starter_infrastructure", "starter_small_business", "starter_training", "starter_efficiency", "reform_executive_mandate", "reform_earmarked_funds", "reform_policy_synergy"]
 }

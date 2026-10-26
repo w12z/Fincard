@@ -16,6 +16,7 @@ var cabinet_db: Dictionary = {}
 var aid_db: Dictionary = {}
 var budget_db: Dictionary = {}
 var group_db: Dictionary = {}
+var status_db: Dictionary = {}
 
 var card_reward_pool: Array[StringName] = []
 var cabinet_reward_pool: Array[StringName] = []
@@ -103,6 +104,10 @@ func _reset_state() -> void:
 	state.cabinets.clear()
 	state.aids.clear()
 	state.flags.clear()
+	state.statuses.clear()
+	state.statuses_triggered_this_turn.clear()
+	state.cards_played_this_turn = 0
+	state.investments_played_this_turn = 0
 	state.budget = 0
 	state.political_capital = 0
 	state.budget_plan = &""
@@ -122,6 +127,9 @@ func _start_turn() -> Array[Event]:
 	turns.enter(TurnStateMachine.Phase.TURN_START, state)
 	state.turn += 1
 	state.turn_in_year += 1
+	state.statuses_triggered_this_turn.clear()
+	state.cards_played_this_turn = 0
+	state.investments_played_this_turn = 0
 	events.append(Event.new(Event.Kind.TURN_STARTED, {
 		"turn": state.turn,
 		"turn_in_year": state.turn_in_year,
@@ -236,6 +244,13 @@ func _end_turn() -> Array[Event]:
 	return events
 
 
+func card_costs(card_id: StringName) -> Dictionary:
+	var card: CardDef = card_db.get(card_id)
+	if card == null:
+		return {}
+	return StatusRules.card_costs(card, state, status_db)
+
+
 func _play_card(params: Dictionary) -> Array[Event]:
 	var events: Array[Event] = []
 	if state.run_status != GameState.RunStatus.RUNNING:
@@ -248,14 +263,25 @@ func _play_card(params: Dictionary) -> Array[Event]:
 	var card: CardDef = card_db.get(card_id)
 	if card == null:
 		return events
-	if state.budget < card.cost or state.political_capital < card.political_cost:
+	var costs := card_costs(card_id)
+	var budget_cost := int(costs["budget"])
+	var political_cost := int(costs["political"])
+	if (budget_cost > 0 and state.budget < budget_cost) or (political_cost > 0 and state.political_capital < political_cost):
 		return events
-	state.budget -= card.cost
-	state.political_capital -= card.political_cost
-	if card.cost != 0:
-		events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"budget", "amount": -card.cost}))
-	if card.political_cost != 0:
-		events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"political_capital", "amount": -card.political_cost}))
+	var active_before := state.statuses.duplicate()
+	state.budget -= budget_cost
+	state.political_capital -= political_cost
+	state.cards_played_this_turn += 1
+	if card.card_type == &"investment":
+		state.investments_played_this_turn += 1
+	if budget_cost != 0:
+		events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"budget", "amount": -budget_cost}))
+	if political_cost != 0:
+		events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"political_capital", "amount": -political_cost}))
+	for id in costs["sources"]:
+		if not state.statuses_triggered_this_turn.has(id):
+			state.statuses_triggered_this_turn.append(id)
+		events.append(Event.new(Event.Kind.STATUS_TRIGGERED, {"status": id}))
 	state.hand.erase(card_id)
 	events.append(Event.new(Event.Kind.CARD_PLAYED, {"card_id": card_id}))
 	for effect in card.effects:
@@ -265,6 +291,12 @@ func _play_card(params: Dictionary) -> Array[Event]:
 		_remove_all_copies(card_id)
 	else:
 		state.discard.append(card_id)
+	for id in active_before:
+		var status: StatusDef = status_db.get(id)
+		if status != null and status.rule == &"third_card_draw" and state.cards_played_this_turn == 3:
+			state.statuses_triggered_this_turn.append(id)
+			events.append(Event.new(Event.Kind.STATUS_TRIGGERED, {"status": id}))
+			events.append_array(_draw(status.amount))
 	return events
 
 

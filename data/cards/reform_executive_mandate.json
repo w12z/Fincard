@@ -1,0 +1,7 @@
+{
+  "id": "reform_executive_mandate",
+  "display_name": "行政授权法",
+  "description": "永久获得行政授权：每回合首张牌的政治成本为 0，预算成本不变。本法案计入当回合出牌张数。",
+  "card_type": "reform", "cost": 4, "political_cost": 3, "once_per_run": true,
+  "effects": [ { "kind": "grant_status", "params": { "status": "executive_mandate" } } ]
+}

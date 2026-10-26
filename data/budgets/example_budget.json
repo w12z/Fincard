@@ -1,6 +1,6 @@
 {
   "id": "example_budget", "display_name": "民生发展案",
-  "description": "新手推荐：为每月政策提供充足预算，增加相当于 GDP 4% 的债务。",
+  "description": "扩大民生与发展支出，增加相当于 GDP 4% 的债务。",
   "budget": 32, "political_capital": 6,
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 4, "percent": true } },
