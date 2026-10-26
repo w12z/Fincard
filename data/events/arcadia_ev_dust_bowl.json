@@ -4,7 +4,7 @@
   "choices": [
     { "label": "联邦赈灾与安置", "effects": [
       { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 2 } },
-      { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 3, "percent": true } },
+      { "kind": "gain_budget", "params": { "amount": -3 } },
       { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -0.5 } }
     ] },
     { "label": "交由州政府自救", "effects": [

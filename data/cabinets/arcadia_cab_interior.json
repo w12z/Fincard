@@ -1,11 +1,11 @@
 {
+  "rarity": "rare",
   "id": "arcadia_cab_interior", "display_name": "内政部长",
-  "description": "每月 GDP +0.15%，债务增加相当于 GDP 0.2% 的数额。",
+  "description": "推动地方建设，每月 GDP +0.15%。",
   "modifiers": [],
   "triggers": [
     { "on": "turn_ended", "effects": [
-      { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 0.15, "percent": true } },
-      { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 0.2, "percent": true } }
+      { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 0.15, "percent": true } }
     ] }
   ]
 }

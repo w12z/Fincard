@@ -1,0 +1,8 @@
+{
+  "id": "policy_national_consensus", "display_name": "全国共识会议", "rarity": "legendary",
+  "description": "召集各界代表，就国家发展议程达成广泛共识。",
+  "card_type": "policy", "cost": 6, "political_cost": 2, "once_per_run": false,
+  "effects": [
+    { "kind": "gain_political_capital", "params": { "amount": 8 } }
+  ]
+}

@@ -4,7 +4,7 @@
   "choices": [
     { "label": "农产品平价补贴", "effects": [
       { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": 0.8 } },
-      { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 2, "percent": true } },
+      { "kind": "gain_budget", "params": { "amount": -2 } },
       { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 2 } }
     ] },
     { "label": "让市场自行出清", "effects": [

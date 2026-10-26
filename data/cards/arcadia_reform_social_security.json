@@ -1,10 +1,10 @@
 {
+  "rarity": "rare",
   "id": "arcadia_reform_social_security", "display_name": "社会保障法",
-  "description": "永久法案：构建社会安全网，稳定信心并降低自然失业率。",
+  "description": "建立覆盖失业与养老的社会安全网。",
   "card_type": "reform", "once_per_run": true, "cost": 5, "political_cost": 3,
   "effects": [
     { "kind": "apply_modifier", "params": { "target": "confidence", "op": "add", "value": 4, "duration": -1, "source": "社会保障" } },
-    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "natural_unemployment", "op": "add", "value": -1, "duration": -1, "source": "社会保障" } },
-    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 5, "percent": true } }
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "natural_unemployment", "op": "add", "value": -1, "duration": -1, "source": "社会保障" } }
   ]
 }

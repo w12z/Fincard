@@ -1,10 +1,10 @@
 {
+  "rarity": "rare",
   "id": "arcadia_recover_aaa", "display_name": "农业调整法",
-  "description": "永久法案：稳定农价并推动农业生产率，需承担补贴债务。",
+  "description": "协调农产品收购与生产安排。",
   "card_type": "reform", "once_per_run": true, "cost": 3, "political_cost": 2,
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": 1.5 } },
-    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 2, "percent": true } },
     { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.08, "duration": -1, "source": "农业调整法" } }
   ]
 }

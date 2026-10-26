@@ -1,0 +1,5 @@
+{
+  "id": "temporary_fiscal_support", "display_name": "过渡财政救济",
+  "description": "接下来两次财年发放时，年度预算收入增加 6。", "uses": 1,
+  "effects": [{ "kind": "apply_modifier", "params": { "scope": "fiscal", "target": "annual_income", "value": 6, "duration": 2, "source": "过渡财政救济" } }]
+}

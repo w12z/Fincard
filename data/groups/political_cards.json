@@ -1,0 +1,1 @@
+{ "id": "political_cards", "type": "cards", "display_name": "政治协调", "members": ["policy_legislative_liaison", "policy_coalition_negotiation", "policy_national_consensus"] }

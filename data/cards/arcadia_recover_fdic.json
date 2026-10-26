@@ -1,10 +1,10 @@
 {
+  "rarity": "rare",
   "id": "arcadia_recover_fdic", "display_name": "联邦存款保险",
-  "description": "永久法案：为储户提供保障，减轻挤兑与银行倒闭潮的损失。",
+  "description": "为储户建立统一的存款保障制度。",
   "card_type": "reform", "once_per_run": true, "cost": 4, "political_cost": 3,
   "effects": [
     { "kind": "apply_modifier", "params": { "target": "confidence", "op": "add", "value": 3, "duration": -1, "source": "存款保险" } },
-    { "kind": "apply_modifier", "params": { "target": "bank_protection", "op": "override", "value": 1, "duration": -1, "source": "存款保险" } },
-    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 3, "percent": true } }
+    { "kind": "apply_modifier", "params": { "target": "bank_protection", "op": "override", "value": 1, "duration": -1, "source": "存款保险" } }
   ]
 }

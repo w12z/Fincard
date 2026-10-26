@@ -1,10 +1,9 @@
 {
+  "rarity": "common",
   "id": "arcadia_recover_open_market", "display_name": "公开市场操作",
-  "description": "为银行体系补充流动性，短期降低利率、提振信心，但推高物价。",
+  "description": "由中央银行在公开市场买入证券。",
   "card_type": "policy", "cost": 2, "political_cost": 1,
   "effects": [
-    { "kind": "apply_modifier", "params": { "target": "interest_rate", "op": "add", "value": -2, "duration": 4, "source": "公开市场操作" } },
-    { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": 0.6 } },
-    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 3 } }
+    { "kind": "apply_modifier", "params": { "target": "interest_rate", "op": "add", "value": -2, "duration": 4, "source": "公开市场操作" } }
   ]
 }

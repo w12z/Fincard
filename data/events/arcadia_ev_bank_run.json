@@ -5,8 +5,8 @@
     { "label": "提供公共担保", "effects": [
       { "kind": "branch", "params": {
         "condition": { "indicator": "bank_protection", "comparator": "ge", "value": 1 },
-        "then": [ { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 1, "percent": true } } ],
-        "else": [ { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 3, "percent": true } } ]
+        "then": [ { "kind": "gain_budget", "params": { "amount": -1 } } ],
+        "else": [ { "kind": "gain_budget", "params": { "amount": -3 } } ]
       } },
       { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 3 } }
     ] },

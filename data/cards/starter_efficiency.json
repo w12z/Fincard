@@ -1,6 +1,7 @@
 {
+  "rarity": "rare",
   "id": "starter_efficiency", "display_name": "行政效率改革",
-  "description": "永久法案：精简审批，长期提高潜在增长。",
+  "description": "精简办事流程，清理重复审批。",
   "card_type": "reform", "once_per_run": true, "cost": 3, "political_cost": 3,
   "effects": [
     { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.12, "duration": -1, "source": "行政效率改革" } }

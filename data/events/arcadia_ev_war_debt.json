@@ -4,11 +4,11 @@
   "choices": [
     { "label": "减免盟国战债", "effects": [
       { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 1, "percent": true } },
-      { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 2, "percent": true } },
+      { "kind": "gain_budget", "params": { "amount": -2 } },
       { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 1 } }
     ] },
     { "label": "坚持收回战债", "effects": [
-      { "kind": "adjust_indicator", "params": { "target": "debt", "amount": -1, "percent": true } },
+      { "kind": "gain_budget", "params": { "amount": 1 } },
       { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -0.5, "percent": true } }
     ] }
   ]

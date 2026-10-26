@@ -2,8 +2,8 @@
   "id": "arcadia_ev_inequality", "title": "分配失衡之问", "cooldown": 10,
   "description": "繁荣的果实分配不均，工会要求临时增加累进税负。",
   "choices": [
-    { "label": "临时提高累进税率", "effects": [
-      { "kind": "apply_modifier", "params": { "target": "tax_rate", "op": "add", "value": 3, "duration": 6, "source": "临时累进税" } },
+    { "label": "征收临时累进税", "effects": [
+      { "kind": "gain_budget", "params": { "amount": 4 } },
       { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 3 } }
     ] },
     { "label": "维持现状", "effects": [

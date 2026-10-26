@@ -1,0 +1,6 @@
+{
+  "id": "special_national_strategy", "display_name": "国家发展蓝图", "rarity": "special",
+  "description": "由智囊团统筹产业与公共投资的发展规划。",
+  "card_type": "reform", "cost": 3, "political_cost": 3, "once_per_run": true,
+  "effects": [{ "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "value": 0.2, "duration": -1, "source": "国家发展蓝图" } }]
+}

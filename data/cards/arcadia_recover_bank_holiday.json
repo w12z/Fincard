@@ -1,6 +1,7 @@
 {
+  "rarity": "common",
   "id": "arcadia_recover_bank_holiday", "display_name": "银行假日",
-  "description": "一次性应急法案：停业整顿银行。低信心时恢复更多信任，但短期损失产出。",
+  "description": "暂停银行营业，清查账目与资产。",
   "card_type": "policy", "once_per_run": true, "cost": 2, "political_cost": 2,
   "effects": [
     { "kind": "branch", "params": { "condition": { "indicator": "confidence", "comparator": "lt", "value": 45 }, "then": [ { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 14 } } ], "else": [ { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 6 } } ] } },

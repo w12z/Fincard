@@ -4,11 +4,10 @@
   "choices": [
     { "label": "立法暂停农场赎回", "effects": [
       { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 2 } },
-      { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 1.5, "percent": true } }
+      { "kind": "gain_budget", "params": { "amount": -2 } }
     ] },
     { "label": "维持市场清算", "effects": [
       { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -3 } },
-      { "kind": "adjust_indicator", "params": { "target": "debt", "amount": -1, "percent": true } },
       { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 0.5 } }
     ] }
   ]

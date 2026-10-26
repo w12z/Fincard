@@ -3,6 +3,7 @@ extends RefCounted
 
 var economy: EconomyModel
 var status_db: Dictionary = {}
+var card_db: Dictionary = {}
 
 
 func resolve(effect: Effect, state: GameState, rng: Rng) -> Array[Event]:
@@ -32,6 +33,16 @@ func resolve(effect: Effect, state: GameState, rng: Rng) -> Array[Event]:
 				return []
 			state.statuses.append(id)
 			return [Event.new(Event.Kind.STATUS_GAINED, {"status": id})]
+		Effect.Kind.GAIN_CARD:
+			var id := StringName(effect.params.get("card", ""))
+			var card: CardDef = card_db.get(id)
+			if card == null:
+				push_error("Unknown granted card: %s" % id)
+				return []
+			if card.once_per_run and (state.flags.get("enacted:" + String(id), false) or state.deck.has(id) or state.hand.has(id) or state.discard.has(id)):
+				return []
+			state.deck.append(id)
+			return [Event.new(Event.Kind.CARD_GAINED, {"card_id": id})]
 		_:
 			return []
 
@@ -99,11 +110,11 @@ func _adjust_indicator(params: Dictionary, state: GameState) -> Array[Event]:
 	var target := StringName(params.get("target", ""))
 	var delta := float(params.get("amount", 0.0))
 	if bool(params.get("percent", false)):
-		if target == &"gdp" or target == &"debt":
+		if target == &"gdp":
 			var gdp := float(state.indicators.get(&"gdp", 0.0))
 			delta = delta / 100.0 * gdp
 		else:
-			push_warning("percent 仅适用于 gdp/debt，已按绝对值处理：%s" % target)
+			push_warning("percent 仅适用于 gdp，已按绝对值处理：%s" % target)
 	var previous := float(state.indicators.get(target, 0.0))
 	state.indicators[target] = previous + delta
 	if economy != null:

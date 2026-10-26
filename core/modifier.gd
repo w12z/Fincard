@@ -5,6 +5,8 @@ enum Op { ADD, MUL, OVERRIDE }
 
 const SCOPE_INDICATOR := &"indicator"
 const SCOPE_COEFFICIENT := &"coefficient"
+const SCOPE_FISCAL := &"fiscal"
+const SCOPE_REWARD := &"reward"
 
 const OP_NAMES := {
 	"add": Op.ADD,

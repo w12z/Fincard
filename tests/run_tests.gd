@@ -2,6 +2,7 @@ extends SceneTree
 
 var controller: GameController
 var failures: int = 0
+const REMOVED_FIELDS := ["debt", "debt_ratio", "tax_rate", "neutral_tax", "debt_threshold", "gdp_tax_gap", "gdp_crowd", "debt_spend", "debt_rev", "debt_int_pass", "conf_debt"]
 
 
 func _initialize() -> void:
@@ -22,7 +23,6 @@ func _new_run(scenario: StringName, seed_value: int = 1) -> Simulation:
 
 
 func _setup(sim: Simulation) -> void:
-	sim.apply_command(Command.choose_budget(sim.state.pending_budget_plans[0]))
 	sim.apply_command(Command.choose_reward([]))
 	if sim.state.pending_event != &"":
 		sim.apply_command(Command.resolve_event(0))
@@ -48,6 +48,8 @@ func _run() -> void:
 			var max_turn := 0
 			for seed_value in range(1, sample_count + 1):
 				var result := _autoplay(scenario, seed_value, policy)
+				if not result["won"] and policy == "planned" and "--diagnostics" in OS.get_cmdline_user_args():
+					print("PLANNED LOSS %s seed=%d reason=%s indicators=%s" % [scenario, seed_value, controller.simulation.state.flags.get("loss_reason", ""), controller.simulation.state.indicators])
 				wins += int(result["won"])
 				turns += int(result["turn"])
 				if result["won"]:
@@ -64,7 +66,8 @@ func _run() -> void:
 
 
 func _test_content() -> void:
-	var databases := {"cards": controller.cards, "events": controller.events, "cabinets": controller.cabinets, "aids": controller.aids, "budgets": controller.budgets}
+	_check_economic_data_dir("res://data")
+	var databases := {"cards": controller.cards, "events": controller.events, "cabinets": controller.cabinets, "aids": controller.aids}
 	for group in controller.groups.values():
 		for id in group.members:
 			_expect(databases[String(group.type)].has(id), "Missing group member %s" % id)
@@ -75,20 +78,82 @@ func _test_content() -> void:
 			_expect(controller.events.has(id), "Missing event %s" % id)
 		for id in scenario.scheduled_events.values():
 			_expect(controller.events.has(id), "Missing scheduled event %s" % id)
-		for id in scenario.budget_pool:
-			_expect(controller.budgets.has(id), "Missing budget %s" % id)
+		_expect(scenario.annual_income > 0, "Countries require annual income")
 		for ids in scenario.groups.values():
 			for id in ids:
 				_expect(controller.groups.has(id), "Missing scenario group %s" % id)
 	_expect(controller.events.size() == 19, "All 19 events must load without duplicate IDs")
-	_expect(controller.cards.size() == 25, "All 25 cards must load")
-	_expect(controller.statuses.size() == 3, "All special abilities must load")
+	_expect(controller.cards.size() == 34, "All 34 cards must load")
+	_expect(controller.statuses.size() == 4, "All special abilities must load")
 	for card: CardDef in controller.cards.values():
+		_expect(CardDef.RARITIES.has(card.rarity), "Card must have a supported rarity: %s" % card.id)
+		_expect(_card_effect_count(card.effects) <= 2, "Card exceeds two effects (including conditional branches): %s" % card.id)
+		_expect(_card_effect_targets(card.effects).size() <= 2, "Card exceeds two effect types across all branches: %s" % card.id)
 		for effect: Effect in card.effects:
 			if effect.kind == Effect.Kind.GRANT_STATUS:
 				_expect(controller.statuses.has(StringName(effect.params.get("status", ""))), "Ability card must reference an existing status")
 	for status: StatusDef in controller.statuses.values():
-		_expect(status.rule in [&"first_card_political_free", &"first_investment_discount", &"third_card_draw"], "Status must have an implemented rule")
+		_expect(status.rule in [&"first_card_political_free", &"first_investment_discount", &"third_card_draw", &"deficit_spending"], "Status must have an implemented rule")
+
+
+func _check_economic_data_dir(path: String) -> void:
+	for directory in DirAccess.get_directories_at(path):
+		_check_economic_data_dir(path.path_join(directory))
+	for filename in DirAccess.get_files_at(path):
+		if filename.ends_with(".json"):
+			var file_path := path.path_join(filename)
+			var data = JSON.parse_string(FileAccess.get_file_as_string(file_path))
+			_expect(data != null, "Invalid JSON: %s" % file_path)
+			_check_economic_data(data, file_path)
+
+
+func _check_economic_data(data: Variant, path: String) -> void:
+	if data is Dictionary:
+		for key in data:
+			_expect(not REMOVED_FIELDS.has(String(key)), "Removed economic field in %s: %s" % [path, key])
+			_check_economic_data(data[key], path)
+		if data.has("target"):
+			var labels: Dictionary = controller.labels["coefficients"] if data.get("scope", "indicator") == "coefficient" else controller.labels["indicators"]
+			if data.get("scope", "indicator") == "fiscal":
+				labels = controller.labels["fiscal"]
+			if data.get("scope", "indicator") == "reward":
+				labels = controller.labels["reward"]
+			_expect(labels.has(data["target"]), "Unknown effect target in %s: %s" % [path, data["target"]])
+		if data.has("indicator"):
+			_expect(controller.labels["indicators"].has(data["indicator"]), "Unknown condition indicator in %s" % path)
+		if data.get("kind", "") == "gain_card":
+			_expect(controller.cards.has(StringName(data.get("params", {}).get("card", ""))), "Granted card must exist: %s" % path)
+	elif data is Array:
+		for value in data:
+			_check_economic_data(value, path)
+	elif data is String:
+		_expect(not REMOVED_FIELDS.has(data), "Removed economic reference in %s: %s" % [path, data])
+
+
+func _card_effect_count(effects: Array) -> int:
+	var count := 0
+	for effect: Effect in effects:
+		if effect.kind == Effect.Kind.BRANCH:
+			count += maxi(_card_effect_count(TextFormatter.parse_effects(effect.params.get("then", []))), _card_effect_count(TextFormatter.parse_effects(effect.params.get("else", []))))
+		else:
+			# Count abilities and protections too: wrappers must not hide extra effects.
+			count += 1
+	return count
+
+
+func _card_effect_targets(effects: Array) -> Dictionary:
+	var targets := {}
+	for effect: Effect in effects:
+		if effect.kind == Effect.Kind.BRANCH:
+			for branch in ["then", "else"]:
+				targets.merge(_card_effect_targets(TextFormatter.parse_effects(effect.params.get(branch, []))))
+		elif effect.kind in [Effect.Kind.ADJUST_INDICATOR, Effect.Kind.APPLY_MODIFIER, Effect.Kind.REMOVE_MODIFIER]:
+			targets["%s:%s" % [effect.params.get("scope", "indicator"), effect.params.get("target", "")]] = true
+		elif effect.kind == Effect.Kind.GRANT_STATUS:
+			targets["status:%s" % effect.params.get("status", "")] = true
+		else:
+			targets["kind:%d" % effect.kind] = true
+	return targets
 
 
 func _test_rules() -> void:
@@ -126,9 +191,9 @@ func _test_rules() -> void:
 	sim.state.indicators[&"gdp"] = 135.01
 	sim.state.indicators[&"unemployment"] = 6.1
 	sim.state.indicators[&"inflation"] = 2
-	sim.economy.scenario_coefficients[&"gdp_auto"] = -0.1
-	sim.economy.scenario_coefficients[&"gdp_conf"] = 0
-	sim.economy.scenario_coefficients[&"u_okun"] = 0
+	sim.economy.scenario_coefficients[&"gdp_auto"] = 0
+	sim.state.indicators[&"confidence"] = 50
+	sim.state.indicators[&"interest_rate"] = 5
 	sim._appoint_cabinet(&"arcadia_cab_labor")
 	sim._appoint_cabinet(&"arcadia_cab_interior")
 	sim.apply_command(Command.end_turn())
@@ -146,7 +211,7 @@ func _test_rules() -> void:
 	# State is clean across runs and all starting derived values are initialized.
 	sim = _new_run(&"example_country")
 	_expect(sim.state.cabinets.is_empty() and sim.state.aids.is_empty(), "Restart must clear inventory")
-	_expect(is_equal_approx(sim.economy.value(sim.state, &"debt_ratio"), 0.55), "Opening state must initialize debt ratio")
+	_expect(sim.state.indicators.size() == 6 and sim.state.indicators.has(&"growth"), "Opening state must contain five economic indicators and derived growth only")
 	var offered_laws: Array[StringName] = []
 	for group in sim._build_year_end_rewards():
 		for option: Reward in group["options"]:
@@ -156,8 +221,8 @@ func _test_rules() -> void:
 	# A goal achieved on the last month takes precedence over the deadline.
 	_setup(sim)
 	sim.state.year = 3
-	sim.state.turn = 35
-	sim.state.turn_in_year = 12
+	sim.state.turn = 3 * int(sim.rules["turns_per_year"])
+	sim.state.turn_in_year = int(sim.rules["turns_per_year"])
 	sim.state.indicators[&"gdp"] = 150
 	sim.state.indicators[&"unemployment"] = 3
 	sim.state.indicators[&"inflation"] = 2
@@ -166,8 +231,8 @@ func _test_rules() -> void:
 	sim = _new_run(&"example_country")
 	_setup(sim)
 	sim.state.year = 3
-	sim.state.turn = 35
-	sim.state.turn_in_year = 12
+	sim.state.turn = 3 * int(sim.rules["turns_per_year"])
+	sim.state.turn_in_year = int(sim.rules["turns_per_year"])
 	sim.state.indicators[&"gdp"] = 90
 	sim.apply_command(Command.end_turn())
 	_expect(sim.state.run_status == GameState.RunStatus.LOST and sim.state.flags.get("loss_reason") == "deadline", "Deadline must end unfinished runs")
@@ -180,10 +245,9 @@ func _test_rules() -> void:
 func _test_economy() -> void:
 	var sim := _new_run(&"arcadia")
 	_setup(sim)
-	sim.state.indicators[&"debt"] = 0
-	sim.state.indicators[&"tax_rate"] = 70
+	var initial_budget := sim.state.budget
 	sim.economy.tick(sim.state, sim.rng)
-	_expect(sim.state.indicators[&"debt"] >= 0, "Debt must not become negative")
+	_expect(sim.state.budget == initial_budget, "Economic settlement must not automatically collect or spend budget")
 	sim.state.modifiers.clear()
 	sim.resolver.resolve(Effect.from_dict({"kind": "apply_modifier", "params": {"scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 100, "duration": -1}}), sim.state, sim.rng)
 	var before := float(sim.state.indicators[&"gdp"])
@@ -203,13 +267,13 @@ func _test_ui() -> void:
 	ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(ui)
 	ui.setup(controller, &"example_country")
+	_expect(not ui._sidebar.visible, "Log sidebar must start collapsed")
+	ui._sidebar_button.button_pressed = true
 	await process_frame
 	await process_frame
 	_expect(ui._log.get_global_rect().end.x <= root.get_visible_rect().end.x + 1, "All three UI columns must fit")
-	_expect(ui._log.size.y > 300, "Event log must have usable vertical space")
+	_expect(ui._log.size.y > 150, "Event log must have usable vertical space alongside the forecast")
 	_expect(ui._overlay_root.get_child(0).size.y <= root.get_visible_rect().size.y, "Scrollable modal must fit viewport")
-	_expect(ui._overlay_root.visible, "Opening budget UI must be visible")
-	ui._dispatch(Command.choose_budget(&"example_budget"))
 	_expect(ui._overlay_root.visible, "Rewards UI must be visible")
 	ui._dispatch(Command.choose_reward([]))
 	if controller.simulation.state.pending_event != &"":
@@ -227,14 +291,7 @@ func _autoplay(scenario: StringName, seed_value: int, policy: String) -> Diction
 	while sim.state.run_status == GameState.RunStatus.RUNNING and steps < 1000:
 		steps += 1
 		var state := sim.state
-		if not state.pending_budget_plans.is_empty():
-			var plan: StringName = state.pending_budget_plans[0]
-			if policy == "random":
-				plan = bot_rng.pick(state.pending_budget_plans)
-			elif policy == "planned":
-				plan = &"example_budget" if scenario == &"example_country" else &"arcadia_budget_moderate"
-			sim.apply_command(Command.choose_budget(plan))
-		elif not state.pending_rewards.is_empty():
+		if not state.pending_rewards.is_empty():
 			var picks: Array = []
 			for group in state.pending_rewards:
 				var pick := -1
@@ -252,12 +309,18 @@ func _autoplay(scenario: StringName, seed_value: int, policy: String) -> Diction
 			sim.apply_command(Command.choose_reward(picks))
 		elif state.pending_event != &"":
 			var definition: EconomyEventDef = sim.event_db[state.pending_event]
-			var choice := 0
+			var available: Array[int] = []
+			for index in definition.choices.size():
+				if sim.event_choice_available(index):
+					available.append(index)
+			_expect(not definition.has_choices() or not available.is_empty(), "Every event must have an affordable choice")
+			var choice: int = available[0] if not available.is_empty() else -1
 			if policy == "random":
-				choice = bot_rng.next_int(definition.choices.size())
+				if not available.is_empty():
+					choice = available[bot_rng.next_int(available.size())]
 			elif policy == "planned":
 				var best := -INF
-				for i in definition.choices.size():
+				for i in available:
 					var score := _effects_score(sim, definition.choices[i].effects)
 					if score > best:
 						best = score
@@ -274,7 +337,7 @@ func _autoplay(scenario: StringName, seed_value: int, policy: String) -> Diction
 				for id in state.hand:
 					var card: CardDef = sim.card_db[id]
 					var costs := sim.card_costs(id)
-					if (int(costs["budget"]) > 0 and state.budget < int(costs["budget"])) or (int(costs["political"]) > 0 and state.political_capital < int(costs["political"])):
+					if not sim.can_spend_budget(int(costs["budget"])) or (int(costs["political"]) > 0 and state.political_capital < int(costs["political"])):
 						continue
 					var score := bot_rng.next_float() + 0.01 if policy == "random" else _effects_score(sim, card.effects) / (1 + card.cost * 0.2 + card.political_cost * 0.1)
 					if score > best_score:
@@ -286,6 +349,9 @@ func _autoplay(scenario: StringName, seed_value: int, policy: String) -> Diction
 			sim.apply_command(Command.end_turn())
 		for value in state.indicators.values():
 			_expect(is_finite(float(value)), "Non-finite economy value")
+		_expect(state.budget >= 0 or StatusRules.allows_deficit(state, sim.status_db), "Negative budget requires deficit reform")
+		for removed in REMOVED_FIELDS:
+			_expect(not state.indicators.has(StringName(removed)), "Removed field must not reappear during play: %s" % removed)
 	_expect(steps < 1000, "Run stalled: %s seed %d" % [scenario, seed_value])
 	return {"won": sim.state.run_status == GameState.RunStatus.WON, "turn": sim.state.turn}
 
@@ -302,6 +368,9 @@ func _reward_score(sim: Simulation, reward: Reward) -> float:
 
 func _effects_score(sim: Simulation, effects: Array) -> float:
 	var score := 0.0
+	# Sustained investment now feeds prices through monthly growth. Avoid
+	# endlessly stimulating an overheated economy instead of stabilizing it.
+	var growth_weight := 0.25 if sim.economy.value(sim.state, &"inflation") >= 5 else 2.5
 	for effect: Effect in effects:
 		if effect.condition != null and not effect.condition.evaluate(sim.state, sim.economy):
 			continue
@@ -324,16 +393,21 @@ func _effects_score(sim: Simulation, effects: Array) -> float:
 			var amount := float(p.get("amount", p.get("value", 0)))
 			var target := StringName(p.get("target", ""))
 			if p.get("scope", "") == "coefficient":
-				score += amount * (35 if target == &"gdp_auto" else 100)
+				if p.get("op", "add") == "override":
+					amount -= sim.economy.coefficient(sim.state, target)
+				var duration := int(p.get("duration", -1))
+				var horizon := mini(duration, 12) if duration > 0 else 12
+				match target:
+					&"gdp_auto": score += amount * horizon * growth_weight
+					&"natural_unemployment": score -= amount * 2
+					&"u_revert": score += amount * 100
 				continue
 			var current := sim.economy.value(sim.state, target)
 			match target:
-				&"gdp": score += amount * 2.5
-				&"unemployment": score -= amount * (2 if current > 7 else 0.3)
+				&"gdp": score += amount * growth_weight
+				&"unemployment": score -= amount * (2 if current > 6 else 0.3)
 				&"confidence": score += amount * (0.5 if current < 45 else 0.15)
 				&"inflation": score += (absf(current - 2) - absf(current + amount - 2)) * 0.6
-				&"debt": score -= amount * (1 if sim.economy.value(sim.state, &"debt_ratio") > 0.9 else 0.15)
 				&"interest_rate": score -= amount * 0.4
-				&"tax_rate": score -= amount * 0.1
 				&"bank_protection", &"market_protection": score += 7 if sim.state.turn < 24 else 0.5
 	return score

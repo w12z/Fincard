@@ -1,0 +1,10 @@
+{
+  "rarity": "common",
+  "id": "policy_emergency_relief", "display_name": "紧急救济案",
+  "description": "紧急调集资金，应对迫在眉睫的救济需求。", "card_type": "policy",
+  "cost": 0, "political_cost": 3, "once_per_run": true,
+  "effects": [
+    { "kind": "gain_budget", "params": { "amount": 10 } },
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -2 } }
+  ]
+}

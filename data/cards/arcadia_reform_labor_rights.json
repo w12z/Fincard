@@ -1,10 +1,10 @@
 {
+  "rarity": "rare",
   "id": "arcadia_reform_labor_rights", "display_name": "劳工权利法",
-  "description": "永久法案：改善劳资关系，让就业在危机后更快恢复。",
+  "description": "确立集体协商与劳动争议调解制度。",
   "card_type": "reform", "once_per_run": true, "cost": 4, "political_cost": 3,
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 4 } },
-    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -1 } },
     { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "u_revert", "op": "add", "value": 0.02, "duration": -1, "source": "劳工权利法" } }
   ]
 }

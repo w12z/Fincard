@@ -1,0 +1,8 @@
+{
+  "id": "policy_coalition_negotiation", "display_name": "联合协商", "rarity": "rare",
+  "description": "协调党团与社会团体，扩大政策支持联盟。",
+  "card_type": "policy", "cost": 4, "political_cost": 1, "once_per_run": false,
+  "effects": [
+    { "kind": "gain_political_capital", "params": { "amount": 5 } }
+  ]
+}

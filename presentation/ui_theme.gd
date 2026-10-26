@@ -13,6 +13,9 @@ const WARNING := Color("e08a00")
 const PANEL_BG := Color("ffffff")
 const PANEL_BORDER := Color("d6e4f0")
 const CARD_BORDER := Color("9ec2f5")
+const EVENT_BG := Color("fff8ed")
+const EVENT_BORDER := Color("d9ba86")
+const EVENT_ACCENT := Color("936329")
 
 const TYPE_INVESTMENT := Color("2563b8")
 const TYPE_POLICY := Color("0e7d7a")
@@ -29,12 +32,42 @@ static func card_type_color(type_id: StringName) -> Color:
 	return TYPE_COLORS.get(String(type_id), TYPE_INVESTMENT)
 
 
+static func rarity_color(rarity: StringName) -> Color:
+	return {&"common": Color("737373"), &"rare": Color("2563b8"), &"legendary": Color("b58112"), &"special": Color("d9363e")}.get(rarity, Color("737373"))
+
+
+static func modifier_color(index: int) -> Color:
+	# Nearby cool hues, staggered by position rather than effect category.
+	const HUES := [0.60, 0.66, 0.56, 0.63, 0.69, 0.58, 0.65]
+	return Color.from_hsv(HUES[index % HUES.size()], 0.48, 0.68)
+
+
+static func style_modifier_badge(badge: Button, index: int) -> void:
+	var color := modifier_color(index)
+	for state in ["normal", "hover", "pressed", "focus"]:
+		var background := Color.WHITE.lerp(color, 0.10 if state == "normal" else 0.20)
+		badge.add_theme_stylebox_override(state, _button_style(background, Color.WHITE.lerp(color, 0.55), 9, 6, 6))
+	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		badge.add_theme_color_override(state, color)
+
+
 static func build() -> Theme:
 	var theme := Theme.new()
 	theme.default_font_size = 14
 
 	theme.set_stylebox("panel", "PanelContainer", _panel_style(PANEL_BG, PANEL_BORDER, 12, 1, 10))
 	theme.set_stylebox("panel", "Panel", _panel_style(PANEL_BG, PANEL_BORDER, 12, 1, 10))
+	theme.set_type_variation("EventPanel", "PanelContainer")
+	theme.set_stylebox("panel", "EventPanel", _panel_style(EVENT_BG, EVENT_BORDER, 12, 2, 10))
+	theme.set_type_variation("EventChoice", "Button")
+	theme.set_stylebox("normal", "EventChoice", _button_style(Color("fffdf8"), EVENT_BORDER, 8, 12, 10))
+	theme.set_stylebox("hover", "EventChoice", _button_style(Color("fff0d6"), EVENT_ACCENT, 8, 12, 10))
+	theme.set_stylebox("pressed", "EventChoice", _button_style(Color("f4e3c5"), EVENT_ACCENT, 8, 12, 10))
+	theme.set_stylebox("focus", "EventChoice", _panel_style(Color.TRANSPARENT, EVENT_ACCENT, 8, 2, 0))
+	theme.set_stylebox("disabled", "EventChoice", _button_style(Color("f2eee7"), Color("ded5c7"), 8, 12, 10))
+	theme.set_color("font_hover_color", "EventChoice", EVENT_ACCENT)
+	theme.set_color("font_pressed_color", "EventChoice", EVENT_ACCENT)
+	theme.set_color("font_focus_color", "EventChoice", EVENT_ACCENT)
 
 	theme.set_color("font_color", "Label", TEXT)
 	theme.set_color("default_color", "RichTextLabel", TEXT)
@@ -89,6 +122,14 @@ static func build() -> Theme:
 	theme.set_stylebox("hover", "StatusBadge", _button_style(Color("eadcf8"), TYPE_REFORM, 10, 8, 10))
 	theme.set_stylebox("pressed", "StatusBadge", _button_style(Color("eadcf8"), TYPE_REFORM, 10, 8, 10))
 	theme.set_color("font_hover_color", "StatusBadge", TYPE_REFORM)
+	theme.set_type_variation("CabinetPortrait", "Button")
+	theme.set_stylebox("normal", "CabinetPortrait", _panel_style(Color("233348"), Color("bfa777"), 9, 2, 0))
+	theme.set_stylebox("hover", "CabinetPortrait", _panel_style(Color("304560"), Color("efcf8c"), 9, 3, 0))
+	theme.set_stylebox("pressed", "CabinetPortrait", _panel_style(Color("304560"), ACCENT, 9, 3, 0))
+	theme.set_stylebox("focus", "CabinetPortrait", _panel_style(Color(0, 0, 0, 0), ACCENT, 9, 3, 0))
+	theme.set_type_variation("AidButton", "Button")
+	theme.set_stylebox("normal", "AidButton", _button_style(Color("fff4df"), Color("d6ad61"), 10, 8, 8))
+	theme.set_stylebox("hover", "AidButton", _button_style(Color("ffebc4"), WARNING, 10, 8, 8))
 
 	return theme
 

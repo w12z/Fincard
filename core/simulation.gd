@@ -14,14 +14,12 @@ var scenario_db: Dictionary = {}
 var event_db: Dictionary = {}
 var cabinet_db: Dictionary = {}
 var aid_db: Dictionary = {}
-var budget_db: Dictionary = {}
 var group_db: Dictionary = {}
 var status_db: Dictionary = {}
 
 var card_reward_pool: Array[StringName] = []
 var cabinet_reward_pool: Array[StringName] = []
 var aid_reward_pool: Array[StringName] = []
-var budget_pool: Array[StringName] = []
 
 var _scenario: ScenarioDef
 
@@ -48,6 +46,8 @@ func start_run(scenario_id: StringName) -> Array[Event]:
 	economy.apply_bounds_overrides(_scenario.bounds_overrides)
 	_reset_state()
 	state.scenario_id = _scenario.id
+	state.base_annual_income = _scenario.annual_income
+	state.base_budget_retention = float(rules.get("budget_retention", 0.5))
 	for id in _scenario.indicators:
 		economy.register_indicator(id)
 		state.indicators[id] = float(_scenario.indicators[id])
@@ -59,7 +59,7 @@ func start_run(scenario_id: StringName) -> Array[Event]:
 	economy.refresh_derived(state)
 	state.year = 1
 	state.flags["opening_setup"] = true
-	events.append_array(_offer_budget_or_finish())
+	events.append_array(_offer_rewards_or_finish())
 	return events
 
 
@@ -78,8 +78,6 @@ func apply_command(command: Command) -> Array[Event]:
 			events = _resolve_event(command.params)
 		Command.Kind.USE_AID:
 			events = _use_aid(command.params)
-		Command.Kind.CHOOSE_BUDGET:
-			events = _choose_budget(command.params)
 		Command.Kind.CHOOSE_REWARD:
 			events = _choose_reward(command.params)
 	if command.kind in [Command.Kind.PLAY_CARD, Command.Kind.USE_AID, Command.Kind.RESOLVE_EVENT]:
@@ -89,9 +87,38 @@ func apply_command(command: Command) -> Array[Event]:
 	return events
 
 
+func forecast_next_turn() -> GameState:
+	if state.run_status != GameState.RunStatus.RUNNING or not _can_act():
+		return null
+	# Use the actual turn pipeline on an isolated state/RNG. Future rewards and
+	# unresolved event choices are excluded; existing cabinet triggers still run.
+	var preview := Simulation.new(state.seed_value)
+	preview.state = state.snapshot()
+	preview.rng = rng.snapshot()
+	preview.rules = rules.duplicate(true)
+	preview.rules["random_event_chance"] = 0.0
+	preview.rules["reward_option_count"] = 0
+	preview._scenario = _scenario
+	preview.turns.phase = turns.phase
+	preview.card_db = card_db
+	preview.event_db = event_db
+	preview.status_db = status_db
+	preview.resolver.card_db = card_db
+	preview.resolver.status_db = status_db
+	preview.economy.indicator_ids = economy.indicator_ids.duplicate()
+	preview.economy.derived_ids = economy.derived_ids.duplicate()
+	preview.economy.equations = economy.equations.duplicate()
+	preview.economy.derived = economy.derived.duplicate()
+	preview.economy.bounds = economy.bounds.duplicate(true)
+	preview.economy.base_coefficients = economy.base_coefficients.duplicate()
+	preview.economy.scenario_coefficients = economy.scenario_coefficients.duplicate()
+	preview._end_turn()
+	return preview.state
+
+
 func _can_act() -> bool:
 	return turns.phase == TurnStateMachine.Phase.MAIN and state.pending_event == &"" \
-		and state.pending_budget_plans.is_empty() and state.pending_rewards.is_empty()
+		and state.pending_rewards.is_empty()
 
 
 func _reset_state() -> void:
@@ -107,11 +134,12 @@ func _reset_state() -> void:
 	state.statuses.clear()
 	state.statuses_triggered_this_turn.clear()
 	state.cards_played_this_turn = 0
+	state.played_cards_this_turn.clear()
 	state.investments_played_this_turn = 0
 	state.budget = 0
 	state.political_capital = 0
-	state.budget_plan = &""
-	state.pending_budget_plans.clear()
+	state.base_annual_income = 0
+	state.base_budget_retention = 0.5
 	state.pending_event = &""
 	state.pending_event_choices.clear()
 	state.pending_rewards.clear()
@@ -122,21 +150,26 @@ func _reset_state() -> void:
 	turns.phase = TurnStateMachine.Phase.TURN_START
 
 
-func _start_turn() -> Array[Event]:
+func _start_turn(year_started: bool = false) -> Array[Event]:
 	var events: Array[Event] = []
 	turns.enter(TurnStateMachine.Phase.TURN_START, state)
 	state.turn += 1
 	state.turn_in_year += 1
 	state.statuses_triggered_this_turn.clear()
 	state.cards_played_this_turn = 0
+	state.played_cards_this_turn.clear()
 	state.investments_played_this_turn = 0
-	events.append(Event.new(Event.Kind.TURN_STARTED, {
+	_grant_turn_resources(events)
+	if year_started:
+		var year_events: Array[Event] = [Event.new(Event.Kind.YEAR_STARTED, {"year": state.year})]
+		events.append_array(trigger_engine.process(year_events, state, resolver, rng, _iteration_limit()))
+	var turn_events: Array[Event] = []
+	turn_events.append(Event.new(Event.Kind.TURN_STARTED, {
 		"turn": state.turn,
 		"turn_in_year": state.turn_in_year,
 		"year": state.year,
 	}))
-	_grant_turn_resources(events)
-	events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
+	events.append_array(trigger_engine.process(turn_events, state, resolver, rng, _iteration_limit()))
 	events.append_array(_enter_main())
 	events.append_array(_schedule_event())
 	economy.refresh_derived(state)
@@ -202,6 +235,8 @@ func _resolve_event(params: Dictionary) -> Array[Event]:
 	var events: Array[Event] = []
 	if state.pending_event == &"" or not event_db.has(state.pending_event):
 		return events
+	if not event_choice_available(int(params.get("choice_index", -1))):
+		return events
 	var definition: EconomyEventDef = event_db[state.pending_event]
 	if definition.has_choices():
 		var index := int(params.get("choice_index", -1))
@@ -217,6 +252,49 @@ func _resolve_event(params: Dictionary) -> Array[Event]:
 	state.pending_event_choices.clear()
 	turns.enter(TurnStateMachine.Phase.MAIN, state)
 	return events
+
+
+func event_choice_available(choice_index: int) -> bool:
+	if state.pending_event == &"" or not event_db.has(state.pending_event):
+		return false
+	var definition: EconomyEventDef = event_db[state.pending_event]
+	if not definition.has_choices():
+		return _effects_affordable(definition.effects)
+	if choice_index < 0 or choice_index >= definition.choices.size():
+		return false
+	return _effects_affordable(definition.choices[choice_index].effects)
+
+
+func can_spend_budget(amount: int) -> bool:
+	return amount <= 0 or StatusRules.allows_deficit(state, status_db) or state.budget >= amount
+
+
+func _effects_affordable(effects: Array) -> bool:
+	if StatusRules.allows_deficit(state, status_db):
+		return true
+	return _budget_after_effects(effects, state.budget) >= 0
+
+
+func _budget_after_effects(effects: Array, budget: int) -> int:
+	# Resource previews do not spend money, draw cards, or consume RNG.
+	for effect: Effect in effects:
+		if effect.condition != null and not effect.condition.evaluate(state, economy):
+			continue
+		if effect.kind == Effect.Kind.GAIN_BUDGET:
+			budget += int(effect.params.get("amount", 0))
+		elif effect.kind == Effect.Kind.BRANCH:
+			var params := effect.params
+			var branch := "then"
+			if params.get("condition") is Dictionary and not Condition.from_dict(params["condition"]).evaluate(state, economy):
+				branch = "else"
+			var nested: Array[Effect] = []
+			for raw in params.get(branch, []):
+				if raw is Dictionary:
+					nested.append(Effect.from_dict(raw))
+			budget = _budget_after_effects(nested, budget)
+		if budget < 0:
+			return -1
+	return budget
 
 
 func _end_turn() -> Array[Event]:
@@ -266,12 +344,13 @@ func _play_card(params: Dictionary) -> Array[Event]:
 	var costs := card_costs(card_id)
 	var budget_cost := int(costs["budget"])
 	var political_cost := int(costs["political"])
-	if (budget_cost > 0 and state.budget < budget_cost) or (political_cost > 0 and state.political_capital < political_cost):
+	if not can_spend_budget(budget_cost) or (political_cost > 0 and state.political_capital < political_cost):
 		return events
 	var active_before := state.statuses.duplicate()
 	state.budget -= budget_cost
 	state.political_capital -= political_cost
 	state.cards_played_this_turn += 1
+	state.played_cards_this_turn.append(card_id)
 	if card.card_type == &"investment":
 		state.investments_played_this_turn += 1
 	if budget_cost != 0:
@@ -341,68 +420,57 @@ func _end_year() -> Array[Event]:
 		state.flags["loss_reason"] = "deadline"
 		events.append(Event.new(Event.Kind.RUN_LOST, {"reason": "deadline"}))
 		return events
-	events.append_array(_offer_budget_or_finish())
-	return events
-
-
-func _choose_budget(params: Dictionary) -> Array[Event]:
-	var events: Array[Event] = []
-	if state.pending_budget_plans.is_empty():
-		return events
-	var plan_id: StringName = params.get("plan_id", &"")
-	if not state.pending_budget_plans.has(plan_id):
-		return events
-	var plan: BudgetPlanDef = budget_db[plan_id]
-	state.budget_plan = plan_id
-	state.pending_budget_plans.clear()
-	events.append(Event.new(Event.Kind.BUDGET_CHOSEN, {"plan": plan_id}))
-	events.append_array(_grant_year_resources(plan))
-	events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
-	economy.refresh_derived(state)
-	events.append_array(_check_end_conditions(false))
-	if state.run_status != GameState.RunStatus.RUNNING:
-		return events
 	events.append_array(_offer_rewards_or_finish())
 	return events
 
 
 func _grant_turn_resources(events: Array[Event]) -> void:
-	var gain := int(rules.get("political_capital_per_turn", 0)) + int(economy.value(state, &"political_capital_gain"))
-	if gain == 0:
-		return
-	state.political_capital += gain
-	events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"political_capital", "amount": gain}))
+	var previous := state.political_capital
+	state.political_capital = political_capital_per_turn()
+	var changes: Array[Event] = [Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"political_capital", "amount": state.political_capital - previous})]
+	events.append_array(trigger_engine.process(changes, state, resolver, rng, _iteration_limit()))
 
 
-func _grant_year_resources(plan: BudgetPlanDef) -> Array[Event]:
+func political_capital_per_turn() -> int:
+	return maxi(0, int(rules.get("political_capital_per_turn", 0)) + int(economy.value(state, &"political_capital_gain")))
+
+
+func fiscal_value(target: StringName, base: float) -> float:
+	return modified_value(Modifier.SCOPE_FISCAL, target, base)
+
+
+func modified_value(scope: StringName, target: StringName, base: float) -> float:
+	var value := base
+	for modifier in state.modifiers:
+		if modifier.scope != scope or modifier.target != target or modifier.is_expired():
+			continue
+		match modifier.op:
+			Modifier.Op.ADD: value += modifier.value
+			Modifier.Op.MUL: value *= modifier.value
+			Modifier.Op.OVERRIDE: value = modifier.value
+	return value
+
+
+func annual_income() -> int:
+	return maxi(0, int(floor(fiscal_value(&"annual_income", state.base_annual_income))))
+
+
+func budget_retention() -> float:
+	return clampf(fiscal_value(&"budget_retention", state.base_budget_retention), 0.0, 1.0)
+
+
+func _grant_year_resources() -> Array[Event]:
 	var events: Array[Event] = []
-	var budget_grant := 0
-	var political_grant := 0
-	if plan != null:
-		budget_grant = plan.budget
-		political_grant = plan.political_capital
-		for effect in plan.effects:
-			events.append_array(resolver.resolve(effect, state, rng))
-	else:
-		if rules.has("base_budget"):
-			budget_grant = int(rules["base_budget"])
-		if rules.has("base_political_capital"):
-			political_grant = int(rules["base_political_capital"])
-	state.budget = budget_grant
-	state.political_capital += political_grant
-	events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"budget", "amount": budget_grant}))
-	events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"political_capital", "amount": political_grant}))
-	return events
-
-
-func _offer_budget_or_finish() -> Array[Event]:
-	var events: Array[Event] = []
-	state.pending_budget_plans = _build_budget_options()
-	if state.pending_budget_plans.is_empty():
-		events.append_array(_grant_year_resources(null))
-		events.append_array(_offer_rewards_or_finish())
-		return events
-	events.append(Event.new(Event.Kind.BUDGET_OFFERED, {"plans": _budget_options_info()}))
+	var previous_budget := state.budget
+	state.budget = int(floor(state.budget * budget_retention())) + annual_income()
+	events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"budget", "amount": state.budget - previous_budget}))
+	# Fiscal duration counts income payments, never months.
+	for modifier in state.modifiers.duplicate():
+		if modifier.scope == Modifier.SCOPE_FISCAL:
+			modifier.advance_turn()
+			if modifier.is_expired():
+				state.modifiers.erase(modifier)
+				events.append(Event.new(Event.Kind.MODIFIER_EXPIRED, {"target": modifier.target, "scope": modifier.scope, "source": modifier.source}))
 	return events
 
 
@@ -420,9 +488,9 @@ func _finish_year_setup() -> Array[Event]:
 	var events: Array[Event] = []
 	if state.flags.get("opening_setup", false):
 		state.flags.erase("opening_setup")
-		events.append(Event.new(Event.Kind.YEAR_STARTED, {"year": state.year}))
+		events.append_array(_grant_year_resources())
 		events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
-		events.append_array(_start_turn())
+		events.append_array(_start_turn(true))
 		return events
 	events.append_array(_advance_year())
 	return events
@@ -452,9 +520,9 @@ func _advance_year() -> Array[Event]:
 	var events: Array[Event] = []
 	state.turn_in_year = 0
 	state.year += 1
-	events.append(Event.new(Event.Kind.YEAR_STARTED, {"year": state.year}))
+	events.append_array(_grant_year_resources())
 	events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
-	events.append_array(_start_turn())
+	events.append_array(_start_turn(true))
 	return events
 
 
@@ -520,15 +588,6 @@ func _check_end_conditions(allow_win: bool = true) -> Array[Event]:
 	return events
 
 
-func _build_budget_options() -> Array[StringName]:
-	var result: Array[StringName] = []
-	var source := _scenario.budget_pool if _scenario != null and not _scenario.budget_pool.is_empty() else budget_pool
-	for id in source:
-		if budget_db.has(id) and _member_allowed("budgets", id):
-			result.append(id)
-	return result
-
-
 func _allowed_groups(type: String) -> Array:
 	if _scenario == null:
 		return []
@@ -561,20 +620,6 @@ func groups_of(type: String, id: StringName) -> Array[StringName]:
 	return result
 
 
-func _budget_options_info() -> Array[Dictionary]:
-	var info: Array[Dictionary] = []
-	for id in state.pending_budget_plans:
-		var plan: BudgetPlanDef = budget_db[id]
-		info.append({
-			"id": plan.id,
-			"display_name": plan.display_name,
-			"description": plan.description,
-			"budget": plan.budget,
-			"political_capital": plan.political_capital,
-		})
-	return info
-
-
 func _build_year_end_rewards() -> Array[Dictionary]:
 	var groups: Array[Dictionary] = []
 	var option_count := int(rules.get("reward_option_count", 0))
@@ -583,7 +628,7 @@ func _build_year_end_rewards() -> Array[Dictionary]:
 	var card_groups := maxi(1, int(rules.get("card_reward_groups", 1)))
 	for i in card_groups:
 		_add_reward_group(groups, Reward.Type.CARD, card_reward_pool, option_count)
-	_add_reward_group(groups, Reward.Type.CABINET, cabinet_reward_pool, option_count)
+	_add_reward_group(groups, Reward.Type.CABINET, cabinet_reward_pool, 2)
 	_add_reward_group(groups, Reward.Type.AID, aid_reward_pool, option_count)
 	return groups
 
@@ -606,11 +651,51 @@ func _add_reward_group(groups: Array[Dictionary], type: int, pool: Array[StringN
 	var options: Array = []
 	var candidates := available.duplicate()
 	while options.size() < count and not candidates.is_empty():
-		var index := rng.next_int(candidates.size())
-		var id: StringName = candidates[index]
-		candidates.remove_at(index)
+		var id: StringName = _pick_rarity_reward(candidates, cabinet_db if type == Reward.Type.CABINET else card_db) if type in [Reward.Type.CARD, Reward.Type.CABINET] else rng.pick(candidates)
+		if id == &"":
+			break
+		candidates.erase(id)
 		options.append(Reward.new(type, id, _reward_label(type, id)))
-	groups.append({"type": type, "options": options})
+	if not options.is_empty():
+		groups.append({"type": type, "options": options})
+
+
+func base_rarity_weight(rarity: StringName) -> float:
+	var defaults := {"common": 20.0, "rare": 5.0, "legendary": 1.0}
+	return float(rules.get("card_rarity_weights", {}).get(String(rarity), defaults.get(String(rarity), 0.0)))
+
+
+func rarity_weight(rarity: StringName) -> float:
+	if not CardDef.REWARD_RARITIES.has(rarity):
+		return 0.0
+	return maxf(0.0, modified_value(Modifier.SCOPE_REWARD, rarity, base_rarity_weight(rarity)))
+
+
+func _pick_reward_card(candidates: Array) -> StringName:
+	return _pick_rarity_reward(candidates, card_db)
+
+
+func _pick_rarity_reward(candidates: Array, definitions: Dictionary) -> StringName:
+	# Cards and cabinets share the exact same effective rarity weights.
+	# Empty/zero-weight tiers are excluded; card counts never skew tier odds.
+	var buckets := {}
+	var total := 0.0
+	for rarity in CardDef.REWARD_RARITIES:
+		var cards: Array[StringName] = []
+		for id in candidates:
+			if definitions.has(id) and definitions[id].rarity == rarity:
+				cards.append(id)
+		if not cards.is_empty() and rarity_weight(rarity) > 0.0:
+			buckets[rarity] = cards
+			total += rarity_weight(rarity)
+	if total <= 0.0:
+		return &""
+	var roll := rng.next_float() * total
+	for rarity in buckets:
+		roll -= rarity_weight(rarity)
+		if roll < 0.0:
+			return rng.pick(buckets[rarity])
+	return rng.pick(buckets.values().back())
 
 
 func _reward_available(type: int, id: StringName) -> bool:
@@ -619,12 +704,12 @@ func _reward_available(type: int, id: StringName) -> bool:
 			if card_db.has(id) and card_db[id].once_per_run:
 				if state.flags.get("enacted:" + String(id), false) or state.deck.has(id) or state.hand.has(id) or state.discard.has(id):
 					return false
-			return card_db.has(id) and _member_allowed("cards", id)
+			return card_db.has(id) and CardDef.REWARD_RARITIES.has(card_db[id].rarity) and _member_allowed("cards", id)
 		Reward.Type.CABINET:
 			for cabinet in state.cabinets:
 				if cabinet.id == id:
 					return false
-			return cabinet_db.has(id) and _member_allowed("cabinets", id)
+			return cabinet_db.has(id) and CardDef.REWARD_RARITIES.has(cabinet_db[id].rarity) and _member_allowed("cabinets", id)
 		Reward.Type.AID:
 			return aid_db.has(id) and _member_allowed("aids", id)
 	return false
@@ -658,7 +743,8 @@ func _advance_modifiers() -> Array[Event]:
 	var events: Array[Event] = []
 	var kept: Array[Modifier] = []
 	for modifier in state.modifiers:
-		modifier.advance_turn()
+		if modifier.scope != Modifier.SCOPE_FISCAL:
+			modifier.advance_turn()
 		if modifier.is_expired():
 			events.append(Event.new(Event.Kind.MODIFIER_EXPIRED, {
 				"target": modifier.target,

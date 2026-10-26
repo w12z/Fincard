@@ -1,10 +1,9 @@
 {
+  "rarity": "rare",
   "id": "arcadia_reform_tax_wealth", "display_name": "财富税",
-  "description": "永久法案：向高收入者加税，用于偿还债务，但长期略微拖累增长。",
+  "description": "向高收入群体征收特别税款。",
   "card_type": "reform", "once_per_run": true, "cost": 0, "political_cost": 3,
   "effects": [
-    { "kind": "adjust_indicator", "params": { "target": "tax_rate", "amount": 4 } },
-    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": -5, "percent": true } },
-    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -2 } }
+    { "kind": "gain_budget", "params": { "amount": 8 } }
   ]
 }

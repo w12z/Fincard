@@ -1,6 +1,7 @@
 {
+  "rarity": "rare",
   "id": "arcadia_recover_sec", "display_name": "证券交易监管",
-  "description": "永久法案：建立监管机构，提升长期信心，并减轻股灾冲击。",
+  "description": "设立证券监管机构，规范信息披露与市场交易。",
   "card_type": "reform", "once_per_run": true, "cost": 3, "political_cost": 2,
   "effects": [
     { "kind": "apply_modifier", "params": { "target": "confidence", "op": "add", "value": 4, "duration": -1, "source": "证券监管" } },

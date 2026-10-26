@@ -9,7 +9,7 @@ var indicators: Dictionary = {}
 var event_pool: Array[StringName] = []
 var innate_modifiers: Array[Effect] = []
 var goal: GoalDef
-var budget_pool: Array[StringName] = []
+var annual_income: int = 32
 var groups: Dictionary = {}
 var scheduled_events: Dictionary = {}
 var economy_overrides: Dictionary = {}
@@ -34,8 +34,7 @@ static func from_dict(data: Dictionary) -> ScenarioDef:
 	var goal_data = data.get("goal")
 	if goal_data is Dictionary:
 		scenario.goal = GoalDef.from_dict(goal_data)
-	for plan_id in data.get("budget_pool", []):
-		scenario.budget_pool.append(StringName(plan_id))
+	scenario.annual_income = int(data.get("annual_income", 32))
 	var raw_groups = data.get("groups", {})
 	if raw_groups is Array:
 		var flat: Array[StringName] = []

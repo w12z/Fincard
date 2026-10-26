@@ -1,6 +1,6 @@
 {
   "id": "example_aid", "display_name": "发展援助",
-  "description": "一次性提供 6 预算和 3 信心，不增加债务。",
+  "description": "一次性提供 6 预算和 3 信心。",
   "uses": 1,
   "effects": [
     { "kind": "gain_budget", "params": { "amount": 6 } },

@@ -1,10 +1,9 @@
 {
+  "rarity": "common",
   "id": "starter_training", "display_name": "职业培训",
-  "description": "帮助失业者转岗，兼顾就业与生产效率。",
+  "description": "开设职业技能课程与转岗培训。",
   "card_type": "investment", "cost": 2, "political_cost": 1,
   "effects": [
-    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -1.2 } },
-    { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 0.6, "percent": true } },
-    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 1 } }
+    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -1.2 } }
   ]
 }

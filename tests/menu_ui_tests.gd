@@ -28,7 +28,7 @@ func _check_copy(node: Node) -> void:
 		text = node.text
 	if node is Control:
 		text += "\n" + node.tooltip_text
-	for phrase in ["书写下一段繁荣", "力挽狂澜", "了解这片土地", "每一次选择", "请检查剧本数据", "向下滚动", "无需点击", "通过特殊改革，可改变", "示例内阁", "示例预算", "示例援助"]:
+	for phrase in ["书写下一段繁荣", "力挽狂澜", "了解这片土地", "每一次选择", "请检查剧本数据", "向下滚动", "无需点击", "通过特殊改革，可改变", "示例内阁", "示例预算", "示例援助", "政府债务", "债务率", "税率", "资金收支直接计入", "每个候选先按", "从下次生成奖励起生效", "预算成本不变", "政治成本不变", "不免除政治成本"]:
 		_expect(not phrase in text, "Obsolete player-facing copy: %s" % phrase)
 	for child in node.get_children():
 		_check_copy(child)
@@ -84,7 +84,7 @@ func _run() -> void:
 			profile._back_button.pressed.emit()
 		await _settle()
 		_expect(main._screen is ScenarioMenu, "Back must return to the selection screen")
-		_expect(main.controller.simulation.state.pending_budget_plans.is_empty(), "Back must not initialize a run")
+		_expect(main.controller.simulation.state.pending_rewards.is_empty(), "Back must not initialize a run")
 	# Small layouts stack rather than hide country information.
 	menu = main._screen
 	menu.size.x = 900
@@ -100,7 +100,7 @@ func _run() -> void:
 	await _settle()
 	_expect(main._screen is GameUI, "Confirm must enter the game")
 	_expect(main.controller.simulation.state.scenario_id == &"arcadia", "Confirm must start the selected scenario")
-	_expect(not main.controller.simulation.state.pending_budget_plans.is_empty(), "A confirmed run must begin with annual preparation")
+	_expect(not main.controller.simulation.state.pending_rewards.is_empty(), "A confirmed run must begin with annual preparation")
 	_check_copy(main._screen)
 	main.free()
 	await process_frame

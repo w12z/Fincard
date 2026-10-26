@@ -12,6 +12,12 @@ func _init(seed_value: int) -> void:
 	_state = seed_value if seed_value != 0 else 1
 
 
+func snapshot() -> Rng:
+	var copy := Rng.new(1)
+	copy._state = _state
+	return copy
+
+
 func next_int(max_exclusive: int) -> int:
 	if max_exclusive <= 0:
 		return 0

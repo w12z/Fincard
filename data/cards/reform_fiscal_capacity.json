@@ -1,0 +1,7 @@
+{
+  "rarity": "rare",
+  "id": "reform_fiscal_capacity", "display_name": "稳健扩张案",
+  "description": "完善财政征管，拓展稳定的收入渠道。", "card_type": "reform",
+  "cost": 3, "political_cost": 3, "once_per_run": true,
+  "effects": [{ "kind": "apply_modifier", "params": { "scope": "fiscal", "target": "annual_income", "value": 6, "duration": -1, "source": "稳健扩张案" } }]
+}

@@ -1,0 +1,8 @@
+{
+  "id": "policy_legislative_liaison", "display_name": "议会联络", "rarity": "common",
+  "description": "安排议员磋商，争取议程支持。",
+  "card_type": "policy", "cost": 3, "political_cost": 1, "once_per_run": false,
+  "effects": [
+    { "kind": "gain_political_capital", "params": { "amount": 3 } }
+  ]
+}

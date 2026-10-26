@@ -1,4 +1,7 @@
 {
+  "rarities": { "common": "普通", "rare": "稀有", "legendary": "传奇", "special": "特殊" },
+  "cards": { "special_national_strategy": "国家发展蓝图" },
+  "reward": { "common": "普通出现权重", "rare": "稀有出现权重", "legendary": "传奇出现权重" },
   "card_types": {
     "investment": "投资与援助",
     "policy": "政策",
@@ -8,50 +11,30 @@
     "gdp": "国内生产总值",
     "inflation": "通货膨胀",
     "unemployment": "失业率",
-    "debt": "政府债务",
     "confidence": "市场信心",
     "interest_rate": "利率",
-    "tax_rate": "税率",
     "growth": "经济增长率",
-    "debt_ratio": "债务率",
-    "political_capital_gain": "每回合政治行动点增益",
+    "political_capital_gain": "每回合政治点重置加成",
     "market_protection": "证券监管保护",
     "bank_protection": "存款保险保护"
   },
   "statuses": {
-    "executive_mandate": "行政授权：每回合首张牌免政治成本",
-    "earmarked_funds": "专项拨款：每回合首张投资预算 -2",
-    "policy_synergy": "政策联动：每回合第三张牌后抽2张"
+    "executive_mandate": "行政授权：每回合首张牌免政治成本；零政治成本牌与获得前已出的牌均计数",
+    "earmarked_funds": "专项拨款：每回合首张投资与援助预算 -2，最低为 0",
+    "policy_synergy": "政策联动：每回合第三张牌结算后抽 2 张；获得前已出的牌计数，授予此能力的牌不触发",
+    "deficit_spending": "赤字财政：允许预算透支"
   },
+  "fiscal": { "annual_income": "年度预算收入", "budget_retention": "跨年预算保留系数" },
   "resources": {
     "budget": "财政预算",
     "political_capital": "政治行动点"
   },
   "coefficients": {
     "natural_unemployment": "自然失业率",
-    "neutral_rate": "中性利率",
-    "neutral_tax": "中性税率",
-    "debt_threshold": "债务挤出阈值",
-    "confidence_neutral": "信心中性值",
     "inflation_target": "通胀目标",
     "gdp_auto": "潜在增长率",
-    "gdp_conf": "信心增长敏感度",
-    "gdp_rate_gap": "利率增长敏感度",
-    "gdp_tax_gap": "税率增长敏感度",
-    "gdp_crowd": "债务挤出强度",
-    "infl_anchor": "通胀回归速度",
-    "infl_phillips": "菲利普斯强度",
-    "infl_demand": "需求拉动强度",
-    "infl_rate": "利率抑通胀强度",
-    "u_okun": "奥肯强度",
-    "u_revert": "失业回归速度",
-    "debt_rev": "税收收入系数",
-    "debt_spend": "基础公共支出比例",
-    "debt_int_pass": "利息负担系数",
-    "conf_growth": "增长提振信心",
-    "conf_infl": "通胀打压信心",
-    "conf_debt": "债务打压信心",
-    "conf_anchor": "信心回归速度"
+    "infl_anchor": "额外通胀回归",
+    "u_revert": "额外就业回归"
   },
   "events": {
     "turn_started": "回合开始",
@@ -71,8 +54,6 @@
     "cabinet_appointed": "任命内阁",
     "aid_used": "使用援助",
     "aid_gained": "获得援助",
-    "budget_offered": "确定预算",
-    "budget_chosen": "预算确定",
     "reward_offered": "发放奖励",
     "reward_chosen": "选择奖励",
     "run_won": "胜利",

@@ -22,7 +22,6 @@ func _prepare() -> Simulation:
 	var sim := controller.simulation
 	sim.rng = Rng.new(7)
 	sim.start_run(&"example_country")
-	sim.apply_command(Command.choose_budget(&"example_budget"))
 	sim.apply_command(Command.choose_reward([]))
 	sim.state.budget = 50
 	sim.state.political_capital = 20
@@ -87,9 +86,8 @@ func _test_mandate() -> void:
 	_expect(sim.card_costs(&"starter_infrastructure")["political"] == 2, "A zero-cost first card also consumes the waiver")
 	sim.card_db.erase(zero.id)
 	# Carry through an annual transition; start-of-turn resets but status persists.
-	sim.state.turn_in_year = 12
+	sim.state.turn_in_year = int(sim.rules["turns_per_year"])
 	sim.apply_command(Command.end_turn())
-	sim.apply_command(Command.choose_budget(&"example_budget"))
 	sim.apply_command(Command.choose_reward([]))
 	_expect(sim.state.cards_played_this_turn == 0 and sim.state.statuses.has(&"executive_mandate"), "Ability must persist across years and refresh each month")
 	_prepare()
@@ -158,7 +156,6 @@ func _test_ui() -> void:
 	ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(ui)
 	ui.setup(controller, &"example_country")
-	ui._dispatch(Command.choose_budget(&"example_budget"))
 	ui._dispatch(Command.choose_reward([]))
 	var sim := controller.simulation
 	_grant(sim, &"executive_mandate")
@@ -169,18 +166,18 @@ func _test_ui() -> void:
 	ui._render()
 	for i in 4:
 		await process_frame
-	var icons: HFlowContainer = ui._statuses_box.get_child(1)
-	_expect(icons.get_child_count() == 3, "Every active ability needs a visible status badge")
-	_expect(is_equal_approx(icons.get_child(0).position.y, icons.get_child(2).position.y), "Three status icons should fit in a compact row")
+	var icons := ui._effect_icons
+	_expect(icons.get_child_count() == ModifierDisplay.entries(sim, controller.labels).size(), "Base parameters, innate modifiers and all abilities share one badge bar")
+	_expect(is_equal_approx(icons.get_child(0).position.y, icons.get_child(3).position.y), "Modifier icons should fit in a compact row")
 	_expect(ui._log.get_global_rect().end.x <= root.get_visible_rect().end.x + 1, "Ability badges must not push the game UI outside the viewport")
-	_expect("行政授权" in icons.get_child(0).tooltip_text, "Badges must explain the ability on hover")
+	_expect("行政授权" in icons.get_child(1).tooltip_text, "Badges must explain the ability on hover")
 	var card: Button = ui._hand_box.get_child(0)
-	_expect(not card.disabled and "政治 0（原1）" in card.text, "UI must allow the discounted card and show actual costs")
+	_expect(not card.disabled and card.find_child("PoliticalAmount", true, false).get_node("Amount").text == "0（原1）", "UI must allow the discounted card and show actual costs")
 	if not capture_directory.is_empty() and DisplayServer.get_name() != "headless":
 		await RenderingServer.frame_post_draw
 		_expect(root.get_texture().get_image().save_png(capture_directory.path_join("fincard-status-abilities.png")) == OK, "Ability screenshot must save")
 	ui._dispatch(Command.play_card(&"starter_small_business"))
-	icons = ui._statuses_box.get_child(1)
-	_expect("0/1" in icons.get_child(0).text and "0/1" in icons.get_child(1).text, "Badges must update after consuming an opportunity")
+	icons = ui._effect_icons
+	_expect("0/1" in icons.get_child(1).text and "0/1" in icons.get_child(2).text, "Badges must update after consuming an opportunity")
 	_expect(ui._hand_box.get_child(0).disabled, "UI must restore normal costs after the first play")
 	ui.free()

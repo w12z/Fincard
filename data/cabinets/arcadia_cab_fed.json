@@ -1,4 +1,5 @@
 {
+  "rarity": "rare",
   "id": "arcadia_cab_fed", "display_name": "联邦储备主席",
   "description": "任职期间利率 -1 个百分点，每财年补充 3 政治行动点。",
   "modifiers": [

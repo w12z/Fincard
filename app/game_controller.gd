@@ -6,7 +6,6 @@ const SCENARIO_DIR := "res://data/scenarios"
 const EVENT_DIR := "res://data/events"
 const CABINET_DIR := "res://data/cabinets"
 const AID_DIR := "res://data/aids"
-const BUDGET_DIR := "res://data/budgets"
 const GROUP_DIR := "res://data/groups"
 const STATUS_DIR := "res://data/statuses"
 const RULES_PATH := "res://data/config/rules.json"
@@ -22,7 +21,6 @@ var scenarios: Dictionary = {}
 var events: Dictionary = {}
 var cabinets: Dictionary = {}
 var aids: Dictionary = {}
-var budgets: Dictionary = {}
 var groups: Dictionary = {}
 var rules: Dictionary = {}
 var economy_config: Dictionary = {}
@@ -36,7 +34,6 @@ func _ready() -> void:
 	events = DataLoader.load_dir(EVENT_DIR, func(d): return EconomyEventDef.from_dict(d))
 	cabinets = DataLoader.load_dir(CABINET_DIR, func(d): return CabinetDef.from_dict(d))
 	aids = DataLoader.load_dir(AID_DIR, func(d): return AidDef.from_dict(d))
-	budgets = DataLoader.load_dir(BUDGET_DIR, func(d): return BudgetPlanDef.from_dict(d))
 	groups = DataLoader.load_dir(GROUP_DIR, func(d): return GroupDef.from_dict(d))
 	statuses = DataLoader.load_dir(STATUS_DIR, func(d): return StatusDef.from_dict(d))
 	rules = ConfigLoader.load_json(RULES_PATH)
@@ -45,11 +42,11 @@ func _ready() -> void:
 	# Zero means a fresh run; nonzero seeds remain reproducible for tests.
 	simulation = Simulation.new(seed_value if seed_value != 0 else int(Time.get_unix_time_from_system() * 1000))
 	simulation.card_db = cards
+	simulation.resolver.card_db = cards
 	simulation.scenario_db = scenarios
 	simulation.event_db = events
 	simulation.cabinet_db = cabinets
 	simulation.aid_db = aids
-	simulation.budget_db = budgets
 	simulation.group_db = groups
 	simulation.status_db = statuses
 	simulation.resolver.status_db = statuses
@@ -80,7 +77,6 @@ func _load_pools() -> void:
 	simulation.card_reward_pool = _resolve_pool(pools, "cards", cards)
 	simulation.cabinet_reward_pool = _resolve_pool(pools, "cabinets", cabinets)
 	simulation.aid_reward_pool = _resolve_pool(pools, "aids", aids)
-	simulation.budget_pool = _resolve_pool(pools, "budgets", budgets)
 
 
 func _resolve_pool(pools: Dictionary, key: String, fallback: Dictionary) -> Array[StringName]:

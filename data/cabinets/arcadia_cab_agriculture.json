@@ -1,4 +1,5 @@
 {
+  "rarity": "common",
   "id": "arcadia_cab_agriculture", "display_name": "农业部长",
   "description": "加快通胀率向 2% 回归，每财年市场信心 +3。",
   "modifiers": [

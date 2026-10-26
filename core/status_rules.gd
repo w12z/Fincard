@@ -2,6 +2,14 @@ class_name StatusRules
 extends RefCounted
 
 
+static func allows_deficit(state: GameState, definitions: Dictionary) -> bool:
+	for id in state.statuses:
+		var status: StatusDef = definitions.get(id)
+		if status != null and status.rule == &"deficit_spending":
+			return true
+	return false
+
+
 static func card_costs(card: CardDef, state: GameState, definitions: Dictionary) -> Dictionary:
 	var budget := card.cost
 	var political := card.political_cost

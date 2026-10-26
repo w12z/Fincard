@@ -1,9 +1,9 @@
 {
+  "rarity": "common",
   "id": "example_card", "display_name": "稳定物价",
-  "description": "适度紧缩以压低通胀，短期略微影响信心。",
+  "description": "协调必需品供应，整顿流通环节。",
   "card_type": "policy", "cost": 1, "political_cost": 1,
   "effects": [
-    { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": -1.5 } },
-    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -1 } }
+    { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": -1.5 } }
   ]
 }

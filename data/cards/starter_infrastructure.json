@@ -1,11 +1,9 @@
 {
+  "rarity": "common",
   "id": "starter_infrastructure", "display_name": "基础设施投资",
-  "description": "建设道路与电网，提升产出并吸纳就业。",
+  "description": "建设道路与电网，连接生产与消费市场。",
   "card_type": "investment", "cost": 4, "political_cost": 2,
   "effects": [
-    { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 2.5, "percent": true } },
-    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -0.8 } },
-    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 2, "percent": true } },
-    { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": 0.5 } }
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.625, "duration": 4, "source": "基础设施投资" } }
   ]
 }

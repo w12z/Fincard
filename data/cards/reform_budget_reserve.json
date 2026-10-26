@@ -1,0 +1,7 @@
+{
+  "rarity": "rare",
+  "id": "reform_budget_reserve", "display_name": "预算结转制度",
+  "description": "建立跨年度资金管理制度。", "card_type": "reform",
+  "cost": 0, "political_cost": 3, "once_per_run": true,
+  "effects": [{ "kind": "apply_modifier", "params": { "scope": "fiscal", "target": "budget_retention", "value": 0.25, "duration": -1, "source": "预算结转制度" } }]
+}

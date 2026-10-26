@@ -47,18 +47,19 @@ func _build() -> void:
 	left.get_parent().custom_minimum_size.x = 340
 	left.add_child(CountryFlag.create(scenario.id, 190))
 	left.add_child(_text("初始经济  /  就任时刻", 20, UiTheme.ACCENT_DARK))
-	for id in [&"gdp", &"debt", &"inflation", &"unemployment", &"confidence", &"interest_rate", &"tax_rate"]:
+	for id in [&"gdp", &"inflation", &"unemployment", &"confidence", &"interest_rate"]:
 		var row := HBoxContainer.new()
 		var name_label := _text(TextFormatter.indicator(controller.labels, id), 16, UiTheme.MUTED)
 		name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		row.add_child(name_label)
-		var suffix := "%" if id in [&"inflation", &"unemployment", &"interest_rate", &"tax_rate"] else ""
+		var suffix := "%" if id in [&"inflation", &"unemployment", &"interest_rate"] else ""
 		var value_label := _text(TextFormatter.fmt(float(scenario.indicators.get(id, 0))) + suffix, 18, UiTheme.TEXT)
 		value_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 		row.add_child(value_label)
 		left.add_child(row)
 	left.add_child(HSeparator.new())
+	left.add_child(_text("每财年收入 %d 预算 · 余额保留 %d%%" % [scenario.annual_income, roundi(float(controller.rules.get("budget_retention", 0.5)) * 100)], 16, UiTheme.ACCENT_DARK))
 	left.add_child(_text("%d 张初始牌  ·  %d 年任期" % [scenario.starting_deck.size(), scenario.goal.deadline_years], 16, UiTheme.ACCENT_DARK))
 	var right := _panel(_columns)
 	right.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -70,7 +71,7 @@ func _build() -> void:
 	right.add_child(_text("风险与失败条件", 20, UiTheme.TEXT))
 	for condition in scenario.goal.loss_conditions:
 		right.add_child(_text("·  " + TextFormatter.condition_text(controller.labels, condition), 15, UiTheme.NEGATIVE))
-	right.add_child(_text("债务率 1.00 = GDP 的 100%。任期届满未达成目标则失败。", 14, UiTheme.MUTED))
+	right.add_child(_text("任期届满未达成目标则失败。", 14, UiTheme.MUTED))
 	if not scenario.scheduled_events.is_empty():
 		right.add_child(HSeparator.new())
 		right.add_child(_text("重大事件", 20, UiTheme.TEXT))

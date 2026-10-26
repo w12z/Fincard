@@ -1,10 +1,9 @@
 {
+  "rarity": "common",
   "id": "starter_small_business", "display_name": "小企业扶持",
-  "description": "小额担保贷款，改善增长与市场信心。",
+  "description": "为小企业提供担保贷款与经营支持。",
   "card_type": "investment", "cost": 2, "political_cost": 1,
   "effects": [
-    { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 1.2, "percent": true } },
-    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 3 } },
-    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 1, "percent": true } }
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.4, "duration": 3, "source": "小企业扶持" } }
   ]
 }

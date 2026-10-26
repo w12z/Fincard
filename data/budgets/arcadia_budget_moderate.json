@@ -1,9 +1,0 @@
-{
-  "id": "arcadia_budget_moderate", "display_name": "稳健扩张案",
-  "description": "兼顾财政、就业与政治支持；增加相当于 GDP 4% 的债务。",
-  "budget": 32, "political_capital": 6,
-  "effects": [
-    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 4, "percent": true } },
-    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 1 } }
-  ]
-}

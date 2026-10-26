@@ -1,0 +1,9 @@
+{
+  "id": "reform_research_network", "display_name": "政策研究网络", "rarity": "rare",
+  "description": "连接研究机构与政策部门，建立常设咨询网络。",
+  "card_type": "reform", "cost": 2, "political_cost": 3, "once_per_run": true,
+  "effects": [
+    { "kind": "apply_modifier", "params": { "scope": "reward", "target": "rare", "value": 5, "duration": -1, "source": "政策研究网络" } },
+    { "kind": "apply_modifier", "params": { "scope": "reward", "target": "legendary", "value": 1, "duration": -1, "source": "政策研究网络" } }
+  ]
+}

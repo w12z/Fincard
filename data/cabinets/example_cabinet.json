@@ -1,8 +1,10 @@
 {
+  "rarity": "rare",
   "id": "example_cabinet", "display_name": "发展顾问",
   "description": "每月潜在增长提高 0.08 个百分点，每个财年补充 3 预算。",
   "modifiers": [
-    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.08, "duration": -1, "source": "发展顾问" } }
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.08, "duration": -1, "source": "发展顾问" } },
+    { "kind": "apply_modifier", "params": { "scope": "fiscal", "target": "annual_income", "value": 3, "duration": -1, "source": "发展顾问" } }
   ],
-  "triggers": [ { "on": "year_started", "effects": [ { "kind": "gain_budget", "params": { "amount": 3 } } ] } ]
+  "triggers": []
 }

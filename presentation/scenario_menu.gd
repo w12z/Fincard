@@ -54,7 +54,6 @@ func _country_card(scenario: ScenarioDef) -> Button:
 	button.theme_type_variation = "CountryButton"
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.custom_minimum_size = Vector2(0, 480)
-	button.tooltip_text = "查看 %s 的国家简介" % scenario.display_name
 	var margin := MarginContainer.new()
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	for edge in ["left", "right", "top", "bottom"]:

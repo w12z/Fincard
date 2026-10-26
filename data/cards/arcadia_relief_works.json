@@ -1,11 +1,9 @@
 {
+  "rarity": "common",
   "id": "arcadia_relief_works", "display_name": "以工代赈·公共工程",
-  "description": "直接创造就业和产出，代价是财政成本与新增债务。",
+  "description": "组织失业者参与公共设施建设。",
   "card_type": "investment", "cost": 5, "political_cost": 2,
   "effects": [
-    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -1.8 } },
-    { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 2.5, "percent": true } },
-    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 3, "percent": true } },
-    { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": 0.4 } }
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.8, "duration": 3, "source": "公共工程" } }
   ]
 }

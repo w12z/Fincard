@@ -19,6 +19,10 @@ static func coefficient(labels: Dictionary, id: StringName) -> String:
 
 
 static func modifier_target(labels: Dictionary, scope: StringName, id: StringName) -> String:
+	if scope == Modifier.SCOPE_REWARD:
+		return _lookup(labels, "reward", id)
+	if scope == Modifier.SCOPE_FISCAL:
+		return _lookup(labels, "fiscal", id)
 	if scope == Modifier.SCOPE_COEFFICIENT:
 		return "系数·%s" % coefficient(labels, id)
 	return indicator(labels, id)
@@ -45,6 +49,10 @@ static func card_type_name(labels: Dictionary, id: StringName) -> String:
 			return "投资与援助"
 
 
+static func rarity_name(labels: Dictionary, id: StringName) -> String:
+	return _lookup(labels, "rarities", id)
+
+
 static func condition_text(labels: Dictionary, condition: Condition) -> String:
 	return "%s %s %s" % [
 		indicator(labels, condition.indicator),
@@ -56,19 +64,23 @@ static func condition_text(labels: Dictionary, condition: Condition) -> String:
 static func effect_text(labels: Dictionary, effect: Effect) -> String:
 	var body := _effect_body(labels, effect)
 	if effect.condition != null:
-		return "若 %s，%s" % [condition_text(labels, effect.condition), body]
+		return "若 %s：\n%s" % [condition_text(labels, effect.condition), _indent(body)]
 	return body
 
 
 static func effects_text(labels: Dictionary, effects: Array) -> String:
 	var parts := PackedStringArray()
 	for effect in effects:
-		parts.append(effect_text(labels, effect))
-	return "；".join(parts)
+		parts.append("• " + effect_text(labels, effect).replace("\n", "\n  "))
+	return "\n".join(parts)
+
+
+static func _indent(text: String) -> String:
+	return "  " + text.replace("\n", "\n  ")
 
 
 static func trigger_text(labels: Dictionary, trigger: Trigger) -> String:
-	return "当「%s」时：%s" % [event_name(labels, _kind_name(trigger.on_kind)), effects_text(labels, trigger.effects)]
+	return "当「%s」时：\n%s" % [event_name(labels, _kind_name(trigger.on_kind)), _indent(effects_text(labels, trigger.effects))]
 
 
 static func signed(value: float) -> String:
@@ -78,7 +90,10 @@ static func signed(value: float) -> String:
 static func fmt(value: float) -> String:
 	if is_equal_approx(value, roundf(value)):
 		return str(int(roundf(value)))
-	return "%.2f" % value
+	var text := "%.3f" % value
+	while text.ends_with("0"):
+		text = text.trim_suffix("0")
+	return text.trim_suffix(".")
 
 
 static func _effect_body(labels: Dictionary, effect: Effect) -> String:
@@ -95,6 +110,8 @@ static func _effect_body(labels: Dictionary, effect: Effect) -> String:
 			var target := modifier_target(labels, StringName(params.get("scope", "indicator")), StringName(params.get("target", "")))
 			var duration := int(params.get("duration", 0))
 			var window := "永久" if duration < 0 else "%d 回合内" % duration
+			if duration >= 0 and params.get("scope", "indicator") == "fiscal":
+				window = "接下来 %d 次财年发放" % duration
 			match Modifier.op_from(params.get("op", "add")):
 				Modifier.Op.MUL:
 					return "%s %s ×%s" % [window, target, fmt(float(params.get("value", 0.0)))]
@@ -120,10 +137,12 @@ static func _effect_body(labels: Dictionary, effect: Effect) -> String:
 			if branch_condition == "":
 				return then_text
 			if else_text == "":
-				return "若 %s：%s" % [branch_condition, then_text]
-			return "若 %s：%s；否则：%s" % [branch_condition, then_text, else_text]
+				return "若 %s：\n%s" % [branch_condition, _indent(then_text)]
+			return "若 %s：\n%s\n否则：\n%s" % [branch_condition, _indent(then_text), _indent(else_text)]
 		Effect.Kind.GRANT_STATUS:
 			return "【永久能力】" + _lookup(labels, "statuses", StringName(params.get("status", "")))
+		Effect.Kind.GAIN_CARD:
+			return "获得卡牌「%s」" % _lookup(labels, "cards", StringName(params.get("card", "")))
 	return "未知效果"
 
 

@@ -11,6 +11,7 @@ enum Kind {
 	BRANCH,
 	CUSTOM,
 	GRANT_STATUS,
+	GAIN_CARD,
 }
 
 const KIND_NAMES := {
@@ -23,6 +24,7 @@ const KIND_NAMES := {
 	"branch": Kind.BRANCH,
 	"custom": Kind.CUSTOM,
 	"grant_status": Kind.GRANT_STATUS,
+	"gain_card": Kind.GAIN_CARD,
 }
 
 var kind: int

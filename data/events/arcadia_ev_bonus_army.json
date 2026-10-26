@@ -4,7 +4,7 @@
   "choices": [
     { "label": "提前发放补偿金", "effects": [
       { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 4 } },
-      { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 3, "percent": true } },
+      { "kind": "gain_budget", "params": { "amount": -3 } },
       { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": 0.5 } }
     ] },
     { "label": "维持原有发放日期", "effects": [

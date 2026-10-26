@@ -1,9 +1,9 @@
 {
   "id": "arcadia_aid_gold", "display_name": "动用黄金储备",
-  "description": "偿还相当于 GDP 5% 的债务，并恢复 3 信心。",
+  "description": "出售黄金储备，获得 6 预算并恢复 3 信心。",
   "uses": 1,
   "effects": [
-    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": -5, "percent": true } },
+    { "kind": "gain_budget", "params": { "amount": 6 } },
     { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 3 } }
   ]
 }

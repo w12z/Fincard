@@ -1,10 +1,9 @@
 {
+  "rarity": "common",
   "id": "arcadia_relief_dole", "display_name": "直接救济金",
-  "description": "快速修复就业与信心，但不直接提高产出。",
+  "description": "向生活困难的家庭发放救济金。",
   "card_type": "investment", "cost": 2, "political_cost": 1,
   "effects": [
-    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -1.2 } },
-    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 5 } },
-    { "kind": "adjust_indicator", "params": { "target": "debt", "amount": 2, "percent": true } }
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 5 } }
   ]
 }

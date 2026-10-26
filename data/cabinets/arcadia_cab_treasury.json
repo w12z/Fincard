@@ -1,9 +1,7 @@
 {
+  "rarity": "common",
   "id": "arcadia_cab_treasury", "display_name": "财政部长",
-  "description": "每财年补充 4 预算，每月偿还相当于 GDP 0.15% 的债务。",
-  "modifiers": [],
-  "triggers": [
-    { "on": "year_started", "effects": [ { "kind": "gain_budget", "params": { "amount": 4 } } ] },
-    { "on": "turn_ended", "effects": [ { "kind": "adjust_indicator", "params": { "target": "debt", "amount": -0.15, "percent": true } } ] }
-  ]
+  "description": "统筹财政资金，每财年预算收入永久增加 4。",
+  "modifiers": [{ "kind": "apply_modifier", "params": { "scope": "fiscal", "target": "annual_income", "value": 4, "duration": -1, "source": "财政部长" } }],
+  "triggers": []
 }
