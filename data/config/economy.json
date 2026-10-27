@@ -6,7 +6,7 @@
   },
   "bounds": {
     "gdp": [1, 1000000],
-    "inflation": [-20, 40], "unemployment": [0.5, 60],
+    "unemployment": [0.5, 60],
     "interest_rate": [0, 25], "confidence": [0, 100],
     "growth": [-8, 8]
   }

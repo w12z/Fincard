@@ -289,7 +289,7 @@ func _render_header() -> void:
 	_header.add_child(_label("第 %d 财年" % _state.year))
 	_header.add_child(_label("回合 %d/%d" % [_state.turn_in_year, _turns_per_year()]))
 	var budget_label := ResourceAmount.create(&"budget", "%d · 年入 %d" % [_state.budget, controller.simulation.annual_income()], UiTheme.NEGATIVE if _state.budget < 0 else UiTheme.ACCENT_DARK)
-	budget_label.tooltip_text += "\n年度收入 %d · 余额结转 %d%%（向下取整）\n%s" % [controller.simulation.annual_income(), roundi(controller.simulation.budget_retention() * 100), "可透支" if StatusRules.allows_deficit(_state, controller.statuses) else "不可透支"]
+	budget_label.tooltip_text += "\n年度收入 %d · 非负余额结转 %d%%（向下取整）· 赤字全额结转\n%s" % [controller.simulation.annual_income(), roundi(controller.simulation.budget_retention() * 100), "可透支" if StatusRules.allows_deficit(_state, controller.statuses) else "不可透支"]
 	_header.add_child(budget_label)
 	var political_label := ResourceAmount.create(&"political", str(_state.political_capital), UiTheme.POSITIVE)
 	political_label.tooltip_text += "\n每回合重置为 %d 点，剩余点数不继承" % controller.simulation.political_capital_per_turn()

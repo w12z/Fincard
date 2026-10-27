@@ -462,7 +462,8 @@ func budget_retention() -> float:
 func _grant_year_resources() -> Array[Event]:
 	var events: Array[Event] = []
 	var previous_budget := state.budget
-	state.budget = int(floor(state.budget * budget_retention())) + annual_income()
+	var carried_budget := state.budget if state.budget < 0 else int(floor(state.budget * budget_retention()))
+	state.budget = carried_budget + annual_income()
 	events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"budget", "amount": state.budget - previous_budget}))
 	# Fiscal duration counts income payments, never months.
 	for modifier in state.modifiers.duplicate():

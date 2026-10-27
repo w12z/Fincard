@@ -2,9 +2,9 @@
   "id": "example_country", "display_name": "新港共和国 · 入门",
   "description": "新港共和国正推行三年发展计划。基础设施建设与小企业投资带来新的就业机会，财政压力和物价上涨也随之而来。政府需要在经济扩张与财政稳定之间取得平衡。",
   "starting_deck": [
-    "starter_infrastructure", "starter_infrastructure", "starter_infrastructure",
-    "starter_small_business", "starter_small_business", "starter_small_business",
-    "starter_training", "starter_training", "example_card", "starter_efficiency"
+    "starter_infrastructure", "starter_infrastructure",
+    "starter_small_business", "starter_small_business",
+    "starter_training", "example_card", "starter_efficiency"
   ],
   "indicators": { "gdp": 100, "inflation": 3, "unemployment": 7, "confidence": 50, "interest_rate": 3 },
   "event_pool": ["example_event", "starter_export", "starter_supply"],
