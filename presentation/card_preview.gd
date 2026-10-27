@@ -10,30 +10,23 @@ static func name_label(card: CardDef) -> Label:
 	return label
 
 
-static func rarity_label(card: CardDef, labels: Dictionary) -> Label:
-	var label := Label.new()
-	label.name = "Rarity"
-	label.text = "［%s］" % TextFormatter.rarity_name(labels, card.rarity)
-	label.add_theme_color_override("font_color", UiTheme.rarity_color(card.rarity))
-	return label
-
-
-static func build(details: String, budget: String, political: String, card: CardDef = null, labels: Dictionary = {}) -> Control:
+static func build(details: String, budget: String, political: String, card: CardDef = null, labels: Dictionary = {}, aid: bool = false) -> Control:
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", UiTheme._panel_style(UiTheme.PANEL_BG, UiTheme.PANEL_BORDER, 10, 1, 12))
+	panel.add_theme_stylebox_override("panel", UiTheme._panel_style(UiTheme.PANEL_BG, UiTheme.rarity_color(card.rarity) if card != null else UiTheme.PANEL_BORDER, 10, 2, 12))
 	var content := VBoxContainer.new()
 	panel.add_child(content)
 	content.add_theme_constant_override("separation", 8)
-	var costs := HBoxContainer.new()
-	costs.add_theme_constant_override("separation", 16)
-	costs.add_child(ResourceAmount.create(&"budget", budget))
-	costs.add_child(ResourceAmount.create(&"political", political))
-	content.add_child(costs)
+	if not aid:
+		var costs := HBoxContainer.new()
+		costs.add_theme_constant_override("separation", 16)
+		costs.add_child(ResourceAmount.create(&"budget", budget))
+		costs.add_child(ResourceAmount.create(&"political", political))
+		content.add_child(costs)
 	if card != null:
 		content.add_child(name_label(card))
-		content.add_child(rarity_label(card, labels))
+		content.add_child(ArtAssets.card_picture(card.id, 150))
 		var type_label := Label.new()
-		type_label.text = TextFormatter.card_type_name(labels, card.card_type)
+		type_label.text = "援助" if aid else TextFormatter.card_type_name(labels, card.card_type)
 		type_label.add_theme_color_override("font_color", UiTheme.TEXT)
 		content.add_child(type_label)
 	var description := Label.new()

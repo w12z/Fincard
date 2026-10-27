@@ -1,0 +1,7 @@
+{
+  "id": "ability_reforms", "type": "cards", "display_name": "行政制度",
+  "members": [
+    "reform_emergency_authority", "reform_policy_reserve", "reform_rotation_execution",
+    "reform_project_continuity", "reform_midterm_review", "reform_agenda_reserve"
+  ]
+}

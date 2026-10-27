@@ -19,7 +19,7 @@ func _run() -> void:
 	root.add_child(controller)
 	var labels := controller.labels
 	var card: CardDef = controller.cards[&"arcadia_recover_bank_holiday"]
-	var expected := "• 若 市场信心 < 45：\n    • 市场信心 +14\n  否则：\n    • 市场信心 +6\n• 国内生产总值 -1%（按当前 GDP）"
+	var expected := "• 若 市场信心 < 45：\n    • 市场信心 +10\n  否则：\n    • 市场信心 +4\n• 国内生产总值 -1%"
 	_expect(TextFormatter.effects_text(labels, card.effects) == expected, "Bank holiday must visually separate its branches from the unconditional GDP cost")
 	var nested := Effect.from_dict({"kind": "branch", "params": {
 		"condition": {"indicator": "confidence", "comparator": "gt", "value": 40},

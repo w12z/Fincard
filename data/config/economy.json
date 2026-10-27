@@ -1,6 +1,6 @@
 {
   "coefficients": {
-    "gdp_auto": 0.18,
+    "gdp_auto": 0.1,
     "inflation_target": 2,
     "natural_unemployment": 6
   },

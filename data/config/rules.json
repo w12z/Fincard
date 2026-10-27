@@ -4,6 +4,7 @@
   "card_rarity_weights": { "common": 20, "rare": 5, "legendary": 1 },
   "reward_option_count": 3,
   "card_reward_groups": 2,
+  "aid_capacity": 3,
   "trigger_iteration_limit": 8,
   "political_capital_per_turn": 3,
   "random_event_chance": 0.35,

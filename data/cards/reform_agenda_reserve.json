@@ -1,0 +1,6 @@
+{
+  "id": "reform_agenda_reserve", "display_name": "议程储备制度", "rarity": "rare",
+  "description": "为后续议程预留政治支持。",
+  "card_type": "reform", "cost": 2, "political_cost": 4, "once_per_run": true,
+  "effects": [{ "kind": "apply_modifier", "params": { "scope": "special", "target": "agenda_reserve", "stacks": 1, "duration": -1 } }]
+}

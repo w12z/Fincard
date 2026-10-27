@@ -1,6 +1,12 @@
 {
   "rarities": { "common": "普通", "rare": "稀有", "legendary": "传奇", "special": "特殊" },
   "cards": { "special_national_strategy": "国家发展蓝图" },
+  "special_modifiers": {
+    "executive_mandate": "行政授权", "earmarked_funds": "专项拨款", "policy_synergy": "政策联动",
+    "deficit_spending": "赤字财政", "emergency_authority": "紧急全权授权", "policy_reserve": "政策备忘录",
+    "rotation_execution": "轮值执行", "project_continuity": "重放", "midterm_review": "中期评估",
+    "agenda_reserve": "议程储备", "investment_research": "证券监管", "aid_card_repeat": "存款保险", "replay": "重放"
+  },
   "reward": { "common": "普通出现权重", "rare": "稀有出现权重", "legendary": "传奇出现权重" },
   "card_types": {
     "investment": "投资与援助",
@@ -13,16 +19,23 @@
     "unemployment": "失业率",
     "confidence": "市场信心",
     "interest_rate": "利率",
-    "growth": "经济增长率",
-    "political_capital_gain": "每回合政治点重置加成",
-    "market_protection": "证券监管保护",
-    "bank_protection": "存款保险保护"
+    "growth": "回合经济增长率",
+    "political_capital_gain": "每回合政治点重置加成"
   },
   "statuses": {
-    "executive_mandate": "行政授权：每回合首张牌免政治成本；零政治成本牌与获得前已出的牌均计数",
-    "earmarked_funds": "专项拨款：每回合首张投资与援助预算 -2，最低为 0",
-    "policy_synergy": "政策联动：每回合第三张牌结算后抽 2 张；获得前已出的牌计数，授予此能力的牌不触发",
-    "deficit_spending": "赤字财政：允许预算透支"
+    "executive_mandate": "行政授权：每回合首张牌免政治成本",
+    "earmarked_funds": "专项拨款：每回合首张投资与援助类卡牌预算 -2",
+    "policy_synergy": "政策联动：每回合第三张牌结算后抽 2 张",
+    "deficit_spending": "赤字财政：允许预算透支，预算下限为负的年度收入；回合结束时，信心减少赤字绝对值除以5",
+    "emergency_authority": "紧急全权授权：每回合从手牌打出的第二张牌免预算和政治成本",
+    "policy_reserve": "政策备忘录：回合结束时可保留一张手牌",
+    "rotation_execution": "轮值执行：每回合打出投资与援助、政策、改革三类牌各至少一张后，获得2政治点，每回合一次",
+    "project_continuity": "项目接续：每回合从手牌打出的第一张牌，其效果在下一回合开始时免费再结算一次",
+    "midterm_review": "中期评估：每回合开始抽牌后，可弃掉一张手牌，再抽两张牌",
+    "agenda_reserve": "议程储备：回合结束时最多保留2政治点，下回合重置后加回",
+    "investment_research": "证券监管：每累计从手牌打出4张投资与援助类卡牌，抽1张牌",
+    "aid_card_repeat": "存款保险：每回合首次使用援助后，下一张从手牌打出的卡牌效果结算两次，只支付一次费用",
+    "replay": "重放：下一张从手牌打出的卡牌额外结算一次效果"
   },
   "fiscal": { "annual_income": "年度预算收入", "budget_retention": "跨年预算保留系数" },
   "resources": {
@@ -32,7 +45,7 @@
   "coefficients": {
     "natural_unemployment": "自然失业率",
     "inflation_target": "通胀目标",
-    "gdp_auto": "潜在增长率",
+    "gdp_auto": "潜在回合增长率",
     "infl_anchor": "额外通胀回归",
     "u_revert": "额外就业回归"
   },
@@ -41,6 +54,7 @@
     "turn_ended": "回合结束",
     "run_started": "开局",
     "card_played": "打出卡牌",
+    "card_replayed": "重放卡牌",
     "card_gained": "获得卡牌",
     "cards_drawn": "抽牌",
     "indicator_changed": "指标变化",

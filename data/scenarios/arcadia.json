@@ -3,16 +3,14 @@
   "display_name": "阿卡迪亚联邦 · 危机",
   "description": "阿卡迪亚联邦正处于繁荣顶峰：工厂满负荷开工，股市节节攀升，失业率降至历史低位。繁荣之下，投机、信贷扩张与分配失衡不断积累。两年后，一场金融崩盘将席卷全国。",
   "starting_deck": [
-    "arcadia_recover_tariff",
-    "arcadia_recover_trade",
-    "arcadia_recover_open_market",
-    "arcadia_recover_sec",
-    "arcadia_recover_fdic",
-    "arcadia_reform_austerity",
-    "arcadia_relief_works",
     "arcadia_relief_dole",
-    "arcadia_relief_ccc",
-    "arcadia_relief_farm"
+    "arcadia_relief_dole",
+    "arcadia_reform_austerity",
+    "arcadia_policy_bond_yield",
+    "arcadia_recover_open_market",
+    "policy_emergency_cabinet_meeting",
+    "starter_infrastructure",
+    "starter_small_business"
   ],
   "indicators": {
     "gdp": 128,
@@ -45,15 +43,15 @@
   "economy_overrides": {},
   "annual_income": 40,
   "groups": {
-    "cards": ["arcadia_relief", "arcadia_recovery", "arcadia_reform", "fiscal_reforms", "research_cards", "political_cards"],
+    "cards": ["arcadia_relief", "arcadia_recovery", "arcadia_reform", "fiscal_reforms", "research_cards", "political_cards", "ability_reforms"],
     "cabinets": ["arcadia_cabinets"],
     "aids": ["arcadia_aids", "fiscal_aids"],
     "events": ["arcadia_events"]
   },
   "goal": {
-    "description": "六年内实现 GDP ≥ 210、失业率 ≤ 6、信心 ≥ 45；最早在第四财年获胜。",
+    "description": "六年内实现 GDP ≥ 210、失业率 ≤ 6、信心 ≥ 45；最早在第四财年结束时获胜。",
     "deadline_years": 6,
-    "after_turn": 24,
+    "after_turn": 31,
     "conditions": [
       { "indicator": "unemployment", "comparator": "le", "value": 6 },
       { "indicator": "gdp", "comparator": "ge", "value": 210 },

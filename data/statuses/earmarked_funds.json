@@ -2,7 +2,7 @@
   "id": "earmarked_funds",
   "display_name": "专项拨款",
   "icon": "补",
-  "description": "每回合首张投资与援助类卡牌的预算成本 -2，最低为 0。同名能力不叠加。",
+  "description": "每回合首张投资与援助类卡牌预算成本 -2。",
   "rule": "first_investment_discount",
   "amount": 2
 }

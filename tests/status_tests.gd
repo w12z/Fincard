@@ -29,7 +29,7 @@ func _prepare() -> Simulation:
 
 
 func _grant(sim: Simulation, id: StringName) -> void:
-	sim.resolver.resolve(Effect.from_dict({"kind": "grant_status", "params": {"status": id}}), sim.state, sim.rng)
+	sim.resolver.resolve(Effect.from_dict({"kind": "apply_modifier", "params": {"scope": "special", "target": id, "duration": -1, "stacks": 1}}), sim.state, sim.rng)
 
 
 func _run() -> void:
@@ -51,7 +51,7 @@ func _test_mandate() -> void:
 	var sim := _prepare()
 	sim.state.hand.assign([&"reform_executive_mandate", &"starter_infrastructure"])
 	sim.apply_command(Command.play_card(&"reform_executive_mandate"))
-	_expect(sim.state.statuses.has(&"executive_mandate"), "Reform must grant its permanent ability")
+	_expect(StatusRules.find_modifier(sim.state, &"executive_mandate") != null, "Reform must grant its permanent modifier")
 	_expect(sim.state.budget == 46 and sim.state.political_capital == 17, "The reform itself must pay its full cost")
 	_expect(sim.card_costs(&"starter_infrastructure")["political"] == 2, "Unlocking ability must not reset first-card tracking")
 	_expect(not sim._reward_available(Reward.Type.CARD, &"reform_executive_mandate"), "Ability law must stay exhausted")
@@ -76,7 +76,7 @@ func _test_mandate() -> void:
 	_expect(sim.card_costs(&"starter_infrastructure")["political"] == 2, "Second card must have normal political cost")
 	_expect(sim.apply_command(Command.play_card(&"starter_infrastructure")).is_empty(), "Second card cannot bypass insufficient points")
 	_grant(sim, &"executive_mandate")
-	_expect(sim.state.statuses.size() == 1, "Duplicate status grants must not stack or reset uses")
+	_expect(StatusRules.active_modifiers(sim.state).size() == 1, "Duplicate nonstacking modifiers must not reset uses")
 	# A card whose printed cost is zero still counts as the first card.
 	sim.apply_command(Command.end_turn())
 	var zero := CardDef.from_dict({"id": "test_zero", "card_type": "policy", "cost": 0, "political_cost": 0})
@@ -89,9 +89,9 @@ func _test_mandate() -> void:
 	sim.state.turn_in_year = int(sim.rules["turns_per_year"])
 	sim.apply_command(Command.end_turn())
 	sim.apply_command(Command.choose_reward([]))
-	_expect(sim.state.cards_played_this_turn == 0 and sim.state.statuses.has(&"executive_mandate"), "Ability must persist across years and refresh each month")
+	_expect(sim.state.cards_played_this_turn == 0 and StatusRules.find_modifier(sim.state, &"executive_mandate") != null, "Ability must persist across years and refresh each turn")
 	_prepare()
-	_expect(sim.state.statuses.is_empty(), "Starting a new run must clear all abilities")
+	_expect(StatusRules.active_modifiers(sim.state).is_empty(), "Starting a new run must clear all special modifiers")
 
 
 func _test_discount() -> void:
@@ -147,7 +147,7 @@ func _test_synergy() -> void:
 	sim.apply_command(Command.play_card(&"starter_training"))
 	sim.apply_command(Command.play_card(&"reform_policy_synergy"))
 	_expect(sim.state.hand.is_empty(), "Ability-granting card must not retroactively trigger its own third-card effect")
-	_expect(StatusRules.progress(controller.statuses[&"policy_synergy"], sim.state) == "下回合可触发", "Badge must not claim a trigger that never occurred")
+	_expect(int(StatusRules.find_modifier(sim.state, &"policy_synergy").data.get("triggered_turn", -1)) != sim.state.turn, "An acquired modifier must not record a trigger that never occurred")
 
 
 func _test_ui() -> void:
@@ -178,6 +178,11 @@ func _test_ui() -> void:
 		_expect(root.get_texture().get_image().save_png(capture_directory.path_join("fincard-status-abilities.png")) == OK, "Ability screenshot must save")
 	ui._dispatch(Command.play_card(&"starter_small_business"))
 	icons = ui._effect_icons
-	_expect("0/1" in icons.get_child(1).text and "0/1" in icons.get_child(2).text, "Badges must update after consuming an opportunity")
+	var consumed := 0
+	for icon in icons.get_children():
+		if icon.get_meta("effect_key") in ["special:executive_mandate", "special:earmarked_funds"]:
+			_expect(icon.text.is_empty() and "0/1" in icon.tooltip_text, "Uses are visible on hover, not on the icon")
+			consumed += 1
+	_expect(consumed == 2, "Both cost modifiers update their hover details")
 	_expect(ui._hand_box.get_child(0).disabled, "UI must restore normal costs after the first play")
 	ui.free()

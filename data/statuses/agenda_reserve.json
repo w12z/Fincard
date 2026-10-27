@@ -1,0 +1,5 @@
+{
+  "id": "agenda_reserve", "display_name": "议程储备", "icon": "存",
+  "description": "回合结束时，最多保留2政治点，在下一回合政治点重置后加回。",
+  "rule": "save_political", "amount": 2, "start_next_turn": true
+}

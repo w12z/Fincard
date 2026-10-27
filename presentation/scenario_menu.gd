@@ -73,7 +73,7 @@ func _country_card(scenario: ScenarioDef) -> Button:
 	goal.custom_minimum_size.x = 220
 	goal.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(goal)
-	content.add_child(_label("%d 年任期    ·    %d 张初始牌    ·    查看国家档案 →" % [scenario.goal.deadline_years, scenario.starting_deck.size()], 15, UiTheme.ACCENT_DARK))
+	content.add_child(_label("%d 年任期    ·    %d 张初始牌" % [scenario.goal.deadline_years, scenario.starting_deck.size()], 15, UiTheme.ACCENT_DARK))
 	_ignore_mouse(margin)
 	button.pressed.connect(func() -> void: country_selected.emit(scenario.id))
 	return button

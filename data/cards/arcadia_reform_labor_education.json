@@ -1,0 +1,14 @@
+{
+  "id": "arcadia_reform_labor_education",
+  "display_name": "免费劳工教育",
+  "description": "为劳工提供免费的职业教育。",
+  "card_type": "reform",
+  "rarity": "rare",
+  "once_per_run": true,
+  "cost": 3,
+  "political_cost": 3,
+  "effects": [
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "natural_unemployment", "op": "add", "value": -0.5, "duration": -1, "source": "免费劳工教育" } },
+    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -2 } }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "id": "replay", "display_name": "重放", "icon": "repeat",
+  "description": "下一张从手牌打出的卡牌额外结算一次效果，然后消耗此修正。",
+  "rule": "repeat_next_card", "stackable": true
+}

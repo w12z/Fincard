@@ -19,7 +19,7 @@ func setup(cabinet: CabinetDef, labels: Dictionary) -> void:
 		var style: StyleBoxFlat = portrait_theme.get_stylebox(state, "CabinetPortrait").duplicate()
 		style.border_color = UiTheme.rarity_color(rarity)
 		add_theme_stylebox_override(state, style)
-	var lines := PackedStringArray([cabinet.display_name, cabinet.description])
+	var lines := PackedStringArray([cabinet.display_name])
 	for effect in cabinet.modifiers:
 		lines.append("· " + TextFormatter.effect_text(labels, effect))
 	for trigger in cabinet.triggers:

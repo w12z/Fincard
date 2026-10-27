@@ -1,6 +1,6 @@
 {
   "id": "arcadia_aid_fireside", "display_name": "炉边谈话",
-  "description": "市场信心 +7。可使用 2 次。",
+  "description": "市场信心 +7。",
   "uses": 2,
   "effects": [ { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 7 } } ]
 }

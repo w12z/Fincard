@@ -3,5 +3,5 @@
   "id": "reform_deficit_spending", "display_name": "赤字财政改革",
   "description": "重新划定政府财政支出的制度边界。", "card_type": "reform",
   "cost": 0, "political_cost": 4, "once_per_run": true,
-  "effects": [{ "kind": "grant_status", "params": { "status": "deficit_spending" } }]
+  "effects": [{ "kind": "apply_modifier", "params": { "scope": "special", "target": "deficit_spending", "stacks": 1, "duration": -1 } }]
 }

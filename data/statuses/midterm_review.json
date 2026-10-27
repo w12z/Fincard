@@ -1,0 +1,5 @@
+{
+  "id": "midterm_review", "display_name": "中期评估", "icon": "评",
+  "description": "每回合开始抽牌后，可以弃掉一张手牌，再抽两张牌。",
+  "rule": "start_turn_review", "start_next_turn": true
+}

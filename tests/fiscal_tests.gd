@@ -108,7 +108,7 @@ func _run() -> void:
 	_expect(sim.annual_income() == 47 and sim.state.budget == 29, "Temporary support affects future payments, not current cash")
 	for i in 12:
 		sim._advance_modifiers()
-	_expect(sim.annual_income() == 47, "Fiscal support must not expire monthly")
+	_expect(sim.annual_income() == 47, "Fiscal support must not expire per turn")
 	sim.state.budget = 0
 	_next_year(sim)
 	_expect(sim.state.budget == 47 and sim.annual_income() == 47, "First temporary income payment")
@@ -132,7 +132,7 @@ func _run() -> void:
 	sim._fire_event(&"starter_supply")
 	sim.apply_command(Command.resolve_event(1))
 	_expect(sim.state.pending_event == &"", "Free option cannot trap a player in deficit")
-	_play(sim, &"arcadia_recover_tariff")
+	_play(sim, &"arcadia_reform_austerity")
 	_expect(sim.state.budget == -3, "Zero-budget income cards remain usable in deficit")
 	sim.state.hand.assign([&"starter_infrastructure"])
 	sim.state.political_capital = 0

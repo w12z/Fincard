@@ -1,0 +1,12 @@
+{
+  "id": "policy_emergency_cabinet_meeting",
+  "display_name": "内阁紧急会议",
+  "description": "召集内阁商议紧急政策。",
+  "card_type": "policy",
+  "rarity": "common",
+  "cost": 0,
+  "political_cost": 2,
+  "effects": [
+    { "kind": "draw_cards", "params": { "count": 2 } }
+  ]
+}

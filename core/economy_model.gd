@@ -24,11 +24,11 @@ func coefficient(state: GameState, key: StringName) -> float:
 			continue
 		match modifier.op:
 			Modifier.Op.ADD:
-				value += modifier.value
+				value += modifier.effective_value()
 			Modifier.Op.MUL:
-				value *= modifier.value
+				value *= modifier.effective_value()
 			Modifier.Op.OVERRIDE:
-				value = modifier.value
+				value = modifier.effective_value()
 	return value
 
 
@@ -123,11 +123,11 @@ func value(state: GameState, id: StringName) -> float:
 			continue
 		match modifier.op:
 			Modifier.Op.ADD:
-				result += modifier.value
+				result += modifier.effective_value()
 			Modifier.Op.MUL:
-				result *= modifier.value
+				result *= modifier.effective_value()
 			Modifier.Op.OVERRIDE:
-				result = modifier.value
+				result = modifier.effective_value()
 	var pair: Array = bounds.get(id, [])
 	if pair.size() == 2:
 		result = clampf(result, float(pair[0]), float(pair[1]))

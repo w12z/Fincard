@@ -7,6 +7,8 @@ var description: String
 var icon: String
 var rule: StringName
 var amount: int
+var start_next_turn: bool = false
+var stackable: bool = false
 
 
 static func from_dict(data: Dictionary) -> StatusDef:
@@ -17,4 +19,6 @@ static func from_dict(data: Dictionary) -> StatusDef:
 	status.icon = data.get("icon", "★")
 	status.rule = StringName(data.get("rule", ""))
 	status.amount = int(data.get("amount", 1))
+	status.start_next_turn = bool(data.get("start_next_turn", false))
+	status.stackable = bool(data.get("stackable", false))
 	return status

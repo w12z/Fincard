@@ -43,12 +43,15 @@ func _run() -> void:
 	ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(ui)
 	ui.setup(controller, &"example_country")
+	ui._reward_group_index = 0
+	ui._overlay_signature = GameUI.UNSET_SIGNATURE
+	ui._render_overlay()
 	var rewards_checked := 0
-	for choice in ui._overlay_box.get_children():
-		if choice is CardPreview.RewardChoice and choice.is_card:
-			_check_preview(choice, choice.preview_budget, choice.preview_political)
+	for choice in ui._overlay_box.get_child(1).get_children():
+		if choice is CardButton:
+			_expect(choice.tooltip_text.is_empty() and choice._make_custom_tooltip("") == null, "Reward cards must not repeat their visible details in a hover preview")
 			rewards_checked += 1
-	_expect(rewards_checked > 0, "Annual card choices include cost previews")
+	_expect(rewards_checked > 0, "Annual card choices expose full card faces without hover previews")
 	ui._dispatch(Command.choose_reward([]))
 	var sim := controller.simulation
 	sim.resolver.resolve(Effect.from_dict({"kind": "grant_status", "params": {"status": "earmarked_funds"}}), sim.state, sim.rng)

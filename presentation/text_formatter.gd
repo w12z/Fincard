@@ -19,12 +19,14 @@ static func coefficient(labels: Dictionary, id: StringName) -> String:
 
 
 static func modifier_target(labels: Dictionary, scope: StringName, id: StringName) -> String:
+	if scope == Modifier.SCOPE_SPECIAL:
+		return _lookup(labels, "special_modifiers", id)
 	if scope == Modifier.SCOPE_REWARD:
 		return _lookup(labels, "reward", id)
 	if scope == Modifier.SCOPE_FISCAL:
 		return _lookup(labels, "fiscal", id)
 	if scope == Modifier.SCOPE_COEFFICIENT:
-		return "系数·%s" % coefficient(labels, id)
+		return coefficient(labels, id)
 	return indicator(labels, id)
 
 
@@ -101,12 +103,15 @@ static func _effect_body(labels: Dictionary, effect: Effect) -> String:
 	match effect.kind:
 		Effect.Kind.ADJUST_INDICATOR:
 			if bool(params.get("percent", false)):
-				return "%s %s%%（按当前 GDP）" % [indicator(labels, StringName(params.get("target", ""))), signed(float(params.get("amount", 0.0)))]
+				return "%s %s%%" % [indicator(labels, StringName(params.get("target", ""))), signed(float(params.get("amount", 0.0)))]
 			return "%s %s" % [
 				indicator(labels, StringName(params.get("target", ""))),
 				signed(float(params.get("amount", 0.0))),
 			]
 		Effect.Kind.APPLY_MODIFIER:
+			if params.get("scope", "indicator") == "special":
+				var id := StringName(params.get("target", ""))
+				return "【永久修正】" + _lookup(labels, "statuses", id) if int(params.get("duration", -1)) < 0 else "%d 回合内 %s ×%d" % [int(params.get("duration", 1)), modifier_target(labels, Modifier.SCOPE_SPECIAL, id), int(params.get("stacks", 1))]
 			var target := modifier_target(labels, StringName(params.get("scope", "indicator")), StringName(params.get("target", "")))
 			var duration := int(params.get("duration", 0))
 			var window := "永久" if duration < 0 else "%d 回合内" % duration

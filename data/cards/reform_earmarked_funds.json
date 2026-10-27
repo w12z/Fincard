@@ -1,8 +1,8 @@
 {
-  "rarity": "legendary",
+  "rarity": "rare",
   "id": "reform_earmarked_funds",
   "display_name": "专项发展基金",
   "description": "设立专门支持发展项目的拨款基金。",
   "card_type": "reform", "cost": 4, "political_cost": 2, "once_per_run": true,
-  "effects": [ { "kind": "grant_status", "params": { "status": "earmarked_funds" } } ]
+  "effects": [ { "kind": "apply_modifier", "params": { "scope": "special", "target": "earmarked_funds", "stacks": 1, "duration": -1 } } ]
 }

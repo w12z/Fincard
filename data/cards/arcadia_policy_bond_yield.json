@@ -4,6 +4,6 @@
   "description": "以更具吸引力的国债回报收紧融资条件。",
   "card_type": "policy", "cost": 1, "political_cost": 1,
   "effects": [
-    { "kind": "apply_modifier", "params": { "target": "interest_rate", "op": "add", "value": 2, "duration": 4, "source": "国债收益率" } }
+    { "kind": "apply_modifier", "params": { "target": "interest_rate", "op": "add", "value": 1, "duration": 2, "source": "国债收益率" } }
   ]
 }

@@ -1,7 +1,7 @@
 {
   "rarity": "rare",
   "id": "arcadia_cab_interior", "display_name": "内政部长",
-  "description": "推动地方建设，每月 GDP +0.15%。",
+  "description": "推动地方建设，每回合结束时 GDP +0.15%。",
   "modifiers": [],
   "triggers": [
     { "on": "turn_ended", "effects": [

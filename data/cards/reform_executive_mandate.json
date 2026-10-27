@@ -1,8 +1,8 @@
 {
-  "rarity": "legendary",
+  "rarity": "rare",
   "id": "reform_executive_mandate",
   "display_name": "行政授权法",
   "description": "简化政策审批，明确行政部门的决策权限。",
   "card_type": "reform", "cost": 4, "political_cost": 3, "once_per_run": true,
-  "effects": [ { "kind": "grant_status", "params": { "status": "executive_mandate" } } ]
+  "effects": [ { "kind": "apply_modifier", "params": { "scope": "special", "target": "executive_mandate", "stacks": 1, "duration": -1 } } ]
 }

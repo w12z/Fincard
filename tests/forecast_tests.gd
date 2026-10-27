@@ -49,7 +49,7 @@ func _assert_prediction(sim: Simulation) -> void:
 		sim.apply_command(Command.choose_reward([]))
 	for id in sim.economy.indicator_ids + sim.economy.derived_ids:
 		_expect(is_equal_approx(sim.economy.value(next, id), sim.economy.value(sim.state, id)), "Forecast must match actual next-turn effective value: %s" % id)
-	_expect(next.budget == sim.state.budget and next.political_capital == sim.state.political_capital, "Forecast includes actual monthly and annual resource transitions")
+	_expect(next.budget == sim.state.budget and next.political_capital == sim.state.political_capital, "Forecast includes actual per-turn and annual resource transitions")
 	_expect(next.run_status == sim.state.run_status, "Forecast respects victory, loss and deadline checks")
 
 
@@ -118,7 +118,7 @@ func _test_parameters() -> void:
 	for key in ["fiscal:annual_income", "fiscal:budget_retention", "reward:common", "reward:rare", "reward:legendary"]:
 		_expect(not seen.has(key), "Unmodified fiscal/reward parameters do not occupy baseline effect slots")
 	var formula := EconomyForecast.formulas(sim)
-	_expect("0.36" in formula and "0.04 ×" in formula, "Formula substitutions include actual modified base and acquired extra parameters")
+	_expect("0.2" in formula and "0.04 ×" in formula, "Formula substitutions include actual modified base and acquired extra parameters")
 
 
 func _settle() -> void:

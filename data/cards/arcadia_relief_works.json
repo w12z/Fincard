@@ -4,6 +4,7 @@
   "description": "组织失业者参与公共设施建设。",
   "card_type": "investment", "cost": 5, "political_cost": 2,
   "effects": [
-    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.8, "duration": 3, "source": "公共工程" } }
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.6, "duration": 3, "source": "公共工程" } },
+    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -1 } }
   ]
 }

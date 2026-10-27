@@ -1,13 +1,9 @@
 {
   "id": "arcadia_ev_bank_run", "title": "银行挤兑", "min_turn": 25, "cooldown": 8,
-  "description": "储户排队提款。存款保险可降低担保成本。",
+  "description": "储户排队提款。",
   "choices": [
     { "label": "提供公共担保", "effects": [
-      { "kind": "branch", "params": {
-        "condition": { "indicator": "bank_protection", "comparator": "ge", "value": 1 },
-        "then": [ { "kind": "gain_budget", "params": { "amount": -1 } } ],
-        "else": [ { "kind": "gain_budget", "params": { "amount": -3 } } ]
-      } },
+      { "kind": "gain_budget", "params": { "amount": -3 } },
       { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 3 } }
     ] },
     { "label": "由市场自行清算", "effects": [

@@ -1,6 +1,6 @@
 {
   "id": "arcadia_ev_speculation", "title": "股市投机狂热", "max_turn": 23, "cooldown": 6,
-  "description": "保证金账户迅速增长，借贷炒股盛行。投机推高短期产出，却让市场在未来六个月更加脆弱。",
+  "description": "保证金账户迅速增长，借贷炒股盛行。",
   "choices": [
     { "label": "收紧保证金监管", "effects": [
       { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -2 } },
@@ -9,7 +9,7 @@
     { "label": "放任繁荣", "effects": [
       { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": 1.5, "percent": true } },
       { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": 0.8 } },
-      { "kind": "apply_modifier", "params": { "target": "confidence", "op": "add", "value": -4, "duration": 6, "source": "投机脆弱性" } }
+      { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -4 } }
     ] }
   ]
 }

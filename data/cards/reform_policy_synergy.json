@@ -1,8 +1,8 @@
 {
-  "rarity": "legendary",
+  "rarity": "rare",
   "id": "reform_policy_synergy",
   "display_name": "跨部门协调机制",
   "description": "打通部门之间的信息与执行壁垒。",
   "card_type": "reform", "cost": 2, "political_cost": 2, "once_per_run": true,
-  "effects": [ { "kind": "grant_status", "params": { "status": "policy_synergy" } } ]
+  "effects": [ { "kind": "apply_modifier", "params": { "scope": "special", "target": "policy_synergy", "stacks": 1, "duration": -1 } } ]
 }

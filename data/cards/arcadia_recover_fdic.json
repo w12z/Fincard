@@ -2,9 +2,9 @@
   "rarity": "rare",
   "id": "arcadia_recover_fdic", "display_name": "联邦存款保险",
   "description": "为储户建立统一的存款保障制度。",
-  "card_type": "reform", "once_per_run": true, "cost": 4, "political_cost": 3,
+  "card_type": "reform", "once_per_run": true, "cost": 2, "political_cost": 2,
   "effects": [
-    { "kind": "apply_modifier", "params": { "target": "confidence", "op": "add", "value": 3, "duration": -1, "source": "存款保险" } },
-    { "kind": "apply_modifier", "params": { "target": "bank_protection", "op": "override", "value": 1, "duration": -1, "source": "存款保险" } }
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 3 } },
+    { "kind": "apply_modifier", "params": { "scope": "special", "target": "aid_card_repeat", "stacks": 1, "duration": -1 } }
   ]
 }

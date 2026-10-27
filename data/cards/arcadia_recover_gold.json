@@ -4,6 +4,7 @@
   "description": "解除货币与黄金储备之间的约束。",
   "card_type": "policy", "once_per_run": true, "cost": 3, "political_cost": 3,
   "effects": [
-    { "kind": "adjust_indicator", "params": { "target": "interest_rate", "amount": -2 } }
+    { "kind": "apply_modifier", "params": { "target": "interest_rate", "op": "add", "value": -3, "duration": -1, "source": "脱离金本位" } },
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -10 } }
   ]
 }

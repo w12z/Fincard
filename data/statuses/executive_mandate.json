@@ -2,7 +2,7 @@
   "id": "executive_mandate",
   "display_name": "行政授权",
   "icon": "免",
-  "description": "每回合首张牌的政治成本为 0。原政治成本为 0 的牌也计为首张。获得前本回合已打出的牌计入张数。同名能力不叠加。",
+  "description": "每回合首张牌免政治成本。",
   "rule": "first_card_political_free",
   "amount": 1
 }

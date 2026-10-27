@@ -1,9 +1,9 @@
 {
   "rarity": "common",
-  "id": "arcadia_recover_open_market", "display_name": "公开市场操作",
-  "description": "由中央银行在公开市场买入证券。",
+  "id": "arcadia_recover_open_market", "display_name": "官方认购国债",
+  "description": "由中央银行认购国债，向市场提供流动性。",
   "card_type": "policy", "cost": 2, "political_cost": 1,
   "effects": [
-    { "kind": "apply_modifier", "params": { "target": "interest_rate", "op": "add", "value": -2, "duration": 4, "source": "公开市场操作" } }
+    { "kind": "apply_modifier", "params": { "target": "interest_rate", "op": "add", "value": -1, "duration": 2, "source": "官方认购国债" } }
   ]
 }

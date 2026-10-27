@@ -1,0 +1,5 @@
+{
+  "id": "policy_reserve", "display_name": "政策备忘录", "icon": "留",
+  "description": "回合结束时，可以选择一张手牌保留到下回合。",
+  "rule": "retain_card"
+}

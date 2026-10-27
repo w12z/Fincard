@@ -2,7 +2,7 @@
   "id": "policy_synergy",
   "display_name": "政策联动",
   "icon": "连",
-  "description": "每回合第三张牌结算后，抽 2 张牌。获得前本回合已打出的牌计入张数，获得此能力的牌不触发此效果。同名能力不叠加。",
+  "description": "每回合第三张牌结算后抽 2 张牌。",
   "rule": "third_card_draw",
   "amount": 2
 }

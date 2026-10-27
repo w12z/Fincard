@@ -14,7 +14,7 @@
   "economy_overrides": {},
   "annual_income": 32,
   "groups": {
-    "cards": ["example_card_group", "fiscal_reforms", "research_cards", "political_cards"], "cabinets": ["example_cabinet_group"],
+    "cards": ["example_card_group", "fiscal_reforms", "research_cards", "political_cards", "ability_reforms"], "cabinets": ["example_cabinet_group"],
     "aids": ["example_aid_group", "fiscal_aids"], "events": ["example_event_group"]
   },
   "goal": {

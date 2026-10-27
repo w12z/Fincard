@@ -25,14 +25,7 @@ func resolve(effect: Effect, state: GameState, rng: Rng) -> Array[Event]:
 		Effect.Kind.BRANCH:
 			return _resolve_branch(effect.params, state, rng)
 		Effect.Kind.GRANT_STATUS:
-			var id := StringName(effect.params.get("status", ""))
-			if not status_db.has(id):
-				push_error("Unknown status: %s" % id)
-				return []
-			if state.statuses.has(id):
-				return []
-			state.statuses.append(id)
-			return [Event.new(Event.Kind.STATUS_GAINED, {"status": id})]
+			return _apply_modifier({"scope": "special", "target": effect.params.get("status", ""), "duration": -1, "stacks": 1}, state)
 		Effect.Kind.GAIN_CARD:
 			var id := StringName(effect.params.get("card", ""))
 			var card: CardDef = card_db.get(id)
@@ -75,6 +68,29 @@ func _apply_modifier(params: Dictionary, state: GameState) -> Array[Event]:
 		StringName(params.get("source", "")),
 		StringName(params.get("scope", "indicator"))
 	)
+	modifier.stacks = maxi(1, int(params.get("stacks", 1)))
+	if modifier.scope == Modifier.SCOPE_SPECIAL:
+		var definition: StatusDef = status_db.get(modifier.target)
+		modifier.rule = StringName(params.get("rule", definition.rule if definition != null else ""))
+		modifier.amount = int(params.get("amount", definition.amount if definition != null else 1))
+		modifier.data = params.get("data", {}).duplicate(true)
+		modifier.ready_turn = state.turn + (1 if definition != null and definition.start_next_turn else 0)
+		if modifier.source == &"" and definition != null:
+			modifier.source = StringName(definition.display_name)
+		if modifier.rule == &"":
+			push_error("Unknown special modifier: %s" % modifier.target)
+			return []
+		for existing in state.modifiers:
+			if existing.scope != Modifier.SCOPE_SPECIAL or existing.target != modifier.target or existing.is_expired():
+				continue
+			if definition == null or definition.stackable:
+				existing.stacks += modifier.stacks
+				if modifier.is_permanent():
+					existing.remaining_turns = -1
+				elif not existing.is_permanent():
+					existing.remaining_turns = maxi(existing.remaining_turns, modifier.remaining_turns)
+				return [Event.new(Event.Kind.MODIFIER_APPLIED, {"target": existing.target, "scope": existing.scope, "op": existing.op, "source": existing.source})]
+			return []
 	state.modifiers.append(modifier)
 	return [Event.new(Event.Kind.MODIFIER_APPLIED, {
 		"target": modifier.target,

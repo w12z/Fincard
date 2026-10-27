@@ -13,11 +13,14 @@ func process(events: Array[Event], state: GameState, resolver: EffectResolver, r
 		iterations += 1
 		var next: Array[Event] = []
 		for event in queue:
-			for cabinet in state.cabinets:
-				for trigger in cabinet.triggers:
-					if trigger.on_kind != event.kind:
-						continue
-					for effect in trigger.effects:
+			for modifier in state.modifiers.duplicate():
+				if modifier.scope != Modifier.SCOPE_SPECIAL or modifier.rule != &"event_effects" or not modifier.is_active(state.turn):
+					continue
+				if int(modifier.data.get("on_kind", -1)) != event.kind:
+					continue
+				for layer in modifier.stacks:
+					for raw in modifier.data.get("effects", []):
+						var effect: Effect = raw if raw is Effect else Effect.from_dict(raw)
 						next.append_array(resolver.resolve(effect, state, rng))
 		all.append_array(next)
 		queue = next

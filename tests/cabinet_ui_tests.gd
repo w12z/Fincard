@@ -44,20 +44,17 @@ func _run() -> void:
 	_expect(ui._cabinets_box.get_child(0) is Label, "Empty cabinet must show a compact placeholder")
 	await _settle()
 	var candidates: Array[CabinetPortrait] = []
+	ui._reward_group_index = _cabinet_group(controller.simulation.state)
+	ui._overlay_signature = GameUI.UNSET_SIGNATURE
+	ui._render_overlay()
 	_find_portraits(ui._overlay_box, candidates)
 	_expect(not candidates.is_empty(), "Cabinet reward options need portraits")
-	for candidate in candidates:
-		var check: CheckBox = candidate.get_parent().get_child(1)
-		candidate.pressed.emit()
-		_expect(check.button_pressed, "Clicking a candidate portrait must select that cabinet")
-		var group_index := _cabinet_group(controller.simulation.state)
-		_expect(ui._reward_selection.has(group_index), "Portrait selection must update the reward command")
-		if ui._reward_selection.has(group_index):
-			var selected: Reward = controller.simulation.state.pending_rewards[group_index]["options"][ui._reward_selection[group_index]]
-			_expect(selected.id == candidate.cabinet_id, "Every portrait must select its own candidate")
 	await _capture("fincard-cabinet-rewards.png")
-	ui._confirm_rewards()
-	_expect(controller.simulation.state.cabinets.size() == 1, "Confirmed portrait choice must appoint a cabinet")
+	if not candidates.is_empty():
+		var selected_id := candidates[0].cabinet_id
+		candidates[0].pressed.emit()
+		_expect(controller.simulation.state.cabinets.size() == 1 and controller.simulation.state.cabinets[0].id == selected_id, "Clicking a portrait immediately appoints that candidate")
+	ui._dispatch(Command.choose_reward([]))
 	for cabinet: CabinetDef in controller.cabinets.values():
 		if not controller.simulation.state.cabinets.has(cabinet):
 			controller.simulation._appoint_cabinet(cabinet.id)
@@ -73,7 +70,7 @@ func _run() -> void:
 		_expect(badge.portrait.texture != null, "Cabinet portrait asset missing: %s" % cabinet.id)
 		if badge.portrait.texture != null:
 			paths[badge.portrait.texture.resource_path] = true
-		_expect(cabinet.display_name in badge.tooltip_text and cabinet.description in badge.tooltip_text, "Hover must include the cabinet identity and description")
+		_expect(cabinet.display_name in badge.tooltip_text, "Hover must include the cabinet identity")
 		for effect in cabinet.modifiers:
 			_expect(TextFormatter.effect_text(controller.labels, effect) in badge.tooltip_text, "Hover must include passive effects")
 		for trigger in cabinet.triggers:

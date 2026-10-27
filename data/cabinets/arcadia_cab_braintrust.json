@@ -1,11 +1,10 @@
 {
   "rarity": "legendary",
   "id": "arcadia_cab_braintrust", "display_name": "智囊团首席顾问",
-  "description": "潜在月增长率 +0.1，市场信心 +2，卡牌与内阁的稀有出现权重 +5。任命时获得特殊卡「国家发展蓝图」。",
+  "description": "潜在回合增长率 +0.1，任命时市场信心 +2，稀有出现权重 +5。",
   "modifiers": [
     { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.1, "duration": -1, "source": "智囊团" } },
-    { "kind": "apply_modifier", "params": { "target": "confidence", "op": "add", "value": 2, "duration": -1, "source": "智囊团" } },
-    { "kind": "apply_modifier", "params": { "scope": "reward", "target": "rare", "value": 5, "duration": -1, "source": "智囊团" } },
-    { "kind": "gain_card", "params": { "card": "special_national_strategy" } }
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 2 } },
+    { "kind": "apply_modifier", "params": { "scope": "reward", "target": "rare", "value": 5, "duration": -1, "source": "智囊团" } }
   ], "triggers": []
 }

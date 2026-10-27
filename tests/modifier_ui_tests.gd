@@ -47,7 +47,8 @@ func _run() -> void:
 		Modifier.new(&"interest_rate", Modifier.Op.ADD, -100, 1, &"来源己"),
 	]
 	sim.state.modifiers.assign(modifiers)
-	sim.state.statuses.assign([&"deficit_spending", &"executive_mandate"])
+	for id in [&"deficit_spending", &"executive_mandate"]:
+		sim.resolver.resolve(Effect.from_dict({"kind": "apply_modifier", "params": {"scope": "special", "target": id, "duration": -1}}), sim.state, sim.rng)
 	var entries := ModifierDisplay.entries(sim, controller.labels)
 	_expect(entries.size() == sim.economy.base_coefficients.size() + 4, "Three base parameters plus acquired effects share one entry list")
 	var growth := _entry(entries, "coefficient:gdp_auto")
@@ -58,7 +59,7 @@ func _run() -> void:
 	_expect(_entry(entries, "indicator:interest_rate")["counter"] == "-3", "Display uses clamped effective result, not sum of raw values")
 	for entry in entries:
 		_expect(not "来源" in entry["tooltip"], "Merged tooltips must not list sources")
-	_expect(modifiers[1].remaining_turns == 2 and sim.state.modifiers.size() == 6, "Display cannot modify simulation stacks or durations")
+	_expect(modifiers[1].remaining_turns == 2 and sim.state.modifiers.size() == 8, "Display cannot modify the unified modifier stack or durations")
 	# Mixed operations preserve simulation order instead of summing incompatible values.
 	sim.state.modifiers.assign([
 		Modifier.new(&"gdp_auto", Modifier.Op.ADD, 0.2, -1, &"", &"coefficient"),
@@ -67,9 +68,11 @@ func _run() -> void:
 		Modifier.new(&"gdp_auto", Modifier.Op.ADD, 0.3, -1, &"", &"coefficient"),
 	])
 	var mixed := _entry(ModifierDisplay.entries(sim, controller.labels), "coefficient:gdp_auto")
-	_expect(mixed["counter"] == "+1.12", "Add, multiply, override and subsequent add use actual operation order")
-	_expect("1 回合后：合计 +0.88" in mixed["tooltip"], "Expiry recomputes remaining operations in order")
+	_expect(mixed["counter"] == "+1.2", "Add, multiply, override and subsequent add use actual operation order")
+	_expect("1 回合后：合计 +0.8" in mixed["tooltip"], "Expiry recomputes remaining operations in order")
 	sim.state.modifiers.assign(modifiers)
+	for id in [&"deficit_spending", &"executive_mandate"]:
+		sim.resolver.resolve(Effect.from_dict({"kind": "apply_modifier", "params": {"scope": "special", "target": id, "duration": -1}}), sim.state, sim.rng)
 	ui._render()
 	for i in 5:
 		await process_frame
@@ -83,14 +86,14 @@ func _run() -> void:
 	var original_color: Color = ui._effect_icons.get_child(0).get_theme_color("font_color")
 	sim.state.modifiers.reverse()
 	ui._render()
-	_expect(ui._effect_icons.get_child(0).get_meta("effect_key") == "indicator:interest_rate", "First occurrence defines stable group order")
+	_expect(ui._effect_icons.get_child(0).get_meta("effect_key") == "special:executive_mandate", "First occurrence defines stable order for numeric and special modifiers together")
 	_expect(ui._effect_icons.get_child(0).get_theme_color("font_color") == original_color, "Changing type at the same index keeps the color")
 	sim.state.modifiers.assign(modifiers)
 	sim._advance_modifiers()
 	sim._advance_modifiers()
 	var after := ModifierDisplay.entries(sim, controller.labels)
 	_expect(_entry(after, "coefficient:gdp_auto")["counter"] == "+0.3", "Expired temporary contribution disappears while permanent contribution stays")
-	_expect(_entry(after, "fiscal:annual_income")["counter"] == "+10", "Monthly expiry does not consume fiscal duration")
+	_expect(_entry(after, "fiscal:annual_income")["counter"] == "+10", "Per-turn expiry does not consume fiscal duration")
 	ui._render()
 	for i in 4:
 		await process_frame
@@ -98,7 +101,6 @@ func _run() -> void:
 		await RenderingServer.frame_post_draw
 		_expect(root.get_texture().get_image().save_png(capture_directory.path_join("fincard-unified-modifiers.png")) == OK, "Unified modifier screenshot saves")
 	sim.state.modifiers.clear()
-	sim.state.statuses.clear()
 	ui._render()
 	_expect(ui._effect_icons.get_child_count() == 3, "Only three base parameters remain without acquired effects")
 	ui.free()

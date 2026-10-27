@@ -44,6 +44,7 @@ func _run() -> void:
 	_test_card_descriptions()
 	_test_political_cards()
 	_test_funding()
+	_test_rebalanced_cards()
 	_test_rates()
 	_test_investments()
 	_test_payments()
@@ -100,20 +101,21 @@ func _test_political_cards() -> void:
 
 func _test_card_descriptions() -> void:
 	var mechanics := RegEx.new()
-	mechanics.compile("[0-9%+×]|永久|每回合|回合内|一次性|未来.{0,3}个月|预算成本|政治成本|出现权重|抽.{0,3}张")
+	mechanics.compile("[0-9%+×]|永久|每回合|回合内|一次性|预算成本|政治成本|出现权重|抽.{0,3}张")
 	for card: CardDef in controller.cards.values():
 		_expect(not card.description.strip_edges().is_empty(), "Card must retain its background description: %s" % card.id)
 		_expect(mechanics.search(card.description) == null, "Card description must not repeat mechanical rules: %s" % card.id)
 		var effects := TextFormatter.effects_text(controller.labels, card.effects)
 		_expect(not effects.is_empty() and not "未知效果" in effects, "Card effects must remain independently readable: %s" % card.id)
+		_expect(not "月" in effects and not "月" in card.description, "Card wording uses turns consistently: %s" % card.id)
 	var synergy := TextFormatter.effects_text(controller.labels, controller.cards[&"reform_policy_synergy"].effects)
-	_expect("获得前" in synergy and "不触发" in synergy, "Synergy timing rules belong in the effect text")
+	_expect("每回合第三张牌结算后抽 2 张" in synergy, "Synergy effect states its trigger and draw amount")
 	var funds := TextFormatter.effects_text(controller.labels, controller.cards[&"reform_earmarked_funds"].effects)
-	_expect("最低为 0" in funds, "Investment discount floor belongs in the effect text")
+	_expect("每回合首张投资与援助类卡牌预算 -2" in funds, "Investment effect states its exact card category and discount")
 
 
 func _test_funding() -> void:
-	var grants := {&"arcadia_reform_tax_wealth": 8, &"arcadia_recover_tariff": 3, &"arcadia_reform_austerity": 3}
+	var grants := {&"arcadia_reform_austerity": 3}
 	for id in grants:
 		var sim := _prepare()
 		var control := _snapshot(sim.state)
@@ -125,18 +127,63 @@ func _test_funding() -> void:
 
 
 func _test_rates() -> void:
-	for id in [&"arcadia_policy_bond_yield", &"arcadia_recover_open_market", &"arcadia_recover_gold"]:
+	for id in [&"arcadia_policy_bond_yield", &"arcadia_recover_open_market"]:
 		var sim := _prepare()
 		var control := _snapshot(sim.state)
 		_play(sim, id)
 		for target in [&"inflation", &"gdp", &"confidence", &"unemployment"]:
 			_expect(sim.state.indicators[target] == control.indicators[target], "Monetary policy must not directly change downstream indicator: %s" % target)
 		var tighter: bool = id == &"arcadia_policy_bond_yield"
+		var adjustment := 1 if tighter else -1
+		_expect(is_equal_approx(sim.economy.value(sim.state, &"interest_rate"), 3 + adjustment), "Rate policies change the effective rate by exactly one")
+		_expect(sim.state.modifiers.back().remaining_turns == 2, "Rate policies last two turns")
 		sim.economy.tick(control, Rng.new(7))
 		sim.economy.tick(sim.state, sim.rng)
 		_expect((sim.state.indicators[&"inflation"] < control.indicators[&"inflation"]) == tighter, "Rates must affect inflation at settlement")
 		_expect((sim.state.indicators[&"gdp"] < control.indicators[&"gdp"]) == tighter, "Rates must affect growth at settlement")
 		_expect(sim.state.budget == 100 - controller.cards[id].cost, "Interest rates must not automatically change budget")
+		sim._advance_modifiers()
+		_expect(is_equal_approx(sim.economy.value(sim.state, &"interest_rate"), 3 + adjustment), "Rate modifier still applies after the first settlement")
+		sim._advance_modifiers()
+		_expect(is_equal_approx(sim.economy.value(sim.state, &"interest_rate"), 3), "Rate modifier expires after the second settlement")
+
+
+func _test_rebalanced_cards() -> void:
+	var sim := _prepare()
+	_play(sim, &"arcadia_reform_tax_wealth")
+	_expect(sim.state.budget == 100 and sim.annual_income() == 36, "Wealth tax increases annual income by four without an immediate payout")
+	for i in 3:
+		sim._advance_modifiers()
+		sim.state.budget = 0
+		sim._grant_year_resources()
+		_expect(sim.state.budget == 36 and sim.annual_income() == 36, "Wealth tax contributes to every future annual payment permanently")
+	sim = _prepare()
+	var growth := sim.economy.coefficient(sim.state, &"gdp_auto")
+	_play(sim, &"arcadia_recover_tariff")
+	_expect(sim.state.budget == 100 and sim.state.indicators[&"confidence"] == 52, "Tariff grants two confidence and no budget")
+	_expect(is_equal_approx(sim.economy.coefficient(sim.state, &"gdp_auto"), growth - 0.1), "Tariff reduces potential growth by 0.1")
+	sim._advance_modifiers()
+	_expect(is_equal_approx(sim.economy.coefficient(sim.state, &"gdp_auto"), growth - 0.1), "Tariff growth penalty includes a second settlement")
+	_play(sim, &"arcadia_recover_tariff")
+	_expect(is_equal_approx(sim.economy.coefficient(sim.state, &"gdp_auto"), growth - 0.2), "Repeated tariffs stack independently")
+	sim._advance_modifiers()
+	_expect(is_equal_approx(sim.economy.coefficient(sim.state, &"gdp_auto"), growth - 0.1), "Earlier tariff expires independently")
+	sim._advance_modifiers()
+	_expect(is_equal_approx(sim.economy.coefficient(sim.state, &"gdp_auto"), growth), "Tariff growth penalty expires after two turns")
+	sim = _prepare()
+	_play(sim, &"arcadia_reform_social_security")
+	_expect(is_equal_approx(sim.economy.coefficient(sim.state, &"natural_unemployment"), 6) and sim.economy.value(sim.state, &"confidence") == 58, "Social security gives eight confidence without changing natural unemployment")
+	sim = _prepare()
+	sim.state.indicators[&"interest_rate"] = 4
+	_play(sim, &"arcadia_recover_gold")
+	_expect(sim.state.indicators[&"interest_rate"] == 4 and sim.economy.value(sim.state, &"interest_rate") == 1 and sim.state.indicators[&"confidence"] == 40, "Leaving gold applies a permanent rate modifier and an immediate confidence cost")
+	sim = _prepare()
+	sim.state.indicators[&"interest_rate"] = 2
+	_play(sim, &"arcadia_recover_gold")
+	_expect(sim.economy.value(sim.state, &"interest_rate") == 0, "The permanent rate modifier still respects the zero boundary")
+	var expected: Array[StringName] = [&"arcadia_relief_dole", &"arcadia_relief_dole", &"arcadia_reform_austerity", &"arcadia_policy_bond_yield", &"arcadia_recover_open_market", &"policy_emergency_cabinet_meeting", &"starter_infrastructure", &"starter_small_business"]
+	_expect(controller.scenarios[&"arcadia"].starting_deck == expected, "Arcadia starts with the requested eight cards")
+	_expect(controller.cards[&"arcadia_recover_open_market"].display_name == "官方认购国债", "Official bond purchases retains its internal ID with the new display name")
 
 
 func _test_investments() -> void:
@@ -145,6 +192,9 @@ func _test_investments() -> void:
 		var control := _snapshot(sim.state)
 		_play(sim, id)
 		for target in [&"gdp", &"unemployment", &"confidence", &"inflation"]:
+			if id == &"arcadia_relief_works" and target == &"unemployment":
+				_expect(sim.state.indicators[target] == control.indicators[target] - 1, "Public works also directly lowers unemployment by one")
+				continue
 			_expect(sim.state.indicators[target] == control.indicators[target], "Growth investment must not immediately change %s: %s" % [target, id])
 		sim.economy.tick(control, Rng.new(7))
 		sim.economy.tick(sim.state, sim.rng)
@@ -189,7 +239,7 @@ func _test_event_budget() -> void:
 		if protected:
 			_play(sim, &"arcadia_recover_fdic")
 		sim._fire_event(&"arcadia_ev_bank_panic")
-		var cost := 3 if protected else 8
+		var cost := 8
 		sim.state.budget = cost - 1
 		var before := sim.state.indicators.duplicate()
 		_expect(not sim.event_choice_available(0) and sim.event_choice_available(1), "Unaffordable bank rescue must have a free alternative")
@@ -342,10 +392,10 @@ func _test_relief() -> void:
 
 
 func _test_branches() -> void:
-	for confidence in [30, 60]:
+	for confidence in [30, 44, 45, 60]:
 		var sim := _prepare()
 		sim.state.indicators[&"confidence"] = confidence
 		var before_gdp := float(sim.state.indicators[&"gdp"])
 		_play(sim, &"arcadia_recover_bank_holiday")
-		_expect(sim.state.indicators[&"confidence"] == confidence + (14 if confidence < 45 else 6), "Bank holiday must preserve its conditional confidence effect")
+		_expect(sim.state.indicators[&"confidence"] == confidence + (10 if confidence < 45 else 4), "Bank holiday uses the rebalanced confidence effect and unchanged threshold")
 		_expect(is_equal_approx(sim.state.indicators[&"gdp"], before_gdp * 0.99), "Bank closure must preserve its direct output cost")

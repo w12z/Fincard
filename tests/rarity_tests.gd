@@ -47,7 +47,7 @@ func _test_distribution() -> void:
 		sim.card_db[card.id] = card
 		candidates.append(card.id)
 	candidates.append(&"reform_research_network")
-	candidates.append(&"reform_executive_mandate")
+	candidates.append(&"reform_emergency_authority")
 	candidates.append(&"special_national_strategy")
 	var counts := {&"common": 0, &"rare": 0, &"legendary": 0, &"special": 0}
 	for i in 26000:
@@ -60,14 +60,14 @@ func _test_distribution() -> void:
 	for i in 12:
 		sim.card_db.erase(StringName("test_common_%d" % i))
 	_expect(sim._pick_reward_card([&"special_national_strategy"]) == &"", "Special-only pool produces no annual card")
-	_expect(sim._pick_reward_card([&"reform_executive_mandate"]) == &"reform_executive_mandate", "Unavailable tiers are excluded instead of yielding empty slots")
+	_expect(sim._pick_reward_card([&"reform_emergency_authority"]) == &"reform_emergency_authority", "Unavailable tiers are excluded instead of yielding empty slots")
 	var candidates_copy := candidates.duplicate()
 	var first := Rng.new(123)
 	var second := Rng.new(123)
 	sim.rng = first
-	var roll1 := sim._pick_reward_card([&"example_card", &"reform_research_network", &"reform_executive_mandate"])
+	var roll1 := sim._pick_reward_card([&"example_card", &"reform_research_network", &"reform_emergency_authority"])
 	sim.rng = second
-	var roll2 := sim._pick_reward_card([&"example_card", &"reform_research_network", &"reform_executive_mandate"])
+	var roll2 := sim._pick_reward_card([&"example_card", &"reform_research_network", &"reform_emergency_authority"])
 	_expect(roll1 == roll2 and candidates == candidates_copy, "Reward rolls are seeded and do not mutate candidate pools")
 
 
@@ -165,7 +165,7 @@ func _test_modifiers() -> void:
 	_expect(found, "Reward modifiers merge in the unified modifier bar")
 	for i in 8:
 		sim._advance_modifiers()
-	_expect(sim.rarity_weight(&"rare") == 15, "Permanent weight boosts survive monthly expiry")
+	_expect(sim.rarity_weight(&"rare") == 15, "Permanent weight boosts survive per-turn expiry")
 	sim = _prepare()
 	_expect(sim.rarity_weight(&"rare") == 5 and sim.rarity_weight(&"legendary") == 1, "Restart clears reward weight bonuses")
 
@@ -173,7 +173,11 @@ func _test_modifiers() -> void:
 func _test_special_grants() -> void:
 	var sim := _prepare()
 	sim._appoint_cabinet(&"arcadia_cab_braintrust")
-	_expect(sim.state.deck.count(&"special_national_strategy") == 1, "Cabinet appointment grants its special card")
+	_expect(not sim.state.deck.has(&"special_national_strategy"), "One legendary cabinet does not grant the blueprint")
+	sim._appoint_cabinet(&"arcadia_cab_labor")
+	_expect(sim.state.deck.count(&"special_national_strategy") == 1, "Two distinct legendary cabinets grant the blueprint")
+	sim._appoint_cabinet(&"arcadia_cab_labor")
+	_expect(sim.state.deck.count(&"special_national_strategy") == 1, "A repeated appointment cannot duplicate the blueprint")
 	var effect := Effect.from_dict({"kind": "gain_card", "params": {"card": "special_national_strategy"}})
 	_expect(sim.resolver.resolve(effect, sim.state, sim.rng).is_empty(), "Unique special cards cannot be duplicated")
 	sim.state.deck.erase(&"special_national_strategy")
@@ -200,9 +204,8 @@ func _check_card_colors(control: Control, card: CardDef) -> void:
 		var expected := UiTheme.TEXT
 		if label.name == "CardName":
 			expected = UiTheme.card_type_color(card.card_type)
-		elif label.name == "Rarity":
-			expected = UiTheme.rarity_color(card.rarity)
-		_expect(label.get_theme_color("font_color") == expected, "Only names use type colors, rarity uses its tier color, and other card text stays black: %s" % label.text)
+		_expect(label.name != "Rarity", "Card faces must not contain a text rarity label")
+		_expect(label.get_theme_color("font_color") == expected, "Only card names use type colors; other card text stays black: %s" % label.text)
 
 
 func _test_ui() -> void:
@@ -215,25 +218,26 @@ func _test_ui() -> void:
 	for child in ui._overlay_box.get_children():
 		if child is Label or child is CheckBox:
 			text += child.text
-		if child is CardPreview.RewardChoice and child.is_card:
-			text += child.find_child("Rarity", true, false).text
-			_check_card_colors(child, child.preview_card)
 	_expect("普通 20" in text and "稀有 5" in text and "传奇 1" in text, "Annual modal shows effective rarity weights")
-	_expect("［普通］" in text or "［稀有］" in text or "［传奇］" in text, "Reward choices show rarity")
+	ui._reward_group_index = 0
+	ui._overlay_signature = GameUI.UNSET_SIGNATURE
+	ui._render_overlay()
+	for choice in ui._overlay_box.get_child(1).get_children():
+		if choice is CardButton:
+			_check_card_colors(choice, choice.preview_card)
+			_expect(choice._styles["normal"].border_color == UiTheme.rarity_color(choice.preview_card.rarity), "Reward cards use rarity-colored edges")
 	ui._dispatch(Command.choose_reward([]))
-	controller.simulation.state.hand.assign([&"special_national_strategy", &"reform_executive_mandate", &"reform_research_network", &"example_card"])
+	controller.simulation.state.hand.assign([&"special_national_strategy", &"reform_emergency_authority", &"reform_research_network", &"example_card"])
 	ui._render()
 	for i in 4:
 		var badge: Button = ui._hand_box.get_child(i)
-		var visible_rarity := false
-		for label in badge.find_children("*", "Label", true, false):
-			if label.text == ["［特殊］", "［传奇］", "［稀有］", "［普通］"][i]:
-				visible_rarity = true
-		_expect(visible_rarity, "Hand displays all four rarities")
 		var card: CardDef = controller.cards[controller.simulation.state.hand[i]]
+		_expect(badge._styles["normal"].border_color == UiTheme.rarity_color(card.rarity), "Hand border displays the card rarity")
+		_expect(badge.find_child("Illustration", true, false) != null, "Hand cards have an illustration area")
 		_check_card_colors(badge, card)
 		var preview: Control = badge._make_custom_tooltip(badge.tooltip_text)
 		_check_card_colors(preview, card)
+		_expect(preview.get_theme_stylebox("panel").border_color == UiTheme.rarity_color(card.rarity), "Hover previews use the same rarity border")
 		preview.free()
 	ui._played_table.render(controller.simulation.state.hand, controller.cards, controller.labels)
 	for button in ui._played_table._cards:

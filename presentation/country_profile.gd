@@ -46,7 +46,7 @@ func _build() -> void:
 	var left := _panel(_columns)
 	left.get_parent().custom_minimum_size.x = 340
 	left.add_child(CountryFlag.create(scenario.id, 190))
-	left.add_child(_text("初始经济  /  就任时刻", 20, UiTheme.ACCENT_DARK))
+	left.add_child(_text("初始经济", 20, UiTheme.ACCENT_DARK))
 	for id in [&"gdp", &"inflation", &"unemployment", &"confidence", &"interest_rate"]:
 		var row := HBoxContainer.new()
 		var name_label := _text(TextFormatter.indicator(controller.labels, id), 16, UiTheme.MUTED)
@@ -64,9 +64,11 @@ func _build() -> void:
 	var right := _panel(_columns)
 	right.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_section(right, "国家背景", scenario.description)
-	_section(right, "任期目标", scenario.goal.description)
+	right.add_child(_text("任期目标", 20, UiTheme.TEXT))
 	for condition in scenario.goal.conditions:
 		right.add_child(_text("◇  " + TextFormatter.condition_text(controller.labels, condition), 17, UiTheme.POSITIVE))
+	if scenario.goal.after_turn > 0:
+		right.add_child(_text("胜利判定：第 %d 回合起" % (scenario.goal.after_turn + 1), 15, UiTheme.WARNING))
 	right.add_child(HSeparator.new())
 	right.add_child(_text("风险与失败条件", 20, UiTheme.TEXT))
 	for condition in scenario.goal.loss_conditions:

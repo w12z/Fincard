@@ -22,6 +22,7 @@ var cabinet_reward_pool: Array[StringName] = []
 var aid_reward_pool: Array[StringName] = []
 
 var _scenario: ScenarioDef
+var _skip_card_choices: bool = false
 
 
 func _init(seed_value: int) -> void:
@@ -80,7 +81,13 @@ func apply_command(command: Command) -> Array[Event]:
 			events = _use_aid(command.params)
 		Command.Kind.CHOOSE_REWARD:
 			events = _choose_reward(command.params)
-	if command.kind in [Command.Kind.PLAY_CARD, Command.Kind.USE_AID, Command.Kind.RESOLVE_EVENT]:
+		Command.Kind.CHOOSE_RETAINED_CARD:
+			events = _choose_retained_card(command.params)
+		Command.Kind.CHOOSE_REVIEW_CARD:
+			events = _choose_review_card(command.params)
+		Command.Kind.CLAIM_REWARD:
+			events = _claim_reward(command.params)
+	if command.kind in [Command.Kind.PLAY_CARD, Command.Kind.USE_AID, Command.Kind.RESOLVE_EVENT, Command.Kind.CHOOSE_REVIEW_CARD]:
 		events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
 		economy.refresh_derived(state)
 		events.append_array(_check_end_conditions(false))
@@ -95,6 +102,7 @@ func forecast_next_turn() -> GameState:
 	var preview := _clone_for_preview()
 	preview.rules["random_event_chance"] = 0.0
 	preview.rules["reward_option_count"] = 0
+	preview._skip_card_choices = true
 	preview._end_turn()
 	return preview.state
 
@@ -129,7 +137,8 @@ func _clone_for_preview() -> Simulation:
 
 func _can_act() -> bool:
 	return turns.phase == TurnStateMachine.Phase.MAIN and state.pending_event == &"" \
-		and state.pending_rewards.is_empty()
+		and state.pending_rewards.is_empty() and not state.flags.get("pending_retain", false) \
+		and not state.flags.get("pending_review", false)
 
 
 func _reset_state() -> void:
@@ -142,8 +151,6 @@ func _reset_state() -> void:
 	state.cabinets.clear()
 	state.aids.clear()
 	state.flags.clear()
-	state.statuses.clear()
-	state.statuses_triggered_this_turn.clear()
 	state.cards_played_this_turn = 0
 	state.played_cards_this_turn.clear()
 	state.investments_played_this_turn = 0
@@ -166,10 +173,10 @@ func _start_turn(year_started: bool = false) -> Array[Event]:
 	turns.enter(TurnStateMachine.Phase.TURN_START, state)
 	state.turn += 1
 	state.turn_in_year += 1
-	state.statuses_triggered_this_turn.clear()
 	state.cards_played_this_turn = 0
 	state.played_cards_this_turn.clear()
 	state.investments_played_this_turn = 0
+	state.flags["types_played_this_turn"] = []
 	_grant_turn_resources(events)
 	if year_started:
 		var year_events: Array[Event] = [Event.new(Event.Kind.YEAR_STARTED, {"year": state.year})]
@@ -181,8 +188,25 @@ func _start_turn(year_started: bool = false) -> Array[Event]:
 		"year": state.year,
 	}))
 	events.append_array(trigger_engine.process(turn_events, state, resolver, rng, _iteration_limit()))
+	for modifier in StatusRules.active_modifiers(state):
+		if modifier.rule != &"next_turn_replay" or int(modifier.data.get("queued_turn", state.turn + 1)) > state.turn:
+			continue
+		var replay_id := StringName(modifier.data.get("queued_card", ""))
+		modifier.data.erase("queued_card")
+		modifier.data.erase("queued_turn")
+		if replay_id == &"":
+			continue
+		for layer in modifier.stacks:
+			events.append_array(_replay_card(replay_id))
+		economy.refresh_derived(state)
+		events.append_array(_check_end_conditions(false))
+		if state.run_status != GameState.RunStatus.RUNNING:
+			return events
 	events.append_array(_enter_main())
-	events.append_array(_schedule_event())
+	if not _skip_card_choices and not state.hand.is_empty() and StatusRules.has_rule(state, status_db, &"start_turn_review"):
+		state.flags["pending_review"] = true
+	else:
+		events.append_array(_schedule_event())
 	economy.refresh_derived(state)
 	return events
 
@@ -277,12 +301,14 @@ func event_choice_available(choice_index: int) -> bool:
 
 
 func can_spend_budget(amount: int) -> bool:
-	return amount <= 0 or StatusRules.allows_deficit(state, status_db) or state.budget >= amount
+	return amount <= 0 or state.budget - amount >= budget_floor()
+
+
+func budget_floor() -> int:
+	return -annual_income() if StatusRules.allows_deficit(state, status_db) else 0
 
 
 func _effects_affordable(effects: Array) -> bool:
-	if StatusRules.allows_deficit(state, status_db):
-		return true
 	if effects.is_empty():
 		return true
 	# Resolve the whole effect list against an isolated simulation so earlier
@@ -290,19 +316,60 @@ func _effects_affordable(effects: Array) -> bool:
 	var preview := _clone_for_preview()
 	for effect: Effect in effects:
 		preview.resolver.resolve(effect, preview.state, preview.rng)
-	return preview.state.budget >= 0
+	return preview.state.budget >= mini(state.budget, preview.budget_floor())
 
 
 func _end_turn() -> Array[Event]:
-	var events: Array[Event] = []
 	if state.pending_event != &"":
-		return events
+		return []
 	if turns.phase != TurnStateMachine.Phase.MAIN:
-		return events
+		return []
+	if not _skip_card_choices and not state.hand.is_empty() and StatusRules.has_rule(state, status_db, &"retain_card"):
+		state.flags["pending_retain"] = true
+		return []
+	return _finish_turn()
+
+
+func _choose_retained_card(params: Dictionary) -> Array[Event]:
+	if not state.flags.get("pending_retain", false):
+		return []
+	var index := int(params.get("hand_index", -1))
+	if index < -1 or index >= state.hand.size():
+		return []
+	var retained: StringName = state.hand[index] if index >= 0 else &""
+	if index >= 0:
+		state.hand.remove_at(index)
+	state.flags.erase("pending_retain")
+	return _finish_turn(retained)
+
+
+func _choose_review_card(params: Dictionary) -> Array[Event]:
+	if not state.flags.get("pending_review", false):
+		return []
+	var index := int(params.get("hand_index", -1))
+	if index < -1 or index >= state.hand.size():
+		return []
+	state.flags.erase("pending_review")
+	var events: Array[Event] = []
+	if index >= 0:
+		state.discard.append(state.hand[index])
+		state.hand.remove_at(index)
+		events.append_array(_draw(2))
+	events.append_array(_schedule_event())
+	return events
+
+
+func _finish_turn(retained: StringName = &"") -> Array[Event]:
+	var events: Array[Event] = []
 	turns.enter(TurnStateMachine.Phase.TURN_END, state)
 	for card_id in state.hand:
 		state.discard.append(card_id)
 	state.hand.clear()
+	if retained != &"":
+		state.hand.append(retained)
+	for modifier in StatusRules.active_modifiers(state):
+		if modifier.rule == &"save_political":
+			modifier.data["saved"] = mini(modifier.amount * modifier.stacks, maxi(0, state.political_capital))
 	events.append_array(economy.tick(state, rng))
 	events.append(Event.new(Event.Kind.TURN_ENDED, {"turn": state.turn}))
 	events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
@@ -342,21 +409,25 @@ func _play_card(params: Dictionary) -> Array[Event]:
 	var political_cost := int(costs["political"])
 	if not can_spend_budget(budget_cost) or (political_cost > 0 and state.political_capital < political_cost):
 		return events
-	var active_before := state.statuses.duplicate()
+	var active_before := StatusRules.active_modifiers(state)
 	state.budget -= budget_cost
 	state.political_capital -= political_cost
 	state.cards_played_this_turn += 1
 	state.played_cards_this_turn.append(card_id)
 	if card.card_type == &"investment":
 		state.investments_played_this_turn += 1
+	var types: Array = state.flags.get("types_played_this_turn", [])
+	if not types.has(card.card_type):
+		types.append(card.card_type)
+	state.flags["types_played_this_turn"] = types
 	if budget_cost != 0:
 		events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"budget", "amount": -budget_cost}))
 	if political_cost != 0:
 		events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"political_capital", "amount": -political_cost}))
 	for id in costs["sources"]:
-		if not state.statuses_triggered_this_turn.has(id):
-			state.statuses_triggered_this_turn.append(id)
-		events.append(Event.new(Event.Kind.STATUS_TRIGGERED, {"status": id}))
+		var modifier := StatusRules.find_modifier(state, id)
+		if modifier != null:
+			events.append(StatusRules.mark_triggered(modifier, state))
 	state.hand.erase(card_id)
 	events.append(Event.new(Event.Kind.CARD_PLAYED, {"card_id": card_id}))
 	for effect in card.effects:
@@ -366,12 +437,52 @@ func _play_card(params: Dictionary) -> Array[Event]:
 		_remove_all_copies(card_id)
 	else:
 		state.discard.append(card_id)
-	for id in active_before:
-		var status: StatusDef = status_db.get(id)
-		if status != null and status.rule == &"third_card_draw" and state.cards_played_this_turn == 3:
-			state.statuses_triggered_this_turn.append(id)
-			events.append(Event.new(Event.Kind.STATUS_TRIGGERED, {"status": id}))
-			events.append_array(_draw(status.amount))
+	for modifier in active_before:
+		match modifier.rule:
+			&"repeat_next_card":
+				var repeats := modifier.stacks
+				modifier.stacks = 0
+				for layer in repeats:
+					events.append_array(_replay_card(card_id))
+			&"third_card_draw":
+				if state.cards_played_this_turn == 3:
+					events.append_array(_trigger_draw_modifier(modifier, modifier.amount * modifier.stacks))
+			&"investment_draw":
+				if card.card_type == &"investment":
+					var progress := int(modifier.data.get("progress", 0)) + 1
+					if progress >= modifier.amount:
+						progress -= modifier.amount
+						events.append_array(_trigger_draw_modifier(modifier, modifier.stacks))
+					modifier.data["progress"] = progress
+			&"all_types_refund":
+				if types.has(&"investment") and types.has(&"policy") and types.has(&"reform") and int(modifier.data.get("triggered_turn", -1)) != state.turn:
+					events.append(StatusRules.mark_triggered(modifier, state))
+					events.append_array(resolver.resolve(Effect.from_dict({"kind": "gain_political_capital", "params": {"amount": modifier.amount * modifier.stacks}}), state, rng))
+			&"next_turn_replay":
+				if state.cards_played_this_turn == 1:
+					modifier.data["queued_card"] = card_id
+					modifier.data["queued_turn"] = state.turn + 1
+					events.append(StatusRules.mark_triggered(modifier, state))
+	for modifier in state.modifiers.duplicate():
+		if modifier.is_expired():
+			state.modifiers.erase(modifier)
+	return events
+
+
+func _trigger_draw_modifier(modifier: Modifier, count: int) -> Array[Event]:
+	var events: Array[Event] = [StatusRules.mark_triggered(modifier, state)]
+	events.append_array(_draw(count))
+	return events
+
+
+func _replay_card(card_id: StringName) -> Array[Event]:
+	var card: CardDef = card_db.get(card_id)
+	if card == null:
+		return []
+	var events: Array[Event] = [Event.new(Event.Kind.CARD_REPLAYED, {"card_id": card_id})]
+	state.played_cards_this_turn.append(card_id)
+	for effect in card.effects:
+		events.append_array(resolver.resolve(effect, state, rng))
 	return events
 
 
@@ -394,10 +505,14 @@ func _use_aid(params: Dictionary) -> Array[Event]:
 			continue
 		for effect in definition.effects:
 			events.append_array(resolver.resolve(effect, state, rng))
-		entry["uses"] = int(entry["uses"]) - 1
-		if int(entry["uses"]) <= 0:
-			state.aids.remove_at(index)
+		state.aids.remove_at(index)
 		events.append(Event.new(Event.Kind.AID_USED, {"aid": aid_id}))
+		for modifier in StatusRules.active_modifiers(state):
+			if modifier.rule == &"aid_card_repeat" and int(modifier.data.get("used_turn", -1)) != state.turn:
+				modifier.data["used_turn"] = state.turn
+				events.append_array(resolver.resolve(Effect.from_dict({"kind": "apply_modifier", "params": {
+					"scope": "special", "target": "replay", "stacks": modifier.stacks, "duration": 1, "source": String(modifier.source),
+				}}), state, rng))
 		break
 	return events
 
@@ -423,6 +538,10 @@ func _end_year() -> Array[Event]:
 func _grant_turn_resources(events: Array[Event]) -> void:
 	var previous := state.political_capital
 	state.political_capital = political_capital_per_turn()
+	for modifier in StatusRules.active_modifiers(state):
+		if modifier.rule == &"save_political":
+			state.political_capital += int(modifier.data.get("saved", 0))
+			modifier.data.erase("saved")
 	var changes: Array[Event] = [Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"political_capital", "amount": state.political_capital - previous})]
 	events.append_array(trigger_engine.process(changes, state, resolver, rng, _iteration_limit()))
 
@@ -441,9 +560,9 @@ func modified_value(scope: StringName, target: StringName, base: float) -> float
 		if modifier.scope != scope or modifier.target != target or modifier.is_expired():
 			continue
 		match modifier.op:
-			Modifier.Op.ADD: value += modifier.value
-			Modifier.Op.MUL: value *= modifier.value
-			Modifier.Op.OVERRIDE: value = modifier.value
+			Modifier.Op.ADD: value += modifier.effective_value()
+			Modifier.Op.MUL: value *= modifier.effective_value()
+			Modifier.Op.OVERRIDE: value = modifier.effective_value()
 	return value
 
 
@@ -461,7 +580,7 @@ func _grant_year_resources() -> Array[Event]:
 	var carried_budget := state.budget if state.budget < 0 else int(floor(state.budget * budget_retention()))
 	state.budget = carried_budget + annual_income()
 	events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"budget", "amount": state.budget - previous_budget}))
-	# Fiscal duration counts income payments, never months.
+	# Fiscal duration counts income payments, never turns.
 	for modifier in state.modifiers.duplicate():
 		if modifier.scope == Modifier.SCOPE_FISCAL:
 			modifier.advance_turn()
@@ -513,6 +632,33 @@ func _choose_reward(params: Dictionary) -> Array[Event]:
 	return events
 
 
+func _claim_reward(params: Dictionary) -> Array[Event]:
+	var events: Array[Event] = []
+	var group_index := int(params.get("group_index", -1))
+	if group_index < 0 or group_index >= state.pending_rewards.size():
+		return events
+	var token := str(params.get("token", ""))
+	if token != "" and token != str(state.pending_rewards[group_index].get("token", "")):
+		return events
+	var options: Array = state.pending_rewards[group_index].get("options", [])
+	var option_index := int(params.get("option_index", -1))
+	if option_index < -1 or option_index >= options.size():
+		return events
+	if option_index >= 0:
+		var reward: Reward = options[option_index]
+		if not _reward_available(reward.type, reward.id):
+			return events
+		events.append_array(_grant_reward(reward))
+	state.pending_rewards.remove_at(group_index)
+	events.append(Event.new(Event.Kind.REWARD_CHOSEN, {"group_index": group_index, "option_index": option_index}))
+	events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
+	economy.refresh_derived(state)
+	events.append_array(_check_end_conditions(false))
+	if state.pending_rewards.is_empty() and state.run_status == GameState.RunStatus.RUNNING:
+		events.append_array(_finish_year_setup())
+	return events
+
+
 func _advance_year() -> Array[Event]:
 	var events: Array[Event] = []
 	state.turn_in_year = 0
@@ -542,12 +688,45 @@ func _appoint_cabinet(cabinet_id: StringName) -> Array[Event]:
 	var events: Array[Event] = []
 	if not cabinet_db.has(cabinet_id):
 		return events
+	for cabinet in state.cabinets:
+		if cabinet.id == cabinet_id:
+			return events
 	var definition: CabinetDef = cabinet_db[cabinet_id]
 	state.cabinets.append(definition)
 	events.append(Event.new(Event.Kind.CABINET_APPOINTED, {"cabinet": cabinet_id}))
 	for effect in definition.modifiers:
 		events.append_array(resolver.resolve(effect, state, rng))
+	for index in definition.triggers.size():
+		var trigger: Trigger = definition.triggers[index]
+		events.append_array(resolver.resolve(Effect.from_dict({"kind": "apply_modifier", "params": {
+			"scope": "special", "target": "%s_trigger_%d" % [definition.id, index], "rule": "event_effects",
+			"duration": -1, "source": definition.display_name,
+			"data": {"on_kind": trigger.on_kind, "effects": trigger.effects},
+		}}), state, rng))
+	var legendary_ids: Array[StringName] = []
+	for cabinet in state.cabinets:
+		if cabinet.rarity == &"legendary" and not legendary_ids.has(cabinet.id):
+			legendary_ids.append(cabinet.id)
+	if legendary_ids.size() >= 2 and card_db.has(&"special_national_strategy"):
+		events.append_array(resolver.resolve(Effect.from_dict({
+			"kind": "gain_card", "params": {"card": "special_national_strategy"},
+		}), state, rng))
 	return events
+
+
+func aid_capacity() -> int:
+	return maxi(0, int(rules.get("aid_capacity", 3)))
+
+
+func aid_count() -> int:
+	return state.aids.size()
+
+
+func aid_gain_amount(aid_id: StringName) -> int:
+	var definition: AidDef = aid_db.get(aid_id)
+	if definition == null:
+		return 0
+	return mini(maxi(0, definition.uses), maxi(0, aid_capacity() - aid_count()))
 
 
 func _gain_aid(aid_id: StringName) -> Array[Event]:
@@ -555,15 +734,13 @@ func _gain_aid(aid_id: StringName) -> Array[Event]:
 	if not aid_db.has(aid_id):
 		return events
 	var definition: AidDef = aid_db[aid_id]
-	var found := false
-	for entry in state.aids:
-		if (entry["def"] as AidDef).id == aid_id:
-			entry["uses"] = int(entry["uses"]) + definition.uses
-			found = true
-			break
-	if not found:
-		state.aids.append({"def": definition, "uses": definition.uses})
-	events.append(Event.new(Event.Kind.AID_GAINED, {"aid": aid_id}))
+	var amount := aid_gain_amount(aid_id)
+	if amount <= 0:
+		return events
+	# Grant separate single-use items, including duplicates of the same type.
+	for i in amount:
+		state.aids.append({"def": definition, "uses": 1})
+	events.append(Event.new(Event.Kind.AID_GAINED, {"aid": aid_id, "amount": amount}))
 	return events
 
 
@@ -619,6 +796,7 @@ func groups_of(type: String, id: StringName) -> Array[StringName]:
 
 func _build_year_end_rewards() -> Array[Dictionary]:
 	var groups: Array[Dictionary] = []
+	state.flags["reward_batch"] = int(state.flags.get("reward_batch", 0)) + 1
 	var option_count := int(rules.get("reward_option_count", 0))
 	if option_count <= 0:
 		return groups
@@ -654,7 +832,7 @@ func _add_reward_group(groups: Array[Dictionary], type: int, pool: Array[StringN
 		candidates.erase(id)
 		options.append(Reward.new(type, id, _reward_label(type, id)))
 	if not options.is_empty():
-		groups.append({"type": type, "options": options})
+		groups.append({"type": type, "options": options, "token": "%d:%d" % [int(state.flags.get("reward_batch", 0)), groups.size()]})
 
 
 func base_rarity_weight(rarity: StringName) -> float:
@@ -708,7 +886,7 @@ func _reward_available(type: int, id: StringName) -> bool:
 					return false
 			return cabinet_db.has(id) and CardDef.REWARD_RARITIES.has(cabinet_db[id].rarity) and _member_allowed("cabinets", id)
 		Reward.Type.AID:
-			return aid_db.has(id) and _member_allowed("aids", id)
+			return aid_gain_amount(id) > 0 and _member_allowed("aids", id)
 	return false
 
 
@@ -740,7 +918,7 @@ func _advance_modifiers() -> Array[Event]:
 	var events: Array[Event] = []
 	var kept: Array[Modifier] = []
 	for modifier in state.modifiers:
-		if modifier.scope != Modifier.SCOPE_FISCAL:
+		if modifier.scope != Modifier.SCOPE_FISCAL and modifier.is_active(state.turn):
 			modifier.advance_turn()
 		if modifier.is_expired():
 			events.append(Event.new(Event.Kind.MODIFIER_EXPIRED, {

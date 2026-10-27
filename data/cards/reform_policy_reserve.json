@@ -1,0 +1,6 @@
+{
+  "id": "reform_policy_reserve", "display_name": "政策备忘录", "rarity": "rare",
+  "description": "将尚待执行的政策留存备查。",
+  "card_type": "reform", "cost": 2, "political_cost": 1, "once_per_run": true,
+  "effects": [{ "kind": "apply_modifier", "params": { "scope": "special", "target": "policy_reserve", "stacks": 1, "duration": -1 } }]
+}

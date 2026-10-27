@@ -1,0 +1,5 @@
+{
+  "id": "project_continuity", "display_name": "重放", "icon": "repeat",
+  "description": "每回合从手牌打出的第一张牌，其效果在下一回合开始时免费再结算一次。",
+  "rule": "next_turn_replay", "start_next_turn": true
+}

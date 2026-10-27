@@ -4,7 +4,7 @@
   "description": "暂停银行营业，清查账目与资产。",
   "card_type": "policy", "once_per_run": true, "cost": 2, "political_cost": 2,
   "effects": [
-    { "kind": "branch", "params": { "condition": { "indicator": "confidence", "comparator": "lt", "value": 45 }, "then": [ { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 14 } } ], "else": [ { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 6 } } ] } },
+    { "kind": "branch", "params": { "condition": { "indicator": "confidence", "comparator": "lt", "value": 45 }, "then": [ { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 10 } } ], "else": [ { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 4 } } ] } },
     { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -1, "percent": true } }
   ]
 }

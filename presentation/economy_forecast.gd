@@ -26,7 +26,7 @@ static func formulas(sim: Simulation) -> String:
 	var growth := float(sim.economy.derived[&"growth"].call(sim.state, sim.economy))
 	var g := TextFormatter.fmt(growth)
 	var parts := PackedStringArray()
-	parts.append("月增长率 = %s + %s / 100 − %s / 10 = %s%%" % [c.call(&"gdp_auto"), v.call(&"confidence"), v.call(&"interest_rate"), g])
+	parts.append("回合增长率 = %s + %s / 100 − %s / 10 = %s%%" % [c.call(&"gdp_auto"), v.call(&"confidence"), v.call(&"interest_rate"), g])
 	parts.append("ΔGDP = %s × %s / 100" % [v.call(&"gdp"), g])
 	var inflation := "Δ通胀 = (%s − %s + %s) / 10" % [c.call(&"inflation_target"), v.call(&"inflation"), g]
 	if not is_zero_approx(sim.economy.coefficient(sim.state, &"infl_anchor")):
@@ -34,9 +34,12 @@ static func formulas(sim: Simulation) -> String:
 	parts.append(inflation)
 	var unemployment := "Δ失业率 = (%s − %s) / 10 − %s / 2" % [c.call(&"natural_unemployment"), v.call(&"unemployment"), g]
 	if not is_zero_approx(sim.economy.coefficient(sim.state, &"u_revert")):
-		unemployment += " + %s × (%s − %s)" % [c.call(&"u_revert"), c.call(&"natural_unemployment"), v.call(&"unemployment")]
+		unemployment += " − %s × max(%s − %s, 0)" % [c.call(&"u_revert"), v.call(&"unemployment"), c.call(&"natural_unemployment")]
 	parts.append(unemployment)
-	parts.append("Δ信心 = %s − |%s − %s| / 10" % [g, v.call(&"inflation"), c.call(&"inflation_target")])
+	var confidence := "Δ信心 = %s − |%s − %s| / 5 − max(%s − %s, 0) / 5" % [g, v.call(&"inflation"), c.call(&"inflation_target"), v.call(&"unemployment"), c.call(&"natural_unemployment")]
+	if sim.state.budget < 0:
+		confidence += " − %d / 5" % absi(sim.state.budget)
+	parts.append(confidence)
 	# Equation results come from the same callables as the simulation, not a
 	# second implementation of the economy's arithmetic.
 	for id in sim.economy.indicator_ids:
@@ -57,7 +60,6 @@ static func parameters(sim: Simulation, labels: Dictionary) -> String:
 		"reward_option_count": "每组奖励候选", "card_reward_groups": "卡牌奖励组数",
 		"political_capital_per_turn": "每回合政治点重置基础值", "random_event_chance": "随机事件概率",
 		"budget_retention": "基础预算结转系数",
-		"trigger_iteration_limit": "连锁结算上限",
 	}
 	for key in names:
 		parts.append("%s：%s" % [names[key], TextFormatter.fmt(float(sim.rules.get(key, 0)))])

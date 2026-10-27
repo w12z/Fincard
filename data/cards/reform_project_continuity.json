@@ -1,0 +1,6 @@
+{
+  "id": "reform_project_continuity", "display_name": "项目接续制度", "rarity": "rare",
+  "description": "建立政策执行的后续落实制度。",
+  "card_type": "reform", "cost": 3, "political_cost": 2, "once_per_run": true,
+  "effects": [{ "kind": "apply_modifier", "params": { "scope": "special", "target": "project_continuity", "stacks": 1, "duration": -1 } }]
+}

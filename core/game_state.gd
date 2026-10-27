@@ -26,11 +26,9 @@ var pending_event: StringName = &""
 var pending_event_choices: Array[Dictionary] = []
 var pending_rewards: Array[Dictionary] = []
 var flags: Dictionary = {}
-var statuses: Array[StringName] = []
 var cards_played_this_turn: int = 0
 var played_cards_this_turn: Array[StringName] = []
 var investments_played_this_turn: int = 0
-var statuses_triggered_this_turn: Array[StringName] = []
 
 
 func snapshot() -> GameState:
@@ -43,7 +41,7 @@ func snapshot() -> GameState:
 		copy.set(property["name"], value)
 	copy.modifiers.clear()
 	for modifier in modifiers:
-		copy.modifiers.append(Modifier.new(modifier.target, modifier.op, modifier.value, modifier.remaining_turns, modifier.source, modifier.scope))
+		copy.modifiers.append(modifier.snapshot())
 	return copy
 
 

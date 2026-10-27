@@ -24,6 +24,7 @@ var _effect_icons: HBoxContainer
 var _cabinets_box: HBoxContainer
 var _cabinet_bar: PanelContainer
 var _aids_box: HBoxContainer
+var _aids_title: Label
 var _hand_box: HBoxContainer
 var _hand_scroll: ScrollContainer
 var _played_table: CardTable
@@ -46,7 +47,7 @@ var _flight_tween: Tween
 var _flight_active: bool = false
 
 var _log_lines: Array[String] = []
-var _reward_selection: Dictionary = {}
+var _reward_group_index: int = -1
 
 var _year_label: Label
 var _turn_label: Label
@@ -78,7 +79,7 @@ func setup(p_controller: GameController, scenario_id: StringName) -> void:
 	controller = p_controller
 	_log_lines.clear()
 	_log_rendered_lines = 0
-	_reward_selection.clear()
+	_reward_group_index = -1
 	_effect_icons = null
 	_indicator_rows.clear()
 	_forecast_build_count = 0
@@ -148,7 +149,7 @@ func _build() -> void:
 	table_scroll.add_child(_played_table)
 	var hand_section := _make_section(center, "手牌")
 	_hand_scroll = ScrollContainer.new()
-	_hand_scroll.custom_minimum_size.y = 260
+	_hand_scroll.custom_minimum_size.y = 310
 	_hand_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hand_section.add_child(_hand_scroll)
 	_hand_box = HBoxContainer.new()
@@ -283,6 +284,7 @@ func _build_cabinet_bar(parent: VBoxContainer) -> void:
 	scroll.add_child(_cabinets_box)
 	_statuses_box = _make_section(top, "生效修正", false, 300)
 	var aid_section := _make_section(top, "外部援助", false, 260)
+	_aids_title = aid_section.get_parent().get_child(0)
 	var aid_scroll := ScrollContainer.new()
 	aid_scroll.custom_minimum_size = Vector2(230, 84)
 	aid_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -380,11 +382,11 @@ func _render_header() -> void:
 	if _turn_label.text != turn_text:
 		_turn_label.text = turn_text
 	_set_resource_amount(_budget_amount, "%d · 年入 %d" % [_state.budget, income], UiTheme.NEGATIVE if _state.budget < 0 else UiTheme.ACCENT_DARK)
-	var budget_tooltip := "预算\n年度收入 %d · 非负余额结转 %d%%（向下取整）· 赤字全额结转\n%s" % [income, retention, "可透支" if StatusRules.allows_deficit(_state, controller.statuses) else "不可透支"]
+	var budget_tooltip := "预算\n年度收入 %d\n余额结转 %d%%\n%s" % [income, retention, "最低预算 %d" % controller.simulation.budget_floor() if StatusRules.allows_deficit(_state, controller.statuses) else "不可透支"]
 	if _budget_amount.tooltip_text != budget_tooltip:
 		_budget_amount.tooltip_text = budget_tooltip
 	_set_resource_amount(_political_amount, str(_state.political_capital), UiTheme.POSITIVE)
-	var political_tooltip := "政治行动点\n每回合重置为 %d 点，剩余点数不继承" % controller.simulation.political_capital_per_turn()
+	var political_tooltip := "政治行动点\n每回合重置为 %d 点" % controller.simulation.political_capital_per_turn()
 	if _political_amount.tooltip_text != political_tooltip:
 		_political_amount.tooltip_text = political_tooltip
 	var status_text := "状态：%s" % _status_text()
@@ -410,8 +412,6 @@ func _render_goal() -> void:
 		rows.append({"text": "（无）", "plain": true})
 	else:
 		var goal := scenario.goal
-		if goal.description != "":
-			rows.append({"text": goal.description, "color": UiTheme.MUTED, "wrap": true})
 		for condition in goal.conditions:
 			var achieved := condition.evaluate(_state, controller.simulation.economy)
 			rows.append({
@@ -472,7 +472,6 @@ func _render_indicators() -> void:
 			_indicators_box.add_child(_colored("综合指标", UiTheme.WARNING))
 			for id in derived:
 				_add_indicator_row(id)
-		_indicators_box.tooltip_text = "每回合 1 个月 · 增长率按月计算"
 	for row in _indicator_rows:
 		var label: Label = row["label"]
 		var id: StringName = row["id"]
@@ -498,24 +497,34 @@ func _render_statuses() -> void:
 	if entries.is_empty():
 		_statuses_box.add_child(_label("（无）"))
 		return
-	_statuses_box.add_child(_label("本回合已出 %d 张牌" % _state.cards_played_this_turn))
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(280, 84)
+	scroll.custom_minimum_size = Vector2(280, 38)
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_statuses_box.add_child(scroll)
 	_effect_icons = HBoxContainer.new()
-	_effect_icons.add_theme_constant_override("separation", 6)
+	_effect_icons.add_theme_constant_override("separation", 4)
 	scroll.add_child(_effect_icons)
 	for index in entries.size():
 		var entry: Dictionary = entries[index]
 		var badge := Button.new()
 		badge.theme_type_variation = "StatusBadge"
-		badge.custom_minimum_size = Vector2(60, 62)
-		badge.text = "%s\n%s" % [entry["icon"], entry.get("value_text", entry["counter"])]
+		badge.custom_minimum_size = Vector2(34, 34)
+		badge.text = ""
 		badge.tooltip_text = entry["tooltip"]
 		badge.set_meta("effect_key", entry["key"])
 		UiTheme.style_modifier_badge(badge, index)
 		_effect_icons.add_child(badge)
+		var icon := TextureRect.new()
+		icon.texture = ArtAssets.modifier_icon(str(entry["icon"]))
+		icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		icon.offset_left = 5
+		icon.offset_top = 5
+		icon.offset_right = -5
+		icon.offset_bottom = -5
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		badge.add_child(icon)
 
 
 func _statuses_signature(entries: Array[Dictionary]) -> String:
@@ -550,7 +559,9 @@ func _render_cabinets() -> void:
 
 
 func _render_aids() -> void:
-	var parts := PackedStringArray([str(_busy()), str(_state.run_status)])
+	var sim := controller.simulation
+	_aids_title.text = "外部援助 %d/%d" % [sim.aid_count(), sim.aid_capacity()]
+	var parts := PackedStringArray([str(_busy()), str(_state.run_status), str(sim.aid_capacity())])
 	for entry in _state.aids:
 		var definition: AidDef = entry["def"]
 		parts.append("%s:%d" % [definition.id, int(entry["uses"])])
@@ -565,11 +576,11 @@ func _render_aids() -> void:
 	for entry in _state.aids:
 		var definition: AidDef = entry["def"]
 		var use := Button.new()
-		use.text = "%s\n×%d" % [definition.display_name, int(entry["uses"])]
+		use.text = definition.display_name
 		use.custom_minimum_size = Vector2(110, 64)
 		use.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		use.theme_type_variation = "AidButton"
-		use.tooltip_text = "%s\n%s\n%s" % [definition.display_name, definition.description, TextFormatter.effects_text(_labels(), definition.effects)]
+		use.tooltip_text = "%s\n%s" % [definition.display_name, TextFormatter.effects_text(_labels(), definition.effects)]
 		use.disabled = _busy() or _state.run_status != GameState.RunStatus.RUNNING
 		var aid_id: StringName = definition.id
 		use.pressed.connect(func() -> void: _dispatch(Command.use_aid(aid_id)))
@@ -589,9 +600,6 @@ func _render_hand() -> void:
 		var card: CardDef = controller.cards.get(card_id)
 		if card == null:
 			continue
-		var type_label := TextFormatter.card_type_name(_labels(), card.card_type)
-		var rarity_label := TextFormatter.rarity_name(_labels(), card.rarity)
-		var type_color := UiTheme.card_type_color(card.card_type)
 		var costs := controller.simulation.card_costs(card_id)
 		var budget_text := str(costs["budget"])
 		var political_text := str(costs["political"])
@@ -599,73 +607,27 @@ func _render_hand() -> void:
 			budget_text += "（原%d）" % card.cost
 		if int(costs["political"]) != card.political_cost:
 			political_text += "（原%d）" % card.political_cost
-		var lines := PackedStringArray([
-			card.display_name,
-			"［%s］" % rarity_label,
-			"［%s］" % type_label,
-		])
-		if card.once_per_run:
-			lines.append("法案 · 限通过一次")
-		for effect in card.effects:
-			lines.append(TextFormatter.effects_text(_labels(), [effect]))
+		var sources: Array[String] = []
 		for id in costs["sources"]:
-			lines.append("★ " + controller.statuses[id].display_name + "减免")
+			sources.append(controller.statuses[id].display_name)
 		var button := CardButton.new()
 		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		button.preview_card = card
 		button.preview_labels = _labels()
-		button.tooltip_text = "%s［%s · %s］\n%s" % [card.display_name, rarity_label, type_label, _detail_text(card.description, card.effects, controller.simulation.groups_of("cards", card.id))]
+		button.tooltip_text = "%s\n%s" % [card.display_name, _detail_text(card.description, card.effects)]
 		button.preview_budget = budget_text
 		button.preview_political = political_text
 		for id in costs["sources"]:
 			button.tooltip_text += "\n★ " + controller.statuses[id].display_name + "减免"
-		button.custom_minimum_size = Vector2(180, 240)
+		button.custom_minimum_size = Vector2(CardFace.WIDTH, CardFace.HEIGHT)
 		button.add_theme_font_size_override("font_size", 13)
 		button.theme_type_variation = "CardButton"
 		button.disabled = _hand_card_disabled(costs)
-		if not button.disabled:
-			var playable_style := StyleBoxFlat.new()
-			playable_style.bg_color = Color("effaf5")
-			playable_style.border_color = UiTheme.POSITIVE
-			playable_style.set_border_width_all(2)
-			playable_style.set_corner_radius_all(10)
-			playable_style.content_margin_left = 10
-			playable_style.content_margin_right = 10
-			playable_style.content_margin_top = 8
-			playable_style.content_margin_bottom = 8
-			button.add_theme_stylebox_override("normal", playable_style)
+		CardFace.style(button, card.rarity, not button.disabled)
 		button.pressed.connect(func() -> void: _play_card_from_hand(card_id, button))
 		_hand_box.add_child(button)
-		var margin := MarginContainer.new()
-		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		for edge in ["left", "right", "top", "bottom"]:
-			margin.add_theme_constant_override("margin_" + edge, 10)
-		button.add_child(margin)
-		var content := VBoxContainer.new()
-		content.alignment = BoxContainer.ALIGNMENT_CENTER
-		margin.add_child(content)
-		for index in lines.size():
-			var line_color := type_color if index == 0 else (UiTheme.rarity_color(card.rarity) if index == 1 else UiTheme.TEXT)
-			var line := _wrapped(lines[index], line_color, 0)
-			line.name = "CardName" if index == 0 else ("Rarity" if index == 1 else "Detail%d" % index)
-			line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER if index < 3 else HORIZONTAL_ALIGNMENT_LEFT
-			line.add_theme_font_size_override("font_size", 13)
-			content.add_child(line)
-			if index == 1:
-				var fees := HBoxContainer.new()
-				fees.name = "Costs"
-				fees.alignment = BoxContainer.ALIGNMENT_CENTER
-				fees.add_theme_constant_override("separation", 10)
-				fees.add_theme_font_size_override("font_size", 13)
-				fees.add_child(ResourceAmount.create(&"budget", budget_text))
-				fees.add_child(ResourceAmount.create(&"political", political_text))
-				content.add_child(fees)
-				button.custom_minimum_size.x = maxf(180, fees.get_combined_minimum_size().x + 20)
-		content.modulate.a = 0.55 if button.disabled else 1.0
-		content.minimum_size_changed.connect(func() -> void:
-			button.custom_minimum_size.y = maxf(240, content.get_combined_minimum_size().y + 20)
-		)
-		_ignore_card_mouse(margin)
+		var margin := CardFace.fill(button, card, _labels(), budget_text, political_text, {"sources": sources})
+		margin.modulate.a = 0.55 if button.disabled else 1.0
 		button.enable_lift(margin)
 
 
@@ -675,7 +637,6 @@ func _hand_content_signature() -> String:
 		"busy" if _busy() else "ready",
 		str(_state.budget),
 		str(_state.political_capital),
-		var_to_str(_state.statuses),
 	])
 	for card_id in _state.hand:
 		var card: CardDef = controller.cards.get(card_id)
@@ -785,8 +746,6 @@ func _forecast_state_signature() -> String:
 		var_to_str(_state.deck),
 		var_to_str(_state.hand),
 		var_to_str(_state.discard),
-		var_to_str(_state.statuses),
-		var_to_str(_state.statuses_triggered_this_turn),
 		var_to_str(_state.played_cards_this_turn),
 		var_to_str(_state.flags),
 		var_to_str(sim.economy.indicator_ids),
@@ -800,9 +759,9 @@ func _forecast_state_signature() -> String:
 		str(sim.rng.snapshot().next_int(1_000_000_000)),
 	])
 	for modifier in _state.modifiers:
-		parts.append("%s|%s|%d|%s|%d|%s" % [
+		parts.append("%s|%s|%d|%s|%d|%s|%d|%s|%d|%s" % [
 			modifier.scope, modifier.target, modifier.op, str(modifier.value),
-			modifier.remaining_turns, modifier.source,
+			modifier.remaining_turns, modifier.source, modifier.stacks, modifier.rule, modifier.ready_turn, var_to_str(modifier.data),
 		])
 	for cabinet in _state.cabinets:
 		parts.append(String(cabinet.id))
@@ -829,12 +788,19 @@ func _render_overlay() -> void:
 	if _state.run_status != GameState.RunStatus.RUNNING:
 		_show_result()
 		return
+	if _state.flags.get("pending_retain", false):
+		_show_hand_choice(true)
+		return
+	if _state.flags.get("pending_review", false):
+		_show_hand_choice(false)
+		return
 	if _state.pending_event != &"":
 		_show_event()
 		return
 	if not _state.pending_rewards.is_empty():
 		_show_rewards()
 		return
+	_reward_group_index = -1
 	_overlay_root.visible = false
 
 
@@ -844,6 +810,10 @@ func _overlay_content_signature() -> String:
 			_state.run_status, _state.year, str(_state.flags.get("loss_reason", "")),
 			_indicator_summary(), _state.seed_value, str(_state.turn),
 		]
+	if _state.flags.get("pending_retain", false):
+		return "retain:%s" % var_to_str(_state.hand)
+	if _state.flags.get("pending_review", false):
+		return "review:%s" % var_to_str(_state.hand)
 	if _state.pending_event != &"":
 		var event_parts := PackedStringArray(["event", String(_state.pending_event), str(_state.pending_event_choices.size())])
 		for index in range(_state.pending_event_choices.size()):
@@ -855,7 +825,7 @@ func _overlay_content_signature() -> String:
 			])
 		return "\n".join(event_parts)
 	if not _state.pending_rewards.is_empty():
-		var reward_parts := PackedStringArray(["rewards"])
+		var reward_parts := PackedStringArray(["rewards", str(_reward_group_index)])
 		reward_parts.append("at:%d:%d:%d" % [_state.year, _state.turn, _state.turn_in_year])
 		reward_parts.append("odds:%s:%s:%s" % [
 			TextFormatter.fmt(controller.simulation.rarity_weight(&"common")),
@@ -869,6 +839,29 @@ func _overlay_content_signature() -> String:
 				reward_parts.append("%d:%s:%s" % [reward.type, reward.id, reward.label])
 		return "\n".join(reward_parts)
 	return "none"
+
+
+func _show_hand_choice(retain: bool) -> void:
+	_overlay_box.add_child(_label("选择一张手牌保留到下回合" if retain else "弃掉一张手牌，再抽两张牌"))
+	for index in _state.hand.size():
+		var card: CardDef = controller.cards.get(_state.hand[index])
+		if card == null:
+			continue
+		var button := Button.new()
+		button.text = card.display_name
+		button.tooltip_text = TextFormatter.effects_text(_labels(), card.effects)
+		var hand_index := index
+		button.pressed.connect(func() -> void:
+			_dispatch(Command.choose_retained_card(hand_index) if retain else Command.choose_review_card(hand_index))
+		)
+		_overlay_box.add_child(button)
+	var skip := Button.new()
+	skip.text = "不保留" if retain else "跳过"
+	skip.pressed.connect(func() -> void:
+		_dispatch(Command.choose_retained_card(-1) if retain else Command.choose_review_card(-1))
+	)
+	_overlay_box.add_child(skip)
+	_overlay_root.visible = true
 
 
 func _show_event() -> void:
@@ -899,10 +892,9 @@ func _show_event() -> void:
 				text += "\n" + TextFormatter.effects_text(_labels(), definition.choices[index].effects)
 			button.text = text
 			button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			button.tooltip_text = choice.get("description", "")
 			button.disabled = not controller.simulation.event_choice_available(index)
 			if button.disabled:
-				button.tooltip_text += "\n预算不足"
+				button.tooltip_text = "预算不足"
 			var choice_index := index
 			button.pressed.connect(func() -> void: _dispatch(Command.resolve_event(choice_index)))
 			_overlay_box.add_child(button)
@@ -910,79 +902,112 @@ func _show_event() -> void:
 
 
 func _show_rewards() -> void:
-	_reward_selection.clear()
+	if _reward_group_index >= _state.pending_rewards.size():
+		_reward_group_index = -1
+	if _reward_group_index >= 0:
+		_show_reward_options(_reward_group_index)
+		return
 	var title := Label.new()
-	title.text = "年度筹备 · 每组可选一项"
+	title.text = "年度筹备"
 	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", UiTheme.ACCENT)
 	_overlay_box.add_child(title)
 	var odds := _wrapped("卡牌／内阁出现权重  普通 %s · 稀有 %s · 传奇 %s" % [TextFormatter.fmt(controller.simulation.rarity_weight(&"common")), TextFormatter.fmt(controller.simulation.rarity_weight(&"rare")), TextFormatter.fmt(controller.simulation.rarity_weight(&"legendary"))], UiTheme.MUTED, 460.0)
 	_overlay_box.add_child(odds)
+	var card_number := 0
 	for group_index in range(_state.pending_rewards.size()):
 		var group: Dictionary = _state.pending_rewards[group_index]
-		var group_title := _label(str(TYPE_LABELS.get(group.get("type"), "奖励")))
-		_overlay_box.add_child(group_title)
-		var options: Array = group.get("options", [])
-		var button_group := ButtonGroup.new()
-		for option_index in range(options.size()):
-			var reward: Reward = options[option_index]
-			var check := CardPreview.RewardChoice.new()
-			check.text = reward.label
-			check.tooltip_text = _reward_detail(reward)
-			if reward.type == Reward.Type.CARD:
-				var reward_card: CardDef = controller.cards.get(reward.id)
-				if reward_card != null:
-					check.is_card = true
-					check.preview_card = reward_card
-					check.preview_labels = _labels()
-					check.preview_budget = str(reward_card.cost)
-					check.preview_political = str(reward_card.political_cost)
-					check.text = ""
-					var reward_content := HBoxContainer.new()
-					reward_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-					reward_content.offset_left = 28
-					reward_content.offset_right = -4
-					reward_content.add_child(CardPreview.name_label(reward_card))
-					reward_content.add_child(CardPreview.rarity_label(reward_card, _labels()))
-					check.add_child(reward_content)
-					check.custom_minimum_size = reward_content.get_combined_minimum_size() + Vector2(32, 8)
-					_ignore_card_mouse(reward_content)
-			check.button_group = button_group
-			var gi := group_index
-			var oi := option_index
-			check.toggled.connect(func(pressed: bool) -> void:
-				if pressed:
-					_reward_selection[gi] = oi
-			)
-			if reward.type == Reward.Type.CABINET and controller.cabinets.has(reward.id):
-				var row := HBoxContainer.new()
-				row.add_theme_constant_override("separation", 12)
-				var badge := CabinetPortrait.new()
-				badge.setup(controller.cabinets[reward.id], _labels())
-				badge.pressed.connect(func() -> void: check.button_pressed = true)
-				row.add_child(badge)
-				row.add_child(check)
-				var cabinet_rarity := _colored(badge.rarity_text, UiTheme.rarity_color(badge.rarity))
-				row.add_child(cabinet_rarity)
-				_overlay_box.add_child(row)
-			else:
-				_overlay_box.add_child(check)
-		var skip := CheckBox.new()
-		skip.text = "跳过"
-		skip.button_group = button_group
-		var gi2 := group_index
-		skip.toggled.connect(func(pressed: bool) -> void:
-			if pressed:
-				_reward_selection.erase(gi2)
+		var button := Button.new()
+		match int(group.get("type", -1)):
+			Reward.Type.CARD:
+				card_number += 1
+				button.text = "领取卡牌奖励 %d" % card_number
+			Reward.Type.AID:
+				button.text = "领取援助奖励"
+			_:
+				button.text = "任命内阁"
+		button.custom_minimum_size.y = 44
+		var index := group_index
+		button.pressed.connect(func() -> void:
+			_reward_group_index = index
+			_overlay_signature = UNSET_SIGNATURE
+			_render_overlay()
 		)
-		_overlay_box.add_child(skip)
-	var confirm := Button.new()
-	confirm.text = "确认"
-	confirm.custom_minimum_size = Vector2(0, 36)
-	confirm.theme_type_variation = "PrimaryButton"
-	confirm.pressed.connect(_confirm_rewards)
-	_overlay_box.add_child(confirm)
+		_overlay_box.add_child(button)
+	var next := Button.new()
+	next.text = "继续"
+	next.theme_type_variation = "PrimaryButton"
+	next.pressed.connect(func() -> void: _dispatch(Command.choose_reward([])))
+	_overlay_box.add_child(next)
 	_overlay_root.visible = true
+
+
+func _show_reward_options(group_index: int) -> void:
+	var group: Dictionary = _state.pending_rewards[group_index]
+	var token := str(group.get("token", ""))
+	_overlay_box.add_child(_label(str(TYPE_LABELS.get(group.get("type"), "奖励"))))
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 12)
+	_overlay_box.add_child(row)
+	var options: Array = group.get("options", [])
+	for option_index in options.size():
+		var reward: Reward = options[option_index]
+		var pick := option_index
+		if reward.type == Reward.Type.CABINET:
+			var cabinet: CabinetDef = controller.cabinets.get(reward.id)
+			if cabinet == null:
+				continue
+			var column := VBoxContainer.new()
+			row.add_child(column)
+			var portrait := CabinetPortrait.new()
+			portrait.setup(cabinet, _labels())
+			portrait.pressed.connect(func() -> void: _claim_reward(group_index, pick, token))
+			column.add_child(portrait)
+			var appoint := Button.new()
+			appoint.text = cabinet.display_name
+			appoint.tooltip_text = _reward_detail(reward)
+			appoint.pressed.connect(func() -> void: _claim_reward(group_index, pick, token))
+			column.add_child(appoint)
+			continue
+		var card: CardDef = controller.cards.get(reward.id) if reward.type == Reward.Type.CARD else CardFace.aid_card(controller.aids[reward.id], controller.simulation.aid_gain_amount(reward.id))
+		if card == null:
+			continue
+		var button := CardButton.new()
+		button.preview_card = card
+		button.preview_labels = _labels()
+		button.preview_budget = str(card.cost)
+		button.preview_political = str(card.political_cost)
+		button.preview_aid = reward.type == Reward.Type.AID
+		button.preview_enabled = false
+		button.custom_minimum_size = Vector2(CardFace.WIDTH, CardFace.HEIGHT)
+		button.disabled = not controller.simulation._reward_available(reward.type, reward.id)
+		button.tooltip_text = ""
+		CardFace.style(button, card.rarity)
+		row.add_child(button)
+		var face := CardFace.fill(button, card, _labels(), str(card.cost), str(card.political_cost), {"aid": reward.type == Reward.Type.AID})
+		button.enable_lift(face)
+		button.pressed.connect(func() -> void: _claim_reward(group_index, pick, token))
+	var back := Button.new()
+	back.text = "返回"
+	back.pressed.connect(func() -> void:
+		_reward_group_index = -1
+		_overlay_signature = UNSET_SIGNATURE
+		_render_overlay()
+	)
+	_overlay_box.add_child(back)
+	var skip := Button.new()
+	skip.text = "跳过"
+	skip.pressed.connect(func() -> void: _claim_reward(group_index, -1, token))
+	_overlay_box.add_child(skip)
+	_overlay_root.visible = true
+
+
+func _claim_reward(group_index: int, option_index: int, token: String) -> void:
+	if group_index < 0 or group_index >= _state.pending_rewards.size():
+		return
+	_reward_group_index = -1
+	_dispatch(Command.claim_reward(group_index, option_index, token))
 
 
 func _show_result() -> void:
@@ -999,7 +1024,7 @@ func _show_result() -> void:
 	if not won:
 		var reason := "任期届满，目标未达成。" if _state.flags.get("loss_reason", "") == "deadline" else "经济危机导致计划终止。"
 		_overlay_box.add_child(_wrapped(reason, UiTheme.NEGATIVE, 460.0))
-	_overlay_box.add_child(_label("复盘种子：%d · 总回合：%d" % [_state.seed_value, _state.turn]))
+	_overlay_box.add_child(_label("总回合：%d" % _state.turn))
 	var back := Button.new()
 	back.text = "返回菜单"
 	back.custom_minimum_size = Vector2(0, 36)
@@ -1007,13 +1032,6 @@ func _show_result() -> void:
 	back.pressed.connect(func() -> void: exit_requested.emit())
 	_overlay_box.add_child(back)
 	_overlay_root.visible = true
-
-
-func _confirm_rewards() -> void:
-	var picks: Array = []
-	for group_index in range(_state.pending_rewards.size()):
-		picks.append(_reward_selection.get(group_index, -1))
-	_dispatch(Command.choose_reward(picks))
 
 
 func _dispatch(command: Command) -> void:
@@ -1146,7 +1164,7 @@ func _play_events(events: Array) -> void:
 			break
 	if restart:
 		_clear_log()
-		_reward_selection.clear()
+		_reward_group_index = -1
 		_reset_section_signatures()
 	for event in events:
 		var line := _describe(event)
@@ -1168,7 +1186,7 @@ func _describe(event: Event) -> String:
 			return "%s %d" % [name, int(params.get("turn_in_year", 0))]
 		Event.Kind.TURN_ENDED:
 			return name
-		Event.Kind.CARD_PLAYED:
+		Event.Kind.CARD_PLAYED, Event.Kind.CARD_REPLAYED:
 			return "%s：%s" % [name, _display_name(controller.cards, params.get("card_id", &""))]
 		Event.Kind.CARD_GAINED:
 			return "%s：%s" % [name, _display_name(controller.cards, params.get("card_id", &""))]
@@ -1184,14 +1202,14 @@ func _describe(event: Event) -> String:
 		Event.Kind.MODIFIER_APPLIED:
 			return "%s：%s（%s）来源 %s" % [
 				name,
-				TextFormatter.modifier_target(_labels(), StringName(params.get("scope", "indicator")), StringName(params.get("target", ""))),
+				_modifier_event_name(params),
 				Modifier.op_label(int(params.get("op", 0))),
 				params.get("source", ""),
 			]
 		Event.Kind.MODIFIER_EXPIRED:
 			return "%s：%s 来源 %s" % [
 				name,
-				TextFormatter.modifier_target(_labels(), StringName(params.get("scope", "indicator")), StringName(params.get("target", ""))),
+				_modifier_event_name(params),
 				params.get("source", ""),
 			]
 		Event.Kind.RESOURCE_CHANGED:
@@ -1208,9 +1226,9 @@ func _describe(event: Event) -> String:
 		Event.Kind.AID_USED:
 			return "%s：%s" % [name, _display_name(controller.aids, params.get("aid", &""))]
 		Event.Kind.AID_GAINED:
-			return "%s：%s" % [name, _display_name(controller.aids, params.get("aid", &""))]
+			return "%s：%s ×%d" % [name, _display_name(controller.aids, params.get("aid", &"")), int(params.get("amount", 1))]
 		Event.Kind.STATUS_GAINED, Event.Kind.STATUS_TRIGGERED:
-			return "[color=#7a3fb0]%s：%s[/color]" % ["获得能力" if event.kind == Event.Kind.STATUS_GAINED else "能力触发", _display_name(controller.statuses, params.get("status", &""))]
+			return "[color=#7a3fb0]%s：%s[/color]" % ["获得修正" if event.kind == Event.Kind.STATUS_GAINED else "修正触发", _display_name(controller.statuses, params.get("status", &""))]
 		Event.Kind.REWARD_OFFERED:
 			return name
 		Event.Kind.REWARD_CHOSEN:
@@ -1222,8 +1240,17 @@ func _describe(event: Event) -> String:
 	return ""
 
 
+func _modifier_event_name(params: Dictionary) -> String:
+	var scope := StringName(params.get("scope", "indicator"))
+	var target := StringName(params.get("target", ""))
+	if scope == Modifier.SCOPE_SPECIAL:
+		return _display_name(controller.statuses, target) if controller.statuses.has(target) else str(params.get("source", "修正"))
+	return TextFormatter.modifier_target(_labels(), scope, target)
+
+
 func _busy() -> bool:
-	return _state.pending_event != &"" or not _state.pending_rewards.is_empty()
+	return _state.pending_event != &"" or not _state.pending_rewards.is_empty() \
+		or _state.flags.get("pending_retain", false) or _state.flags.get("pending_review", false)
 
 
 func _turns_per_year() -> int:
@@ -1286,38 +1313,30 @@ func _reward_detail(reward: Reward) -> String:
 		Reward.Type.CARD:
 			var card: CardDef = controller.cards.get(reward.id)
 			if card != null:
-				return "［%s · %s］\n%s" % [
-					TextFormatter.rarity_name(_labels(), card.rarity), TextFormatter.card_type_name(_labels(), card.card_type),
-					_detail_text(card.description, card.effects, controller.simulation.groups_of("cards", card.id)),
-				]
+				return _detail_text(card.description, card.effects)
 		Reward.Type.CABINET:
 			var cabinet: CabinetDef = controller.cabinets.get(reward.id)
 			if cabinet != null:
-				return _detail_text(cabinet.description, cabinet.modifiers, controller.simulation.groups_of("cabinets", cabinet.id))
+				var parts := PackedStringArray()
+				if not cabinet.modifiers.is_empty():
+					parts.append(TextFormatter.effects_text(_labels(), cabinet.modifiers))
+				for trigger in cabinet.triggers:
+					parts.append(TextFormatter.trigger_text(_labels(), trigger))
+				return "\n".join(parts)
 		Reward.Type.AID:
 			var aid: AidDef = controller.aids.get(reward.id)
 			if aid != null:
-				return _detail_text(aid.description, aid.effects, controller.simulation.groups_of("aids", aid.id))
+				return TextFormatter.effects_text(_labels(), aid.effects)
 	return ""
 
 
-func _detail_text(description: String, effects: Array, group_ids: Array = []) -> String:
+func _detail_text(description: String, effects: Array) -> String:
 	var parts := PackedStringArray()
-	if not group_ids.is_empty():
-		parts.append("类别：%s" % _group_names(group_ids))
 	if description != "":
 		parts.append(description)
 	if not effects.is_empty():
 		parts.append(TextFormatter.effects_text(_labels(), effects))
 	return "\n".join(parts)
-
-
-func _group_names(group_ids: Array) -> String:
-	var parts := PackedStringArray()
-	for group_id in group_ids:
-		var group: GroupDef = controller.groups.get(group_id)
-		parts.append(group.display_name if group != null and group.display_name != "" else String(group_id))
-	return "，".join(parts)
 
 
 func _label(text: String) -> Label:

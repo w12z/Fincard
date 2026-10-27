@@ -1,18 +1,10 @@
 {
   "id": "arcadia_ev_bank_panic", "title": "恐慌蔓延·银行倒闭潮",
-  "description": "储户蜂拥提现，多家银行濒临倒闭。存款保险可降低救助成本与失业损失。",
+  "description": "储户蜂拥提现，多家银行濒临倒闭。",
   "choices": [
-    { "label": "紧急注资救助银行", "description": "支付预算，阻止恐慌扩散。存款保险可降低费用。", "effects": [
-      { "kind": "branch", "params": {
-        "condition": { "indicator": "bank_protection", "comparator": "ge", "value": 1 },
-        "then": [
-          { "kind": "gain_budget", "params": { "amount": -3 } },
-          { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 1 } }
-        ], "else": [
-          { "kind": "gain_budget", "params": { "amount": -8 } },
-          { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 3 } }
-        ]
-      } },
+    { "label": "紧急注资救助银行", "description": "支付预算，阻止恐慌扩散。", "effects": [
+      { "kind": "gain_budget", "params": { "amount": -8 } },
+      { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 3 } },
       { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -4 } }
     ] },
     { "label": "放任银行倒闭", "description": "不支付救助资金，但引发全面恐慌。", "effects": [

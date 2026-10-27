@@ -147,8 +147,8 @@ func _run() -> void:
 	var sim := controller.simulation
 	for cabinet: CabinetDef in controller.cabinets.values():
 		sim._appoint_cabinet(cabinet.id)
-	for id in controller.statuses:
-		sim.resolver.resolve(Effect.from_dict({"kind": "grant_status", "params": {"status": id}}), sim.state, sim.rng)
+	for id in [&"executive_mandate", &"earmarked_funds", &"policy_synergy", &"deficit_spending"]:
+		sim.resolver.resolve(Effect.from_dict({"kind": "apply_modifier", "params": {"scope": "special", "target": id, "duration": -1}}), sim.state, sim.rng)
 	for id in controller.aids:
 		sim._gain_aid(id)
 	sim.state.budget = 100
@@ -167,7 +167,7 @@ func _run() -> void:
 	_expect(ui._played_table._cards.is_empty(), "A new turn must open with an empty table")
 	_expect(root.get_visible_rect().encloses(cabin_rect), "Top panels must fit the viewport")
 	var aid: Button = ui._aids_box.get_child(0)
-	_expect(not aid.disabled and "×" in aid.text and not aid.tooltip_text.is_empty(), "Aid buttons need remaining uses and hover details")
+	_expect(not aid.disabled and not aid.text.is_empty() and not aid.tooltip_text.is_empty(), "Aid buttons need a name and effect details")
 	var hand_card: Button = ui._hand_box.get_child(0)
 	_check_resource_icons(ui)
 	_expect(ui._header.get_node("BudgetAmount/Icon").texture != ui._header.get_node("PoliticalAmount/Icon").texture, "Budget and political points use distinct artwork")
@@ -211,7 +211,7 @@ func _run() -> void:
 	var expected: Array[StringName] = [&"starter_small_business", &"starter_infrastructure", &"reform_executive_mandate", &"starter_training"]
 	_expect(sim.state.played_cards_this_turn == expected, "Played cards must retain exact play order")
 	_expect(ui._played_table._cards.size() == 4, "Every successful play needs one table card")
-	for i in ui._played_table._cards.size():
+	for i in mini(ui._played_table._cards.size(), expected.size()):
 		var card: Button = ui._played_table._cards[i]
 		_expect(card.get_meta("card_id") == expected[i] and card.get_meta("play_order") == i + 1, "Table order must match history")
 		_expect(root.get_visible_rect().encloses(card.get_global_rect()), "Played cards must fit the table")

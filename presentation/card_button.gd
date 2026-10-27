@@ -6,6 +6,8 @@ var preview_budget := "0"
 var preview_political := "0"
 var preview_card: CardDef
 var preview_labels := {}
+var preview_aid: bool = false
+var preview_enabled: bool = true
 var _face: Control
 var _styles := {}
 var _lift_tween: Tween
@@ -13,7 +15,9 @@ var _lifted := false
 
 
 func _make_custom_tooltip(for_text: String) -> Object:
-	return CardPreview.build(for_text, preview_budget, preview_political, preview_card, preview_labels)
+	if not preview_enabled:
+		return null
+	return CardPreview.build(for_text, preview_budget, preview_political, preview_card, preview_labels, preview_aid)
 
 
 func _has_point(point: Vector2) -> bool:

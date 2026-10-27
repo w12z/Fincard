@@ -4,6 +4,7 @@
   "description": "对进口商品征收保护性关税。",
   "card_type": "policy", "cost": 0, "political_cost": 1,
   "effects": [
-    { "kind": "gain_budget", "params": { "amount": 3 } }
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 2 } },
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": -0.1, "duration": 2, "source": "临时保护关税" } }
   ]
 }

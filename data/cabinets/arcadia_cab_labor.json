@@ -1,7 +1,7 @@
 {
   "rarity": "legendary",
   "id": "arcadia_cab_labor", "display_name": "劳工部长",
-  "description": "每月失业率 -0.15 个百分点，市场信心 +0.3。",
+  "description": "每回合结束时失业率 -0.15 个百分点，市场信心 +0.3。",
   "modifiers": [],
   "triggers": [
     { "on": "turn_ended", "effects": [

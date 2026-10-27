@@ -85,17 +85,17 @@ func _test_content() -> void:
 			for id in ids:
 				_expect(controller.groups.has(id), "Missing scenario group %s" % id)
 	_expect(controller.events.size() == 19, "All 19 events must load without duplicate IDs")
-	_expect(controller.cards.size() == 34, "All 34 cards must load")
-	_expect(controller.statuses.size() == 4, "All special abilities must load")
+	_expect(controller.cards.size() == 42, "All 42 cards must load")
+	_expect(controller.statuses.size() == 13, "All 13 special modifier definitions must load")
 	for card: CardDef in controller.cards.values():
 		_expect(CardDef.RARITIES.has(card.rarity), "Card must have a supported rarity: %s" % card.id)
 		_expect(_card_effect_count(card.effects) <= 2, "Card exceeds two effects (including conditional branches): %s" % card.id)
 		_expect(_card_effect_targets(card.effects).size() <= 2, "Card exceeds two effect types across all branches: %s" % card.id)
 		for effect: Effect in card.effects:
-			if effect.kind == Effect.Kind.GRANT_STATUS:
-				_expect(controller.statuses.has(StringName(effect.params.get("status", ""))), "Ability card must reference an existing status")
+			if effect.kind == Effect.Kind.APPLY_MODIFIER and effect.params.get("scope", "") == "special":
+				_expect(controller.statuses.has(StringName(effect.params.get("target", ""))), "Special modifier must reference an existing definition")
 	for status: StatusDef in controller.statuses.values():
-		_expect(status.rule in [&"first_card_political_free", &"first_investment_discount", &"third_card_draw", &"deficit_spending"], "Status must have an implemented rule")
+		_expect(status.rule in [&"first_card_political_free", &"first_investment_discount", &"third_card_draw", &"deficit_spending", &"second_card_free", &"retain_card", &"all_types_refund", &"next_turn_replay", &"start_turn_review", &"save_political", &"investment_draw", &"aid_card_repeat", &"repeat_next_card"], "Special modifier must have an implemented rule")
 
 
 func _check_economic_data_dir(path: String) -> void:
@@ -120,6 +120,8 @@ func _check_economic_data(data: Variant, path: String) -> void:
 				labels = controller.labels["fiscal"]
 			if data.get("scope", "indicator") == "reward":
 				labels = controller.labels["reward"]
+			if data.get("scope", "indicator") == "special":
+				labels = controller.labels["special_modifiers"]
 			_expect(labels.has(data["target"]), "Unknown effect target in %s: %s" % [path, data["target"]])
 		if data.has("indicator"):
 			_expect(controller.labels["indicators"].has(data["indicator"]), "Unknown condition indicator in %s" % path)
@@ -342,6 +344,20 @@ func _autoplay(scenario: StringName, seed_value: int, policy: String) -> Diction
 								pick = i
 				picks.append(pick)
 			sim.apply_command(Command.choose_reward(picks))
+		elif state.flags.get("pending_retain", false) or state.flags.get("pending_review", false):
+			var retain := bool(state.flags.get("pending_retain", false))
+			var pick := -1
+			if policy == "random" and not state.hand.is_empty():
+				pick = bot_rng.next_int(state.hand.size())
+			elif policy == "planned":
+				var best := -INF if retain else INF
+				for i in state.hand.size():
+					var card: CardDef = sim.card_db[state.hand[i]]
+					var score := _effects_score(sim, card.effects) / (1 + card.cost * 0.2 + card.political_cost * 0.1)
+					if (retain and score > best) or (not retain and score < best):
+						best = score
+						pick = i
+			sim.apply_command(Command.choose_retained_card(pick) if retain else Command.choose_review_card(pick))
 		elif state.pending_event != &"":
 			var definition: EconomyEventDef = sim.event_db[state.pending_event]
 			var available: Array[int] = []
@@ -380,7 +396,7 @@ func _autoplay(scenario: StringName, seed_value: int, policy: String) -> Diction
 						best_card = id
 				if best_card != &"":
 					sim.apply_command(Command.play_card(best_card))
-			# One card per month is deliberately a simple baseline, not an optimal solver.
+			# One card per turn is deliberately a simple baseline, not an optimal solver.
 			sim.apply_command(Command.end_turn())
 		for value in state.indicators.values():
 			_expect(is_finite(float(value)), "Non-finite economy value")
@@ -403,7 +419,7 @@ func _reward_score(sim: Simulation, reward: Reward) -> float:
 
 func _effects_score(sim: Simulation, effects: Array) -> float:
 	var score := 0.0
-	# Sustained investment now feeds prices through monthly growth. Avoid
+	# Sustained investment now feeds prices through per-turn growth. Avoid
 	# endlessly stimulating an overheated economy instead of stabilizing it.
 	var growth_weight := 0.25 if sim.economy.value(sim.state, &"inflation") >= 5 else 2.5
 	for effect: Effect in effects:
@@ -421,12 +437,21 @@ func _effects_score(sim: Simulation, effects: Array) -> float:
 		elif effect.kind == Effect.Kind.GAIN_POLITICAL_CAPITAL:
 			score += float(p.get("amount", 0)) * (0.6 if sim.state.political_capital < 4 else 0.15)
 		elif effect.kind == Effect.Kind.GRANT_STATUS:
-			# This conservative one-card/month bot cannot exploit full combo value.
+			# This conservative one-card/turn bot cannot exploit full combo value.
 			var ability_scores := {"executive_mandate": 2.5, "earmarked_funds": 2.5, "policy_synergy": 0.5}
 			score += float(ability_scores.get(String(p.get("status", "")), 0))
 		elif effect.kind == Effect.Kind.ADJUST_INDICATOR or effect.kind == Effect.Kind.APPLY_MODIFIER:
 			var amount := float(p.get("amount", p.get("value", 0)))
 			var target := StringName(p.get("target", ""))
+			if p.get("scope", "") == "special":
+				# Keep the existing one-card-per-turn baseline; do not pretend it can use every combo.
+				var ability_scores := {"executive_mandate": 2.5, "earmarked_funds": 2.5, "policy_synergy": 0.5, "deficit_spending": 1.0, "emergency_authority": 0.0, "policy_reserve": 1.5, "rotation_execution": 0.0, "project_continuity": 4.0, "midterm_review": 1.5, "agenda_reserve": 2.0, "investment_research": 2.0, "aid_card_repeat": 2.0}
+				score += float(ability_scores.get(String(target), 0))
+				continue
+			if p.get("scope", "") == "fiscal":
+				var remaining := maxi(0, sim.scenario_db[sim.state.scenario_id].goal.deadline_years - sim.state.year)
+				score += amount * remaining * 0.15 if target == &"annual_income" else amount * maxi(0, sim.state.budget) * remaining * 0.1
+				continue
 			if p.get("scope", "") == "coefficient":
 				if p.get("op", "add") == "override":
 					amount -= sim.economy.coefficient(sim.state, target)
@@ -444,5 +469,4 @@ func _effects_score(sim: Simulation, effects: Array) -> float:
 				&"confidence": score += amount * (0.5 if current < 45 else 0.15)
 				&"inflation": score += (absf(current - 2) - absf(current + amount - 2)) * 0.6
 				&"interest_rate": score -= amount * 0.4
-				&"bank_protection", &"market_protection": score += 7 if sim.state.turn < 24 else 0.5
 	return score

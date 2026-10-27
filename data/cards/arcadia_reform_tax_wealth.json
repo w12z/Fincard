@@ -4,6 +4,6 @@
   "description": "向高收入群体征收特别税款。",
   "card_type": "reform", "once_per_run": true, "cost": 0, "political_cost": 3,
   "effects": [
-    { "kind": "gain_budget", "params": { "amount": 8 } }
+    { "kind": "apply_modifier", "params": { "scope": "fiscal", "target": "annual_income", "op": "add", "value": 4, "duration": -1, "source": "财富税" } }
   ]
 }

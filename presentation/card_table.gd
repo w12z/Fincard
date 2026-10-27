@@ -34,7 +34,6 @@ func render(history: Array[StringName], definitions: Dictionary, labels: Diction
 		var card: CardDef = definitions.get(history[index])
 		if card == null:
 			continue
-		var color := UiTheme.card_type_color(card.card_type)
 		var button := CardButton.new()
 		button.preview_card = card
 		button.preview_labels = labels
@@ -44,35 +43,12 @@ func render(history: Array[StringName], definitions: Dictionary, labels: Diction
 		button.size = CARD_SIZE
 		button.clip_contents = true
 		button.mouse_default_cursor_shape = Control.CURSOR_HELP
-		button.add_theme_stylebox_override("normal", _style(UiTheme.CARD_BORDER, false))
-		button.add_theme_stylebox_override("hover", _style(UiTheme.ACCENT, true))
-		button.add_theme_stylebox_override("pressed", _style(UiTheme.ACCENT, true))
+		CardFace.style(button, card.rarity)
 		button.set_meta("card_id", card.id)
 		button.set_meta("play_order", index + 1)
-		button.tooltip_text = "%d. %s［%s］\n%s\n%s" % [index + 1, card.display_name, TextFormatter.rarity_name(labels, card.rarity), card.description, TextFormatter.effects_text(labels, card.effects)]
+		button.tooltip_text = "%d. %s\n%s\n%s" % [index + 1, card.display_name, card.description, TextFormatter.effects_text(labels, card.effects)]
 		add_child(button)
-		var margin := MarginContainer.new()
-		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		for edge in ["left", "right", "top", "bottom"]:
-			margin.add_theme_constant_override("margin_" + edge, 12)
-		button.add_child(margin)
-		var content := VBoxContainer.new()
-		content.add_theme_constant_override("separation", 8)
-		margin.add_child(content)
-		content.add_child(_label("%02d" % (index + 1), 22, UiTheme.TEXT))
-		var title := _label(card.display_name, 16, color)
-		title.name = "CardName"
-		content.add_child(title)
-		var rarity := CardPreview.rarity_label(card, labels)
-		rarity.add_theme_font_size_override("font_size", 12)
-		content.add_child(rarity)
-		content.add_child(HSeparator.new())
-		var effect_label := _label(TextFormatter.effects_text(labels, card.effects), 13, UiTheme.TEXT)
-		effect_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		effect_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		effect_label.max_lines_visible = 5
-		content.add_child(effect_label)
-		_ignore_mouse(margin)
+		CardFace.fill(button, card, labels, str(card.cost), str(card.political_cost), {"compact": true, "order": index + 1})
 		_cards.append(button)
 		button.mouse_entered.connect(func() -> void: button.z_index = _cards.size() + 1)
 		button.mouse_exited.connect(func() -> void: button.z_index = int(button.get_meta("play_order")))

@@ -22,11 +22,13 @@ static func build(economy: EconomyModel, config: Dictionary, rules: Dictionary) 
 	economy.equations[&"unemployment"] = func(state: GameState, model: EconomyModel, _rng: Rng) -> float:
 		var gap := model.coefficient(state, &"natural_unemployment") - model.value(state, &"unemployment")
 		return gap / 10.0 - EconomyBuilder._growth_rate(state, model) / 2.0 \
-			+ model.coefficient(state, &"u_revert") * gap
+			- model.coefficient(state, &"u_revert") * maxf(-gap, 0.0)
 
 	economy.equations[&"confidence"] = func(state: GameState, model: EconomyModel, _rng: Rng) -> float:
 		return EconomyBuilder._growth_rate(state, model) \
-			- absf(model.value(state, &"inflation") - model.coefficient(state, &"inflation_target")) / 10.0
+			- absf(model.value(state, &"inflation") - model.coefficient(state, &"inflation_target")) / 5.0 \
+			- maxf(model.value(state, &"unemployment") - model.coefficient(state, &"natural_unemployment"), 0.0) / 5.0 \
+			- maxf(-float(state.budget), 0.0) / 5.0
 
 	economy.register_derived(&"growth", func(state: GameState, model: EconomyModel) -> float:
 		return EconomyBuilder._growth_rate(state, model)

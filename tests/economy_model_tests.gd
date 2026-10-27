@@ -34,6 +34,7 @@ func _test_baseline() -> void:
 	for scenario in controller.scenarios:
 		var sim := _prepare(scenario)
 		_expect(sim.economy.base_coefficients.size() == 3, "The economy has exactly three default parameters")
+		_expect(is_equal_approx(sim.economy.base_coefficients[&"gdp_auto"], 0.1), "Default potential growth is 0.1 per turn")
 		for key in expected:
 			_expect(sim.economy.base_coefficients.has(key) and _entry_count(sim, "coefficient:%s" % key) == 1, "Every base parameter is visible once")
 		for key in sim.economy.scenario_coefficients:
@@ -45,13 +46,13 @@ func _test_baseline() -> void:
 
 func _test_equations() -> void:
 	var sim := _prepare()
-	# At GDP=128, confidence=70, rate=4 the simplified growth rate is 0.48.
+	# At GDP=128, confidence=70, rate=4 the simplified growth rate is 0.4.
 	var forecast := sim.forecast_next_turn()
 	sim.economy.tick(sim.state, sim.rng)
-	_expect(is_equal_approx(sim.state.indicators[&"gdp"], 128 * 1.0048), "GDP uses potential growth + confidence/100 - interest/10")
-	_expect(is_equal_approx(sim.state.indicators[&"inflation"], 2.048), "Inflation follows its target and current growth")
-	_expect(is_equal_approx(sim.state.indicators[&"unemployment"], 4.86), "Unemployment follows its natural level and growth")
-	_expect(is_equal_approx(sim.state.indicators[&"confidence"], 70.48), "Confidence follows growth and deviation from the inflation target")
+	_expect(is_equal_approx(sim.state.indicators[&"gdp"], 128 * 1.004), "GDP uses potential growth + confidence/100 - interest/10")
+	_expect(is_equal_approx(sim.state.indicators[&"inflation"], 2.04), "Inflation follows its target and current growth")
+	_expect(is_equal_approx(sim.state.indicators[&"unemployment"], 4.9), "Unemployment follows its natural level and growth")
+	_expect(is_equal_approx(sim.state.indicators[&"confidence"], 70.4), "Confidence follows growth and deviation from the inflation target")
 	for id in sim.economy.indicator_ids:
 		_expect(is_equal_approx(sim.economy.value(sim.state, id), sim.economy.value(forecast, id)), "Prediction still matches simplified economic settlement")
 	var formula := EconomyForecast.formulas(sim)
@@ -74,7 +75,10 @@ func _test_extensions() -> void:
 	_expect(_entry_count(sim, "coefficient:u_revert") == 1, "A reform can add another economic extension")
 	g = float(sim.economy.derived[&"growth"].call(sim.state, sim.economy))
 	delta = float(sim.economy.equations[&"unemployment"].call(sim.state, sim.economy, sim.rng))
-	_expect(is_equal_approx(delta, (6 - 5) / 10.0 - g / 2 + 0.02 * (6 - 5)), "Labor reform remains functional without a hidden baseline coefficient")
+	_expect(is_equal_approx(delta, (6 - 5) / 10.0 - g / 2), "Extra employment recovery must not raise unemployment below the natural target")
+	sim.state.indicators[&"unemployment"] = 8
+	delta = float(sim.economy.equations[&"unemployment"].call(sim.state, sim.economy, sim.rng))
+	_expect(is_equal_approx(delta, (6 - 8) / 10.0 - g / 2 - 0.02 * (8 - 6)), "Extra recovery lowers unemployment only above the natural target")
 	_expect("0.02 ×" in EconomyForecast.formulas(sim), "Reform extension is visible in the formula")
 	# Financial/reward extensions remain allowed, but only after being earned.
 	sim._appoint_cabinet(&"arcadia_cab_braintrust")

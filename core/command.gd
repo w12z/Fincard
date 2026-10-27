@@ -1,7 +1,7 @@
 class_name Command
 extends RefCounted
 
-enum Kind { PLAY_CARD, END_TURN, RESOLVE_EVENT, USE_AID, CHOOSE_REWARD }
+enum Kind { PLAY_CARD, END_TURN, RESOLVE_EVENT, USE_AID, CHOOSE_REWARD, CHOOSE_RETAINED_CARD, CHOOSE_REVIEW_CARD, CLAIM_REWARD }
 
 var kind: int
 var params: Dictionary
@@ -30,3 +30,15 @@ static func use_aid(aid_id: StringName) -> Command:
 
 static func choose_reward(picks: Array) -> Command:
 	return Command.new(Kind.CHOOSE_REWARD, {"picks": picks})
+
+
+static func choose_retained_card(hand_index: int) -> Command:
+	return Command.new(Kind.CHOOSE_RETAINED_CARD, {"hand_index": hand_index})
+
+
+static func choose_review_card(hand_index: int) -> Command:
+	return Command.new(Kind.CHOOSE_REVIEW_CARD, {"hand_index": hand_index})
+
+
+static func claim_reward(group_index: int, option_index: int, token: String = "") -> Command:
+	return Command.new(Kind.CLAIM_REWARD, {"group_index": group_index, "option_index": option_index, "token": token})
