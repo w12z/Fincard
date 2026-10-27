@@ -139,7 +139,7 @@ func _run() -> void:
 	_expect(sim.apply_command(Command.play_card(&"starter_infrastructure")).is_empty(), "Deficit must not waive political cost")
 	sim.state.budget = -11
 	_next_year(sim)
-	_expect(sim.state.budget == 26, "Negative balances retain the same factor and floor rounding")
+	_expect(sim.state.budget == 21, "Deficit carries in full without retention or floor rounding before annual income")
 	sim = _prepare()
 	_expect(not StatusRules.allows_deficit(sim.state, sim.status_db) and sim.annual_income() == 32 and sim.budget_retention() == 0.5, "Restart clears fiscal reforms and temporary support")
 	# An opening cabinet must affect the very first payment, once only.

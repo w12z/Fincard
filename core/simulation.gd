@@ -48,8 +48,8 @@ func start_run(scenario_id: StringName) -> Array[Event]:
 	state.scenario_id = _scenario.id
 	state.base_annual_income = _scenario.annual_income
 	state.base_budget_retention = float(rules.get("budget_retention", 0.5))
+	economy.set_active_indicators(_scenario.indicators.keys())
 	for id in _scenario.indicators:
-		economy.register_indicator(id)
 		state.indicators[id] = float(_scenario.indicators[id])
 	state.deck = _scenario.starting_deck.duplicate()
 	rng.shuffle(state.deck)
@@ -92,17 +92,28 @@ func forecast_next_turn() -> GameState:
 		return null
 	# Use the actual turn pipeline on an isolated state/RNG. Future rewards and
 	# unresolved event choices are excluded; existing cabinet triggers still run.
+	var preview := _clone_for_preview()
+	preview.rules["random_event_chance"] = 0.0
+	preview.rules["reward_option_count"] = 0
+	preview._end_turn()
+	return preview.state
+
+
+func _clone_for_preview() -> Simulation:
+	# Clone everything resolution can observe so previews never mutate the live run.
 	var preview := Simulation.new(state.seed_value)
 	preview.state = state.snapshot()
 	preview.rng = rng.snapshot()
 	preview.rules = rules.duplicate(true)
-	preview.rules["random_event_chance"] = 0.0
-	preview.rules["reward_option_count"] = 0
 	preview._scenario = _scenario
 	preview.turns.phase = turns.phase
 	preview.card_db = card_db
 	preview.event_db = event_db
+	preview.cabinet_db = cabinet_db
+	preview.aid_db = aid_db
+	preview.group_db = group_db
 	preview.status_db = status_db
+	preview.resolver.economy = preview.economy
 	preview.resolver.card_db = card_db
 	preview.resolver.status_db = status_db
 	preview.economy.indicator_ids = economy.indicator_ids.duplicate()
@@ -110,10 +121,10 @@ func forecast_next_turn() -> GameState:
 	preview.economy.equations = economy.equations.duplicate()
 	preview.economy.derived = economy.derived.duplicate()
 	preview.economy.bounds = economy.bounds.duplicate(true)
+	preview.economy.base_bounds = economy.base_bounds.duplicate(true)
 	preview.economy.base_coefficients = economy.base_coefficients.duplicate()
 	preview.economy.scenario_coefficients = economy.scenario_coefficients.duplicate()
-	preview._end_turn()
-	return preview.state
+	return preview
 
 
 func _can_act() -> bool:
@@ -272,29 +283,14 @@ func can_spend_budget(amount: int) -> bool:
 func _effects_affordable(effects: Array) -> bool:
 	if StatusRules.allows_deficit(state, status_db):
 		return true
-	return _budget_after_effects(effects, state.budget) >= 0
-
-
-func _budget_after_effects(effects: Array, budget: int) -> int:
-	# Resource previews do not spend money, draw cards, or consume RNG.
+	if effects.is_empty():
+		return true
+	# Resolve the whole effect list against an isolated simulation so earlier
+	# effects can change the indicator values and modifiers that later branches read.
+	var preview := _clone_for_preview()
 	for effect: Effect in effects:
-		if effect.condition != null and not effect.condition.evaluate(state, economy):
-			continue
-		if effect.kind == Effect.Kind.GAIN_BUDGET:
-			budget += int(effect.params.get("amount", 0))
-		elif effect.kind == Effect.Kind.BRANCH:
-			var params := effect.params
-			var branch := "then"
-			if params.get("condition") is Dictionary and not Condition.from_dict(params["condition"]).evaluate(state, economy):
-				branch = "else"
-			var nested: Array[Effect] = []
-			for raw in params.get(branch, []):
-				if raw is Dictionary:
-					nested.append(Effect.from_dict(raw))
-			budget = _budget_after_effects(nested, budget)
-		if budget < 0:
-			return -1
-	return budget
+		preview.resolver.resolve(effect, preview.state, preview.rng)
+	return preview.state.budget >= 0
 
 
 func _end_turn() -> Array[Event]:

@@ -48,6 +48,8 @@ func _run() -> void:
 	_test_investments()
 	_test_payments()
 	_test_event_budget()
+	_test_event_preview_ordering()
+	_test_event_preview_isolation()
 	_test_relief()
 	_test_branches()
 	await _test_event_ui()
@@ -212,6 +214,83 @@ func _test_event_budget() -> void:
 		_expect(not definition.has_choices() or choice >= 0, "Event must not trap a player without budget: %s" % id)
 		sim.apply_command(Command.resolve_event(choice))
 		_expect(sim.state.pending_event == &"" and sim.state.budget >= 0, "Free event resolution must advance without overdraft: %s" % id)
+
+
+func _test_event_preview_ordering() -> void:
+	var event := _preview_branch_event()
+	var sim := _prepare()
+	sim.event_db[event.id] = event
+	sim.state.indicators[&"confidence"] = 45
+	sim.state.budget = 10
+	sim._fire_event(event.id)
+	_expect(sim.event_choice_available(0), "Preview must apply earlier effects before selecting a branch")
+	var events := sim.apply_command(Command.resolve_event(0))
+	_expect(not events.is_empty() and sim.state.pending_event == &"", "An affordable previewed branch must resolve")
+	_expect(sim.state.budget == 5 and sim.state.indicators[&"confidence"] == 55, "Resolution must select the same branch as the preview")
+	# The same event is unaffordable when the earlier effect cannot cross the branch threshold.
+	sim = _prepare()
+	sim.event_db[event.id] = event
+	sim.state.indicators[&"confidence"] = 45
+	sim.state.budget = 4
+	sim._fire_event(event.id)
+	sim.economy.refresh_derived(sim.state)
+	var before := sim.state.indicators.duplicate(true)
+	_expect(not sim.event_choice_available(0), "Preview must reject the branch selected after earlier effects")
+	_expect(sim.apply_command(Command.resolve_event(0)).is_empty(), "An unaffordable previewed branch must be rejected before execution")
+	_expect(sim.state.budget == 4 and sim.state.indicators == before and sim.state.pending_event == event.id, "Rejected choice must not partially execute")
+	sim.event_db.erase(event.id)
+
+
+func _test_event_preview_isolation() -> void:
+	var sim := _prepare()
+	var event := _preview_isolation_event()
+	sim.event_db[event.id] = event
+	sim.state.indicators[&"confidence"] = 40
+	sim.state.budget = 10
+	sim._fire_event(event.id)
+	var indicators := sim.state.indicators.duplicate(true)
+	var hand := sim.state.hand.duplicate()
+	var deck := sim.state.deck.duplicate()
+	var discard := sim.state.discard.duplicate()
+	var budget := sim.state.budget
+	var rng_before := sim.rng.snapshot()
+	_expect(sim.event_choice_available(-1), "No-choice event preview must be affordable")
+	_expect(sim.state.indicators == indicators and sim.state.budget == budget, "Event preview must not change live indicators or budget")
+	_expect(sim.state.hand == hand and sim.state.deck == deck and sim.state.discard == discard, "Event preview must not draw from the live deck")
+	_expect(sim.state.pending_event == event.id, "Event preview must not resolve the pending event")
+	_expect(sim.rng.snapshot().next_int(1000000) == rng_before.next_int(1000000), "Event preview must not consume live RNG")
+	sim.event_db.erase(event.id)
+
+
+func _preview_branch_event() -> EconomyEventDef:
+	var event := EconomyEventDef.new()
+	event.id = &"synthetic_preview_branch"
+	event.title = "Preview branch"
+	event.description = ""
+	event.choices.append(EventChoice.from_dict({
+		"label": "Pay after adjustment",
+		"description": "",
+		"effects": [
+			{"kind": "adjust_indicator", "params": {"target": "confidence", "amount": 10}},
+			{"kind": "branch", "params": {
+				"condition": {"indicator": "confidence", "comparator": "ge", "value": 50},
+				"then": [{"kind": "gain_budget", "params": {"amount": -5}}],
+				"else": [{"kind": "gain_budget", "params": {"amount": -20}}],
+			}},
+		],
+	}))
+	return event
+
+
+func _preview_isolation_event() -> EconomyEventDef:
+	var event := EconomyEventDef.new()
+	event.id = &"synthetic_preview_isolation"
+	event.title = "Preview isolation"
+	event.description = ""
+	event.effects.append(Effect.from_dict({"kind": "adjust_indicator", "params": {"target": "confidence", "amount": 10}}))
+	event.effects.append(Effect.from_dict({"kind": "draw_cards", "params": {"count": 2}}))
+	event.effects.append(Effect.from_dict({"kind": "gain_budget", "params": {"amount": -5}}))
+	return event
 
 
 func _test_event_ui() -> void:

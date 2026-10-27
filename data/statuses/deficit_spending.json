@@ -1,5 +1,5 @@
 {
   "id": "deficit_spending", "display_name": "赤字财政", "icon": "赤",
-  "description": "允许预算透支。负余额按跨年保留系数结转。",
+  "description": "允许预算透支。赤字全额结转，不乘跨年保留系数。",
   "rule": "deficit_spending"
 }

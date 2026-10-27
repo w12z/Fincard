@@ -5,6 +5,8 @@ const CARD_SIZE := Vector2(184, 224)
 const MIN_STEP := 44.0
 var _cards: Array[Button] = []
 var _reveal_pending: bool = false
+var _history_signature: String = ""
+var _signature_ready: bool = false
 
 
 func _ready() -> void:
@@ -12,12 +14,22 @@ func _ready() -> void:
 
 
 func render(history: Array[StringName], definitions: Dictionary, labels: Dictionary) -> void:
+	var minimum := Vector2(0 if history.is_empty() else CARD_SIZE.x + MIN_STEP * (history.size() - 1), CARD_SIZE.y + 24)
+	if custom_minimum_size != minimum:
+		custom_minimum_size = minimum
+	var ids := PackedStringArray()
+	for card_id in history:
+		ids.append(String(card_id))
+	var signature := "|".join(ids)
+	if _signature_ready and signature == _history_signature:
+		return
+	_history_signature = signature
+	_signature_ready = true
 	var previous_count := _cards.size()
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()
 	_cards.clear()
-	custom_minimum_size = Vector2(0 if history.is_empty() else CARD_SIZE.x + MIN_STEP * (history.size() - 1), CARD_SIZE.y + 24)
 	for index in history.size():
 		var card: CardDef = definitions.get(history[index])
 		if card == null:

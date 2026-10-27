@@ -32,6 +32,16 @@ func coefficient(state: GameState, key: StringName) -> float:
 	return value
 
 
+func set_active_indicators(ids: Array) -> void:
+	# A run only simulates its scenario's indicators. Equations, derived values,
+	# coefficients, and bounds stay registered because they are global definitions.
+	indicator_ids.clear()
+	for raw in ids:
+		var id := StringName(raw)
+		if id != &"" and not indicator_ids.has(id):
+			indicator_ids.append(id)
+
+
 func register_indicator(id: StringName) -> void:
 	if not indicator_ids.has(id):
 		indicator_ids.append(id)

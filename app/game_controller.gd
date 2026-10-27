@@ -84,8 +84,14 @@ func _resolve_pool(pools: Dictionary, key: String, fallback: Dictionary) -> Arra
 	var configured = pools.get(key)
 	if configured is Array and not configured.is_empty():
 		for id in configured:
-			result.append(StringName(id))
+			_append_pool_id(result, StringName(id))
 		return result
 	for id in fallback.keys():
-		result.append(id)
+		_append_pool_id(result, StringName(id))
 	return result
+
+
+func _append_pool_id(pool: Array[StringName], id: StringName) -> void:
+	if id == &"" or pool.has(id):
+		return
+	pool.append(id)

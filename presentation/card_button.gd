@@ -37,6 +37,24 @@ func enable_lift(face: Control) -> void:
 	focus_exited.connect(func() -> void: _face.queue_redraw())
 
 
+func cancel_lift() -> void:
+	if _lift_tween != null:
+		if _lift_tween.is_valid():
+			_lift_tween.kill()
+		_lift_tween = null
+	_lifted = false
+	if _face != null:
+		_face.offset_top = 0.0
+		_face.offset_bottom = 0.0
+		_face.queue_redraw()
+
+
+func visual_global_rect() -> Rect2:
+	if _face != null and _face.is_inside_tree():
+		return _face.get_global_rect()
+	return get_global_rect()
+
+
 func _animate_lift(raised: bool) -> void:
 	_lifted = raised and not disabled
 	if _lift_tween != null:

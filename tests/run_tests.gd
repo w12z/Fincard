@@ -35,6 +35,8 @@ func _run() -> void:
 	_test_content()
 	_test_rules()
 	_test_economy()
+	_test_indicator_reset()
+	_test_reward_pool_resolution()
 	await _test_ui()
 	var sample_count := 100
 	for arg in OS.get_cmdline_user_args():
@@ -260,6 +262,39 @@ func _test_economy() -> void:
 		sim._schedule_event()
 		_expect(sim.state.pending_event == sim.scenario_db[&"arcadia"].scheduled_events[turn_number], "Scheduled crisis missing")
 	sim.rules["random_event_chance"] = 0.35
+
+
+func _test_indicator_reset() -> void:
+	var sim := _new_run(&"arcadia")
+	var stale: StringName = &"stale_scenario_indicator"
+	sim.economy.register_indicator(stale)
+	var stale_equation := func(_state: GameState, _model: EconomyModel, _rng: Rng) -> float:
+		return 1.0
+	sim.economy.equations[stale] = stale_equation
+	sim.state.indicators[stale] = 42.0
+	_expect(sim.economy.indicator_ids.has(stale), "Stale indicator setup must be registered")
+	sim.start_run(&"example_country")
+	_expect(not sim.economy.indicator_ids.has(stale), "Restart must drop indicators from the previous scenario")
+	_expect(not sim.state.indicators.has(stale), "Restart must clear stale indicator values")
+	for id in sim.scenario_db[&"example_country"].indicators:
+		_expect(sim.economy.indicator_ids.has(id), "Restart must keep every scenario indicator: %s" % id)
+	_expect(sim.economy.derived_ids.has(&"growth"), "Restart must preserve derived definitions")
+	_expect(sim.economy.equations.has(&"gdp"), "Restart must preserve equation definitions")
+	sim.economy.tick(sim.state, sim.rng)
+	sim.economy.refresh_derived(sim.state)
+	_expect(not sim.state.indicators.has(stale), "Stale indicator must not return after tick or refresh")
+	sim.economy.equations.erase(stale)
+	sim.economy.indicator_ids.erase(stale)
+	sim.state.indicators.erase(stale)
+
+
+func _test_reward_pool_resolution() -> void:
+	var configured := {"cards": [&"beta", &"alpha", &"beta", &"", &"alpha", &"gamma", ""]}
+	var expected: Array[StringName] = [&"beta", &"alpha", &"gamma"]
+	_expect(controller._resolve_pool(configured, "cards", controller.cards) == expected, "Configured pools must keep only the first occurrence of each non-empty ID")
+	var fallback := {&"": true, &"alpha": true, &"beta": true}
+	var fallback_expected: Array[StringName] = [&"alpha", &"beta"]
+	_expect(controller._resolve_pool({&"cards": []}, "cards", fallback) == fallback_expected, "Empty configured pools must fall back without empty IDs")
 
 
 func _test_ui() -> void:

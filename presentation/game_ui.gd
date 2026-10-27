@@ -4,6 +4,9 @@ extends Control
 signal exit_requested
 
 const LOG_LIMIT := 1000
+const UNSET_SIGNATURE := "__unset__"
+const CARD_FLIGHT_DURATION := 0.2
+const CARD_FLIGHT_SETTLE_FRAMES := 4
 const TYPE_LABELS := {
 	Reward.Type.CARD: "新卡牌",
 	Reward.Type.CABINET: "任命内阁",
@@ -35,16 +38,66 @@ var _parameters: RichTextLabel
 var _overlay_root: CenterContainer
 var _overlay_box: VBoxContainer
 var _overlay_panel: PanelContainer
+var _flight_layer: Control
+
+var _flight_card: CardButton
+var _flight_target: Control
+var _flight_tween: Tween
+var _flight_active: bool = false
 
 var _log_lines: Array[String] = []
 var _reward_selection: Dictionary = {}
 
+var _year_label: Label
+var _turn_label: Label
+var _budget_amount: ResourceAmount
+var _political_amount: ResourceAmount
+var _status_label: Label
+var _indicator_rows: Array[Dictionary] = []
+var _log_rendered_lines: int = 0
+var _built: bool = false
+
+var _goal_signature: String = UNSET_SIGNATURE
+var _indicator_structure: String = UNSET_SIGNATURE
+var _status_signature: String = UNSET_SIGNATURE
+var _cabinet_signature: String = UNSET_SIGNATURE
+var _aids_signature: String = UNSET_SIGNATURE
+var _hand_signature: String = UNSET_SIGNATURE
+var _overlay_signature: String = UNSET_SIGNATURE
+var _forecast_signature: String = UNSET_SIGNATURE
+var _forecast_dirty: bool = true
+var _forecast_build_count: int = 0
+
 
 func setup(p_controller: GameController, scenario_id: StringName) -> void:
+	_cancel_flight(false)
+	if _built:
+		for child in get_children():
+			remove_child(child)
+			child.queue_free()
 	controller = p_controller
+	_log_lines.clear()
+	_log_rendered_lines = 0
+	_reward_selection.clear()
+	_effect_icons = null
+	_indicator_rows.clear()
+	_forecast_build_count = 0
 	_build()
+	_reset_section_signatures()
 	_play_events(controller.start_run(scenario_id))
 	_render()
+
+
+func _reset_section_signatures() -> void:
+	_goal_signature = UNSET_SIGNATURE
+	_indicator_structure = UNSET_SIGNATURE
+	_status_signature = UNSET_SIGNATURE
+	_cabinet_signature = UNSET_SIGNATURE
+	_aids_signature = UNSET_SIGNATURE
+	_hand_signature = UNSET_SIGNATURE
+	_overlay_signature = UNSET_SIGNATURE
+	_forecast_signature = UNSET_SIGNATURE
+	_forecast_dirty = true
 
 
 func _build() -> void:
@@ -62,6 +115,7 @@ func _build() -> void:
 	_header = HBoxContainer.new()
 	_header.add_theme_constant_override("separation", 16)
 	root.add_child(_header)
+	_build_header_contents()
 	_build_cabinet_bar(root)
 
 	var split := HBoxContainer.new()
@@ -163,14 +217,48 @@ func _build() -> void:
 	_log.custom_minimum_size = Vector2(240, 0)
 	log_section.add_child(_log)
 
+	_flight_layer = Control.new()
+	_flight_layer.name = "CardFlightLayer"
+	_flight_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_flight_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_flight_layer)
+
 	_build_overlay()
+	_built = true
+
+
+func _build_header_contents() -> void:
+	var title := Label.new()
+	title.text = "Fincard"
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", UiTheme.ACCENT)
+	_header.add_child(title)
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_header.add_child(spacer)
+	_year_label = _label("")
+	_header.add_child(_year_label)
+	_turn_label = _label("")
+	_header.add_child(_turn_label)
+	_budget_amount = ResourceAmount.create(&"budget", "0")
+	_header.add_child(_budget_amount)
+	_political_amount = ResourceAmount.create(&"political", "0", UiTheme.POSITIVE)
+	_header.add_child(_political_amount)
+	_status_label = _label("")
+	_header.add_child(_status_label)
+	var back := Button.new()
+	back.text = "返回菜单"
+	back.pressed.connect(func() -> void: exit_requested.emit())
+	_header.add_child(back)
 
 
 func _toggle_sidebar(pressed: bool) -> void:
 	_sidebar.visible = pressed
 	_sidebar_button.text = "收起日志" if pressed else "显示日志"
 	if pressed:
+		_forecast_dirty = true
 		_render_log()
+		_scroll_log_to_end()
 
 
 func _build_cabinet_bar(parent: VBoxContainer) -> void:
@@ -270,85 +358,143 @@ func _render() -> void:
 	_render_aids()
 	_render_hand()
 	_played_table.render(_state.played_cards_this_turn, controller.cards, _labels())
-	_deck_label.text = "牌库 %d · 弃牌 %d · 手牌 %d" % [_state.deck.size(), _state.discard.size(), _state.hand.size()]
-	_end_turn_button.disabled = _busy() or _state.run_status != GameState.RunStatus.RUNNING
+	if _flight_active and _flight_target != null \
+		and (not is_instance_valid(_flight_target) or _flight_target.get_parent() != _played_table):
+		# The table rebuilt mid-flight; drop the temporary card instead of ghosting it.
+		_cancel_flight(true)
+	var deck_text := "牌库 %d · 弃牌 %d · 手牌 %d" % [_state.deck.size(), _state.discard.size(), _state.hand.size()]
+	if _deck_label.text != deck_text:
+		_deck_label.text = deck_text
+	_end_turn_button.disabled = _busy() or _flight_active or _state.run_status != GameState.RunStatus.RUNNING
 	_render_log()
 	_render_overlay()
 
 
 func _render_header() -> void:
-	_clear(_header)
-	var title := Label.new()
-	title.text = "Fincard"
-	title.add_theme_font_size_override("font_size", 22)
-	title.add_theme_color_override("font_color", UiTheme.ACCENT)
-	_header.add_child(title)
-	var spacer := Control.new()
-	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_header.add_child(spacer)
-	_header.add_child(_label("第 %d 财年" % _state.year))
-	_header.add_child(_label("回合 %d/%d" % [_state.turn_in_year, _turns_per_year()]))
-	var budget_label := ResourceAmount.create(&"budget", "%d · 年入 %d" % [_state.budget, controller.simulation.annual_income()], UiTheme.NEGATIVE if _state.budget < 0 else UiTheme.ACCENT_DARK)
-	budget_label.tooltip_text += "\n年度收入 %d · 非负余额结转 %d%%（向下取整）· 赤字全额结转\n%s" % [controller.simulation.annual_income(), roundi(controller.simulation.budget_retention() * 100), "可透支" if StatusRules.allows_deficit(_state, controller.statuses) else "不可透支"]
-	_header.add_child(budget_label)
-	var political_label := ResourceAmount.create(&"political", str(_state.political_capital), UiTheme.POSITIVE)
-	political_label.tooltip_text += "\n每回合重置为 %d 点，剩余点数不继承" % controller.simulation.political_capital_per_turn()
-	_header.add_child(political_label)
-	var status_label := _label("状态：%s" % _status_text())
-	status_label.add_theme_color_override("font_color", _status_color())
-	_header.add_child(status_label)
-	var back := Button.new()
-	back.text = "返回菜单"
-	back.pressed.connect(func() -> void: exit_requested.emit())
-	_header.add_child(back)
+	var income := controller.simulation.annual_income()
+	var retention := roundi(controller.simulation.budget_retention() * 100)
+	var year_text := "第 %d 财年" % _state.year
+	if _year_label.text != year_text:
+		_year_label.text = year_text
+	var turn_text := "回合 %d/%d" % [_state.turn_in_year, _turns_per_year()]
+	if _turn_label.text != turn_text:
+		_turn_label.text = turn_text
+	_set_resource_amount(_budget_amount, "%d · 年入 %d" % [_state.budget, income], UiTheme.NEGATIVE if _state.budget < 0 else UiTheme.ACCENT_DARK)
+	var budget_tooltip := "预算\n年度收入 %d · 非负余额结转 %d%%（向下取整）· 赤字全额结转\n%s" % [income, retention, "可透支" if StatusRules.allows_deficit(_state, controller.statuses) else "不可透支"]
+	if _budget_amount.tooltip_text != budget_tooltip:
+		_budget_amount.tooltip_text = budget_tooltip
+	_set_resource_amount(_political_amount, str(_state.political_capital), UiTheme.POSITIVE)
+	var political_tooltip := "政治行动点\n每回合重置为 %d 点，剩余点数不继承" % controller.simulation.political_capital_per_turn()
+	if _political_amount.tooltip_text != political_tooltip:
+		_political_amount.tooltip_text = political_tooltip
+	var status_text := "状态：%s" % _status_text()
+	if _status_label.text != status_text:
+		_status_label.text = status_text
+	var status_color := _status_color()
+	if _status_label.get_theme_color("font_color") != status_color:
+		_status_label.add_theme_color_override("font_color", status_color)
+
+
+func _set_resource_amount(display: ResourceAmount, text: String, color: Color) -> void:
+	var amount: Label = display.get_node("Amount")
+	if amount.text != text:
+		amount.text = text
+	if amount.get_theme_color("font_color") != color:
+		amount.add_theme_color_override("font_color", color)
 
 
 func _render_goal() -> void:
-	_clear(_goal_box)
+	var rows: Array[Dictionary] = []
 	var scenario: ScenarioDef = controller.scenarios.get(_state.scenario_id)
 	if scenario == null or scenario.goal == null:
-		_goal_box.add_child(_label("（无）"))
+		rows.append({"text": "（无）", "plain": true})
+	else:
+		var goal := scenario.goal
+		if goal.description != "":
+			rows.append({"text": goal.description, "color": UiTheme.MUTED, "wrap": true})
+		for condition in goal.conditions:
+			var achieved := condition.evaluate(_state, controller.simulation.economy)
+			rows.append({
+				"text": "%s %s" % ["✓" if achieved else "○", TextFormatter.condition_text(_labels(), condition)],
+				"color": UiTheme.POSITIVE if achieved else UiTheme.MUTED,
+				"wrap": true,
+			})
+		for condition in goal.loss_conditions:
+			rows.append({"text": "失败：%s" % TextFormatter.condition_text(_labels(), condition), "color": UiTheme.NEGATIVE, "wrap": true})
+		if goal.deadline_years > 0:
+			rows.append({"text": "期限：第 %d 财年" % goal.deadline_years, "color": UiTheme.WARNING})
+		if goal.after_turn > 0:
+			rows.append({"text": "胜利判定：自第 %d 回合起" % (goal.after_turn + 1), "color": UiTheme.WARNING})
+	var signature := _rows_signature(rows)
+	if signature == _goal_signature:
 		return
-	var goal := scenario.goal
-	if goal.description != "":
-		_goal_box.add_child(_wrapped(goal.description, UiTheme.MUTED))
-	for condition in goal.conditions:
-		var achieved := condition.evaluate(_state, controller.simulation.economy)
-		_goal_box.add_child(_wrapped("%s %s" % ["✓" if achieved else "○", TextFormatter.condition_text(_labels(), condition)], UiTheme.POSITIVE if achieved else UiTheme.MUTED))
-	for condition in goal.loss_conditions:
-		_goal_box.add_child(_wrapped("失败：%s" % TextFormatter.condition_text(_labels(), condition), UiTheme.NEGATIVE))
-	if goal.deadline_years > 0:
-		_goal_box.add_child(_colored("期限：第 %d 财年" % goal.deadline_years, UiTheme.WARNING))
-	if goal.after_turn > 0:
-		_goal_box.add_child(_colored("胜利判定：自第 %d 回合起" % (goal.after_turn + 1), UiTheme.WARNING))
+	_goal_signature = signature
+	_clear(_goal_box)
+	_add_rows(_goal_box, rows)
+
+
+func _rows_signature(rows: Array[Dictionary]) -> String:
+	var parts := PackedStringArray()
+	for row in rows:
+		if row.get("plain", false):
+			parts.append("%s|plain" % str(row["text"]))
+		else:
+			var color: Color = row["color"]
+			parts.append("%s|%s|%s" % [str(row["text"]), color.to_html(), str(row.get("wrap", false))])
+	return "\n".join(parts)
+
+
+func _add_rows(box: VBoxContainer, rows: Array[Dictionary]) -> void:
+	for row in rows:
+		if row.get("plain", false):
+			box.add_child(_label(str(row["text"])))
+		elif row.get("wrap", false):
+			box.add_child(_wrapped(str(row["text"]), row["color"]))
+		else:
+			box.add_child(_colored(str(row["text"]), row["color"]))
 
 
 func _render_indicators() -> void:
-	_clear(_indicators_box)
-	var ids := controller.simulation.economy.indicator_ids
-	if ids.is_empty():
-		_indicators_box.add_child(_label("（未定义指标）"))
-	else:
-		for id in ids:
-			_indicators_box.add_child(_label("%s：%s" % [
-				TextFormatter.indicator(_labels(), id),
-				TextFormatter.fmt(controller.simulation.economy.value(_state, id)),
-			]))
-	_indicators_box.tooltip_text = "每回合 1 个月 · 增长率按月计算"
-	var derived := controller.simulation.economy.derived_ids
-	if not derived.is_empty():
-		_indicators_box.add_child(_colored("综合指标", UiTheme.WARNING))
-		for id in derived:
-			_indicators_box.add_child(_label("%s：%s" % [
-				TextFormatter.indicator(_labels(), id),
-				TextFormatter.fmt(controller.simulation.economy.value(_state, id)),
-			]))
+	var economy := controller.simulation.economy
+	var ids := economy.indicator_ids
+	var derived := economy.derived_ids
+	var structure := "%s|%s" % [var_to_str(ids), var_to_str(derived)]
+	if structure != _indicator_structure:
+		_indicator_structure = structure
+		_clear(_indicators_box)
+		_indicator_rows.clear()
+		if ids.is_empty():
+			_indicators_box.add_child(_label("（未定义指标）"))
+		else:
+			for id in ids:
+				_add_indicator_row(id)
+		if not derived.is_empty():
+			_indicators_box.add_child(_colored("综合指标", UiTheme.WARNING))
+			for id in derived:
+				_add_indicator_row(id)
+		_indicators_box.tooltip_text = "每回合 1 个月 · 增长率按月计算"
+	for row in _indicator_rows:
+		var label: Label = row["label"]
+		var id: StringName = row["id"]
+		var value_text := "%s：%s" % [TextFormatter.indicator(_labels(), id), TextFormatter.fmt(economy.value(_state, id))]
+		if label.text != value_text:
+			label.text = value_text
+
+
+func _add_indicator_row(id: StringName) -> void:
+	var label := _label("")
+	_indicators_box.add_child(label)
+	_indicator_rows.append({"id": id, "label": label})
 
 
 func _render_statuses() -> void:
+	var entries := ModifierDisplay.entries(controller.simulation, _labels())
+	var signature := _statuses_signature(entries)
+	if signature == _status_signature:
+		return
+	_status_signature = signature
 	_clear(_statuses_box)
 	_effect_icons = null
-	var entries := ModifierDisplay.entries(controller.simulation, _labels())
 	if entries.is_empty():
 		_statuses_box.add_child(_label("（无）"))
 		return
@@ -372,7 +518,27 @@ func _render_statuses() -> void:
 		_effect_icons.add_child(badge)
 
 
+func _statuses_signature(entries: Array[Dictionary]) -> String:
+	var parts := PackedStringArray(["cards:%d" % _state.cards_played_this_turn])
+	for entry in entries:
+		parts.append("%s|%s|%s|%s|%s" % [
+			entry["key"],
+			entry["icon"],
+			str(entry.get("value_text", entry["counter"])),
+			str(entry["counter"]),
+			entry["tooltip"],
+		])
+	return "\n".join(parts)
+
+
 func _render_cabinets() -> void:
+	var ids := PackedStringArray()
+	for cabinet in _state.cabinets:
+		ids.append(String(cabinet.id))
+	var signature := "|".join(ids)
+	if signature == _cabinet_signature:
+		return
+	_cabinet_signature = signature
 	_clear(_cabinets_box)
 	if _state.cabinets.is_empty():
 		_cabinets_box.add_child(_colored("（空缺）", UiTheme.MUTED))
@@ -384,6 +550,14 @@ func _render_cabinets() -> void:
 
 
 func _render_aids() -> void:
+	var parts := PackedStringArray([str(_busy()), str(_state.run_status)])
+	for entry in _state.aids:
+		var definition: AidDef = entry["def"]
+		parts.append("%s:%d" % [definition.id, int(entry["uses"])])
+	var signature := "\n".join(parts)
+	if signature == _aids_signature:
+		return
+	_aids_signature = signature
 	_clear(_aids_box)
 	if _state.aids.is_empty():
 		_aids_box.add_child(_label("（无）"))
@@ -403,6 +577,10 @@ func _render_aids() -> void:
 
 
 func _render_hand() -> void:
+	var signature := _hand_content_signature()
+	if signature == _hand_signature:
+		return
+	_hand_signature = signature
 	_clear(_hand_box)
 	if _state.hand.is_empty():
 		_hand_box.add_child(_label("（无手牌）"))
@@ -444,9 +622,7 @@ func _render_hand() -> void:
 		button.custom_minimum_size = Vector2(180, 240)
 		button.add_theme_font_size_override("font_size", 13)
 		button.theme_type_variation = "CardButton"
-		button.disabled = _busy() or _state.run_status != GameState.RunStatus.RUNNING \
-			or not controller.simulation.can_spend_budget(int(costs["budget"])) \
-			or (int(costs["political"]) > 0 and _state.political_capital < int(costs["political"]))
+		button.disabled = _hand_card_disabled(costs)
 		if not button.disabled:
 			var playable_style := StyleBoxFlat.new()
 			playable_style.bg_color = Color("effaf5")
@@ -458,7 +634,7 @@ func _render_hand() -> void:
 			playable_style.content_margin_top = 8
 			playable_style.content_margin_bottom = 8
 			button.add_theme_stylebox_override("normal", playable_style)
-		button.pressed.connect(func() -> void: _dispatch(Command.play_card(card_id)))
+		button.pressed.connect(func() -> void: _play_card_from_hand(card_id, button))
 		_hand_box.add_child(button)
 		var margin := MarginContainer.new()
 		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -493,6 +669,36 @@ func _render_hand() -> void:
 		button.enable_lift(margin)
 
 
+func _hand_content_signature() -> String:
+	var parts := PackedStringArray([
+		str(_state.run_status),
+		"busy" if _busy() else "ready",
+		str(_state.budget),
+		str(_state.political_capital),
+		var_to_str(_state.statuses),
+	])
+	for card_id in _state.hand:
+		var card: CardDef = controller.cards.get(card_id)
+		if card == null:
+			parts.append("%s:missing" % card_id)
+			continue
+		var costs := controller.simulation.card_costs(card_id)
+		parts.append("%s|%s|%s|%s|%s" % [
+			card_id,
+			str(costs["budget"]),
+			str(costs["political"]),
+			var_to_str(costs["sources"]),
+			str(_hand_card_disabled(costs)),
+		])
+	return "\n".join(parts)
+
+
+func _hand_card_disabled(costs: Dictionary) -> bool:
+	return _busy() or _state.run_status != GameState.RunStatus.RUNNING \
+		or not controller.simulation.can_spend_budget(int(costs["budget"])) \
+		or (int(costs["political"]) > 0 and _state.political_capital < int(costs["political"]))
+
+
 func _ignore_card_mouse(control: Control) -> void:
 	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for child in control.get_children():
@@ -501,14 +707,125 @@ func _ignore_card_mouse(control: Control) -> void:
 
 
 func _render_log() -> void:
-	_log.text = "\n".join(_log_lines)
+	_sync_log()
+	_render_forecast()
+
+
+func _sync_log() -> void:
+	if _log == null:
+		return
+	if _log_rendered_lines > _log_lines.size():
+		# A defensive reset for any caller that clears the backing array directly.
+		_log.clear()
+		_log_rendered_lines = 0
+	var appended := false
+	while _log_rendered_lines < _log_lines.size():
+		if _log_rendered_lines > 0:
+			_log.append_text("\n")
+		_log.append_text(_log_lines[_log_rendered_lines])
+		_log_rendered_lines += 1
+		appended = true
+	if appended and _log.is_visible_in_tree():
+		_log.scroll_to_line(_log_rendered_lines - 1)
+
+
+func _append_log_line(line: String) -> void:
+	_sync_log()
+	_log_lines.append(line)
+	if _log_lines.size() > LOG_LIMIT:
+		_log_lines.remove_at(0)
+		if _log != null and _log_rendered_lines > 0:
+			_log.remove_paragraph(0)
+			_log_rendered_lines -= 1
+	_sync_log()
+
+
+func _clear_log() -> void:
+	_log_lines.clear()
+	_log_rendered_lines = 0
+	if _log != null:
+		_log.clear()
+
+
+func _scroll_log_to_end() -> void:
+	if _log == null or _log_rendered_lines == 0:
+		return
+	_log.scroll_to_line(_log_rendered_lines - 1)
+
+
+func _render_forecast() -> void:
+	if _sidebar == null or not _sidebar.visible:
+		return
+	var signature := _forecast_state_signature()
+	if not _forecast_dirty and signature == _forecast_signature:
+		return
 	_forecast.text = EconomyForecast.text(controller.simulation, _labels())
 	_parameters.text = EconomyForecast.parameters(controller.simulation, _labels())
+	_forecast_signature = signature
+	_forecast_dirty = false
+	_forecast_build_count += 1
+
+
+func _forecast_state_signature() -> String:
+	var sim := controller.simulation
+	var parts := PackedStringArray([
+		"%d|%d|%d|%d|%d|%d|%d|%d|%s" % [
+			_state.turn, _state.turn_in_year, _state.year, _state.budget,
+			_state.political_capital, _state.run_status, _state.cards_played_this_turn,
+			_state.investments_played_this_turn, str(_state.base_budget_retention),
+		],
+		str(_state.phase),
+		str(_state.base_annual_income),
+		String(_state.scenario_id),
+		str(_state.seed_value),
+		String(_state.pending_event),
+		var_to_str(_state.pending_event_choices),
+		var_to_str(_state.indicators),
+		var_to_str(_state.prev_indicators),
+		var_to_str(_state.deck),
+		var_to_str(_state.hand),
+		var_to_str(_state.discard),
+		var_to_str(_state.statuses),
+		var_to_str(_state.statuses_triggered_this_turn),
+		var_to_str(_state.played_cards_this_turn),
+		var_to_str(_state.flags),
+		var_to_str(sim.economy.indicator_ids),
+		var_to_str(sim.economy.derived_ids),
+		var_to_str(sim.economy.bounds),
+		var_to_str(sim.economy.equations.keys()),
+		var_to_str(sim.economy.base_coefficients),
+		var_to_str(sim.economy.scenario_coefficients),
+		var_to_str(sim.rules),
+		str(sim.turns.phase),
+		str(sim.rng.snapshot().next_int(1_000_000_000)),
+	])
+	for modifier in _state.modifiers:
+		parts.append("%s|%s|%d|%s|%d|%s" % [
+			modifier.scope, modifier.target, modifier.op, str(modifier.value),
+			modifier.remaining_turns, modifier.source,
+		])
+	for cabinet in _state.cabinets:
+		parts.append(String(cabinet.id))
+	for entry in _state.aids:
+		var definition: AidDef = entry["def"]
+		parts.append("%s:%d" % [definition.id, int(entry["uses"])])
+	for group in _state.pending_rewards:
+		parts.append(str(group.get("type", "")))
+		for option in group.get("options", []):
+			var reward: Reward = option
+			parts.append("%d:%s:%s" % [reward.type, reward.id, reward.label])
+	return "\n".join(parts)
 
 
 func _render_overlay() -> void:
+	var variation: StringName = &"EventPanel" if _state.pending_event != &"" and _state.run_status == GameState.RunStatus.RUNNING else &""
+	if _overlay_panel.theme_type_variation != variation:
+		_overlay_panel.theme_type_variation = variation
+	var signature := _overlay_content_signature()
+	if signature == _overlay_signature:
+		return
+	_overlay_signature = signature
 	_clear(_overlay_box)
-	_overlay_panel.theme_type_variation = "EventPanel" if _state.pending_event != &"" and _state.run_status == GameState.RunStatus.RUNNING else ""
 	if _state.run_status != GameState.RunStatus.RUNNING:
 		_show_result()
 		return
@@ -519,6 +836,39 @@ func _render_overlay() -> void:
 		_show_rewards()
 		return
 	_overlay_root.visible = false
+
+
+func _overlay_content_signature() -> String:
+	if _state.run_status != GameState.RunStatus.RUNNING:
+		return "result:%d|%d|%s|%s|%d|%s" % [
+			_state.run_status, _state.year, str(_state.flags.get("loss_reason", "")),
+			_indicator_summary(), _state.seed_value, str(_state.turn),
+		]
+	if _state.pending_event != &"":
+		var event_parts := PackedStringArray(["event", String(_state.pending_event), str(_state.pending_event_choices.size())])
+		for index in range(_state.pending_event_choices.size()):
+			var choice: Dictionary = _state.pending_event_choices[index]
+			event_parts.append("%s|%s|%s" % [
+				str(choice.get("label", "")),
+				str(choice.get("description", "")),
+				str(controller.simulation.event_choice_available(index)),
+			])
+		return "\n".join(event_parts)
+	if not _state.pending_rewards.is_empty():
+		var reward_parts := PackedStringArray(["rewards"])
+		reward_parts.append("at:%d:%d:%d" % [_state.year, _state.turn, _state.turn_in_year])
+		reward_parts.append("odds:%s:%s:%s" % [
+			TextFormatter.fmt(controller.simulation.rarity_weight(&"common")),
+			TextFormatter.fmt(controller.simulation.rarity_weight(&"rare")),
+			TextFormatter.fmt(controller.simulation.rarity_weight(&"legendary")),
+		])
+		for group in _state.pending_rewards:
+			reward_parts.append(str(group.get("type", "")))
+			for option in group.get("options", []):
+				var reward: Reward = option
+				reward_parts.append("%d:%s:%s" % [reward.type, reward.id, reward.label])
+		return "\n".join(reward_parts)
+	return "none"
 
 
 func _show_event() -> void:
@@ -667,17 +1017,141 @@ func _confirm_rewards() -> void:
 
 
 func _dispatch(command: Command) -> void:
-	_play_events(controller.dispatch(command))
+	_apply_command_events(controller.dispatch(command))
+
+
+func _apply_command_events(events: Array) -> void:
+	_play_events(events)
+	_forecast_dirty = true
 	_render()
 
 
+func _play_card_from_hand(card_id: StringName, button: CardButton) -> void:
+	if _flight_active or not is_instance_valid(button) or button.disabled:
+		return
+	var origin_rect := button.visual_global_rect()
+	_flight_active = true
+	var events := controller.dispatch(Command.play_card(card_id))
+	if not _events_played_card(events, card_id):
+		# The command was rejected: no card entered the table, so nothing flies.
+		_flight_active = false
+		_apply_command_events(events)
+		return
+	_begin_card_flight(button, origin_rect)
+	_apply_command_events(events)
+	await _animate_card_flight(card_id)
+
+
+func _events_played_card(events: Array, card_id: StringName) -> bool:
+	for event in events:
+		if event.kind == Event.Kind.CARD_PLAYED and StringName(event.params.get("card_id", &"")) == card_id:
+			return true
+	return false
+
+
+func _begin_card_flight(button: CardButton, origin_rect: Rect2) -> void:
+	button.cancel_lift()
+	var parent := button.get_parent()
+	if parent != null:
+		parent.remove_child(button)
+	_flight_layer.add_child(button)
+	button.custom_minimum_size = Vector2.ZERO
+	button.size = origin_rect.size
+	button.global_position = origin_rect.position
+	button.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.mouse_default_cursor_shape = Control.CURSOR_ARROW
+	button.clip_contents = true
+	_flight_card = button
+
+
+func _animate_card_flight(card_id: StringName) -> void:
+	# Hide the destination right away so the table copy never shows up next to the
+	# flying hand card, even for the frames spent waiting for the layout to settle.
+	var target := _find_played_card(card_id)
+	if target != null:
+		target.visible = false
+		_flight_target = target
+	# Let containers, the scrollbar and CardTable's deferred reveal settle first.
+	for _frame in CARD_FLIGHT_SETTLE_FRAMES:
+		await get_tree().process_frame
+		if not _flight_active or not is_instance_valid(_flight_card):
+			return
+	var settled := _find_played_card(card_id)
+	if settled == null or not is_instance_valid(_flight_card):
+		_cancel_flight(true)
+		_hand_signature = UNSET_SIGNATURE
+		_render()
+		return
+	if settled != _flight_target:
+		# A render during the wait rebuilt the table; hide its fresh copy instead.
+		if is_instance_valid(_flight_target):
+			_flight_target.visible = true
+		settled.visible = false
+		_flight_target = settled
+	var target_rect := settled.get_global_rect()
+	var destination := target_rect.position - _flight_layer.global_position
+	_flight_tween = create_tween()
+	_flight_tween.set_parallel(true)
+	_flight_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_flight_tween.tween_property(_flight_card, "position", destination, CARD_FLIGHT_DURATION)
+	_flight_tween.tween_property(_flight_card, "size", target_rect.size, CARD_FLIGHT_DURATION)
+	_flight_tween.finished.connect(_on_card_flight_finished)
+
+
+func _find_played_card(card_id: StringName) -> Button:
+	for index in range(_played_table._cards.size() - 1, -1, -1):
+		var card: Button = _played_table._cards[index]
+		if is_instance_valid(card) and StringName(card.get_meta("card_id", &"")) == card_id:
+			return card
+	return null
+
+
+func _on_card_flight_finished() -> void:
+	if is_instance_valid(_flight_target):
+		_flight_target.visible = true
+	if is_instance_valid(_flight_card):
+		_flight_card.queue_free()
+	_flight_tween = null
+	_flight_card = null
+	_flight_target = null
+	_flight_active = false
+	_end_turn_button.disabled = _busy() or _state.run_status != GameState.RunStatus.RUNNING
+
+
+func _cancel_flight(release_card: bool) -> void:
+	if _flight_tween != null and _flight_tween.is_valid():
+		_flight_tween.kill()
+	_flight_tween = null
+	if release_card and is_instance_valid(_flight_card):
+		_flight_card.queue_free()
+	if is_instance_valid(_flight_target):
+		_flight_target.visible = true
+	_flight_card = null
+	_flight_target = null
+	_flight_active = false
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		if _flight_tween != null and _flight_tween.is_valid():
+			_flight_tween.kill()
+		_flight_tween = null
+
+
 func _play_events(events: Array) -> void:
+	var restart := false
+	for event in events:
+		if event.kind == Event.Kind.RUN_STARTED:
+			restart = true
+			break
+	if restart:
+		_clear_log()
+		_reward_selection.clear()
+		_reset_section_signatures()
 	for event in events:
 		var line := _describe(event)
 		if line != "":
-			_log_lines.append(line)
-	if _log_lines.size() > LOG_LIMIT:
-		_log_lines = _log_lines.slice(_log_lines.size() - LOG_LIMIT)
+			_append_log_line(line)
 
 
 func _describe(event: Event) -> String:
