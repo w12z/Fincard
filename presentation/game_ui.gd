@@ -803,6 +803,7 @@ func _is_annual_meeting() -> bool:
 	return _state != null and _state.run_status == GameState.RunStatus.RUNNING \
 		and _state.pending_event == &"" and not _state.pending_rewards.is_empty() \
 		and not _state.pending_rewards[0].has("event") \
+		and not _state.pending_rewards[0].get("turn_reward", false) \
 		and not _state.flags.get("pending_retain", false) and not _state.flags.get("pending_review", false) \
 		and _state.flags.get("pending_discard_draw", []).is_empty()
 
@@ -963,7 +964,7 @@ func _show_rewards() -> void:
 		if _state.pending_rewards[index].get("removal_pending", false):
 			_show_card_removal(index)
 			return
-	if _state.pending_rewards[0].has("event"):
+	if _state.pending_rewards[0].has("event") or _state.pending_rewards[0].get("turn_reward", false):
 		_reward_group_index = 0
 		_show_reward_options(0)
 		return
@@ -1058,6 +1059,8 @@ func _show_reward_options(group_index: int) -> void:
 	row.add_theme_constant_override("separation", 12)
 	box.add_child(row)
 	var options: Array = group.get("options", [])
+	if options.is_empty() and group.get("turn_reward", false):
+		box.add_child(_wrapped("援助容量已满" if int(group.get("type", -1)) == Reward.Type.AID and controller.simulation.aid_count() >= controller.simulation.aid_capacity() else "暂无可领取的奖励", UiTheme.MUTED, 460.0))
 	for option_index in options.size():
 		var reward: Reward = options[option_index]
 		var pick := option_index
@@ -1095,7 +1098,7 @@ func _show_reward_options(group_index: int) -> void:
 		var face := CardFace.fill(button, card, _labels(), str(card.cost), str(card.political_cost), {"aid": reward.type == Reward.Type.AID})
 		button.enable_lift(face)
 		button.pressed.connect(func() -> void: _claim_reward(group_index, pick, token))
-	if not group.has("event"):
+	if not group.has("event") and not group.get("turn_reward", false):
 		var back := Button.new()
 		back.text = "返回"
 		back.pressed.connect(func() -> void:
@@ -1105,7 +1108,7 @@ func _show_reward_options(group_index: int) -> void:
 		)
 		box.add_child(back)
 	var skip := Button.new()
-	skip.text = "跳过"
+	skip.text = "放弃奖励" if group.get("turn_reward", false) else "跳过"
 	skip.pressed.connect(func() -> void: _claim_reward(group_index, -1, token))
 	box.add_child(skip)
 	_overlay_root.visible = not _is_annual_meeting()

@@ -1,6 +1,8 @@
 class_name Simulation
 extends RefCounted
 
+const TURN_REWARD_INTERVAL := 4
+
 var state: GameState
 var rng: Rng
 var economy: EconomyModel
@@ -522,9 +524,39 @@ func _finish_turn(retained: StringName = &"") -> Array[Event]:
 
 
 func _continue_after_turn() -> Array[Event]:
-	if state.turn_in_year >= int(rules.get("turns_per_year", 0)):
+	# A final-year settlement ends the run before offering any further rewards.
+	if state.turn_in_year >= int(rules.get("turns_per_year", 0)) and _scenario.goal != null \
+		and _scenario.goal.deadline_years > 0 and state.year >= _scenario.goal.deadline_years:
 		return _end_year()
-	return _start_turn()
+	var events := _offer_turn_reward()
+	if not state.pending_rewards.is_empty():
+		return events
+	if state.turn_in_year >= int(rules.get("turns_per_year", 0)):
+		events.append_array(_end_year())
+	else:
+		events.append_array(_start_turn())
+	return events
+
+
+func _offer_turn_reward() -> Array[Event]:
+	if _skip_card_choices or state.turn <= 0 or state.turn % TURN_REWARD_INTERVAL != 0 \
+		or int(state.flags.get("turn_reward_offered", -1)) == state.turn:
+		return []
+	state.flags["turn_reward_offered"] = state.turn
+	# Type odds are always 4:1:4, even if a pool is empty or aid storage is full.
+	var roll := rng.next_int(9)
+	var type := Reward.Type.CARD if roll < 4 else (Reward.Type.CABINET if roll == 4 else Reward.Type.AID)
+	var pool := card_reward_pool if type == Reward.Type.CARD else (cabinet_reward_pool if type == Reward.Type.CABINET else aid_reward_pool)
+	state.flags["reward_batch"] = int(state.flags.get("reward_batch", 0)) + 1
+	var groups: Array[Dictionary] = []
+	_add_reward_group(groups, type, pool, 2 if type == Reward.Type.CABINET else 3)
+	if groups.is_empty():
+		groups.append({"type": type, "options": [], "token": "%d:turn" % int(state.flags["reward_batch"])})
+	var group: Dictionary = groups[0]
+	group["turn_reward"] = true
+	group["title"] = "回合奖励 · %s" % {Reward.Type.CARD: "卡牌", Reward.Type.CABINET: "内阁", Reward.Type.AID: "援助"}[type]
+	state.pending_rewards = groups
+	return [Event.new(Event.Kind.REWARD_OFFERED, {"groups": groups.duplicate(true)})]
 
 
 func _start_turn_recovery_modifiers() -> Array[Event]:
@@ -886,7 +918,7 @@ func _choose_reward(params: Dictionary) -> Array[Event]:
 		if group.get("removal_pending", false):
 			return events
 	var picks: Array = params.get("picks", [])
-	if state.pending_rewards[0].has("event"):
+	if state.pending_rewards[0].has("event") or state.pending_rewards[0].get("turn_reward", false):
 		return _claim_reward({"group_index": 0, "option_index": int(picks[0]) if not picks.is_empty() else -1})
 	for group_index in range(state.pending_rewards.size()):
 		var group: Dictionary = state.pending_rewards[group_index]
@@ -919,7 +951,8 @@ func _claim_reward(params: Dictionary) -> Array[Event]:
 	var option_index := int(params.get("option_index", -1))
 	if option_index < -1 or option_index >= options.size():
 		return events
-	if option_index == -1 and int(group.get("type", -1)) == Reward.Type.CARD and not removable_cards().is_empty():
+	if option_index == -1 and not group.get("turn_reward", false) \
+		and int(group.get("type", -1)) == Reward.Type.CARD and not removable_cards().is_empty():
 		group["removal_pending"] = true
 		return events
 	if option_index >= 0:
@@ -944,7 +977,7 @@ func _choose_removed_card(params: Dictionary) -> Array[Event]:
 	if group_index < 0 or group_index >= state.pending_rewards.size():
 		return []
 	var group: Dictionary = state.pending_rewards[group_index]
-	if not group.get("removal_pending", false) or str(params.get("token", "")) != str(group.get("token", "")):
+	if group.get("turn_reward", false) or not group.get("removal_pending", false) or str(params.get("token", "")) != str(group.get("token", "")):
 		return []
 	var id := StringName(params.get("card_id", ""))
 	var events: Array[Event] = []
@@ -968,7 +1001,9 @@ func _finish_reward_group(group_index: int, option_index: int, prior_events: Arr
 	economy.refresh_derived(state)
 	events.append_array(_check_end_conditions(false))
 	if state.pending_rewards.is_empty() and state.run_status == GameState.RunStatus.RUNNING:
-		if group.has("event"):
+		if group.get("turn_reward", false):
+			events.append_array(_continue_after_turn())
+		elif group.has("event"):
 			if group.get("resume_after_turn", false):
 				events.append_array(_continue_after_turn())
 			else:
