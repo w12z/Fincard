@@ -1,4 +1,4 @@
-"""Generate card illustrations with GLM-Image; never save credentials or signed URLs."""
+"""Generate card and event illustrations with GLM-Image; never save credentials or signed URLs."""
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -67,6 +67,7 @@ SCENES = {
     "reform_project_continuity": "两份几乎相同的工程文书前后叠放，中间由弧形箭头连接，旁边是桥梁模型",
     "reform_midterm_review": "放大镜下一份待审文书，旁边一张收起的文件和两张展开的备选文件",
     "reform_agenda_reserve": "一份带书签的议程文书、两个封好的文件夹与一只怀表",
+    "reform_permanent_coordination": "一张常设圆形会议桌与三张空座椅居中，桌面摆着三份只有装饰线条的协调文件、一枚橙色圆印和复古台钟，后方是青绿色议事厅拱窗，没有人物，纸张上完全无字",
     "example_aid": "一艘小货船停在码头，前景是成排援助物资箱与麦穗，无人物",
     "arcadia_aid_fireside": "一台老式收音机、复古话筒与壁炉火焰，舒适温暖的小房间，无人物",
     "arcadia_aid_foreign_loan": "来自远方的资金箱、盖圆印的汇票信封与两座由虚线连接的小银行，无人物",
@@ -99,6 +100,32 @@ SCENES = {
     "route_fiscal_special_recovery_budget": "一本厚实的特别预算账册、大型资金箱与成排资金信封，中央拨款文件带醒目橙色圆印",
     "route_fiscal_cross_department_mobilization": "三份不同颜色的部门文件在圆桌中央交叠，周围是复古电话、齿轮和三枚印章，无人物",
     "route_fiscal_public_private_investment": "公共建筑模型与工厂模型并排，两侧资金袋通过弧线连接中央正在建设的桥梁",
+    "arcadia_ev_bank_panic": "空荡的银行大厅横向展开，敞开的金库露出空货架，前景是倾倒的硬币筒和散落的存折，窗外几座银行建筑的灯光熄灭，表现连锁恐慌，无人物无文字",
+    "arcadia_ev_bank_run": "一座复古银行的取款窗口和打开的抽屉，前景几本空白存折、提款凭证与快要见底的钱箱，画面没有队伍或人物，没有可读文字",
+    "arcadia_ev_black_thursday": "宏大的复古证券交易所立面，前景证券纸张和断开的齿轮散落，陶土橙色阶梯折线从左上猛然坠向右下，图表不带坐标数字，象征金融崩盘，无人物无字",
+    "arcadia_ev_bonus_army": "议会建筑外的空帐篷、旧军靴、水壶与成叠的无字请愿信封横向摆放，温和克制的历史场景，不画旗帜武器、标语、人物或文字",
+    "arcadia_ev_congress_block": "空议事厅内的长桌和高背空座椅，中央一枚木槌压着被横杆挡住的无字卷宗，窗外深蓝建筑轮廓，表现法案受阻，无人物无字",
+    "arcadia_ev_credit_freeze": "被霜纹覆盖的银行钱箱与停止运转的工厂齿轮，断开的青绿色资金输送管连接空厂房，前景搁着冷却的运输箱，横向场景，无人物无字",
+    "arcadia_ev_dust_bowl": "陶土橙色尘风掠过干裂农田，几何分块的枯麦、倾斜谷仓与闲置犁具，远方公路上只有一辆装满家当的空拖车，无人物无字",
+    "arcadia_ev_europe_default": "两座不同风格的复古海外银行隔海相望，一条断裂的资金链和封起的无字汇票信封居中，倾斜天平上压着少量硬币，无真实地图无人物无字",
+    "arcadia_ev_farm_depression": "小谷仓前堆着无人收购的麦袋和农产品木箱，农田在远处横向铺开，空交易天平与合上的钱箱放在前景，没有价签和数字，无人物无字",
+    "arcadia_ev_farm_foreclosure": "一座被大锁锁住的农舍和谷仓，前景是钥匙、无字抵押文件与收起的农具，篱笆后的农田安静荒芜，不画封条文字，无人物",
+    "arcadia_ev_financial_reorganization": "剖开的金库模型与整齐的资产抽屉，桌上放着放大镜、分门别类的无字银行账册和重新连接的齿轮，象征整理金融秩序，无人物无字",
+    "arcadia_ev_gold_outflow": "复古港口的运输轨道伸向远处货船，几箱金条正离开打开的储备金库，弧形轨迹由银行通往海面，画面不含人物、标记文字或真实国旗",
+    "arcadia_ev_inequality": "一架宽阔天平两端分别是高高的硬币堆和少量面包、麦袋，背景为繁荣工厂与小房屋的对比剪影，构图简洁，无人物无文字",
+    "arcadia_ev_market_flourish": "复古海港与重新运转的工厂相连，成排出口木箱、机械吊臂和驶向远方的小货船，青绿色河道与橙色码头横向展开，无人物无字",
+    "arcadia_ev_market_stabilization": "稳固的银行石柱与一架重新放平的天平，前景是合好的金库门、整齐无字证券和亮起的台灯，深蓝背景中出现温暖的橙色光块，无人物无字",
+    "arcadia_ev_recovery_direction": "一张无字发展蓝图铺在圆形会议桌上，几何路线连接桥梁工地、社区商店和银行模型，三种方向并置在同一个完整场景，不画多格拼贴，无人物无字",
+    "arcadia_ev_recovery_institutions": "木槌和橙色圆形印章摆在三份完全无字的制度卷宗前，后方几何桥梁、社区与银行模型形成整体，纸张仅有抽象线条，无人物无文字",
+    "arcadia_ev_recovery_mobilization": "一条连通工厂、钢桥、商店和银行的铁路横向穿过城市，前景有配套工具箱、物资箱和展开的无字建设蓝图，充满复苏动能，无人物无字",
+    "arcadia_ev_recovery_plan": "展开的无字城市规划图上摆着公共道路、水塔和小工厂模型，铁铲、齿轮与麦穗在前景有序排列，温暖而克制的复苏场景，无人物无文字",
+    "arcadia_ev_recovery_support": "前景整齐摆放建设工具、粮食纸袋与配套资金箱，后方道路将地方仓库、社区店铺和工厂相连，完整横向场景，无人物无文字",
+    "arcadia_ev_speculation": "高低错落的硬币堆、装饰性证券纸张与向上攀升的橙色几何阶梯，底部支撑结构已经出现裂缝，背景证券交易所剪影，无坐标数字无人物无文字",
+    "arcadia_ev_strike": "一间安静停机的工厂，静止传送带与挂起的工具箱居中，关闭的厂门前放着空白日程夹板和怀表，不画人群标语旗帜，无人物无字",
+    "arcadia_ev_war_debt": "一张只有几何线条的海外债务文书横放在桌面，两侧是不同颜色的蜡印和银行模型，一枚怀表与折起的贸易契约放在旁边，无人物无字",
+    "example_event": "复古国际港口里，粮食袋与原料箱堆在平衡天平旁，货船、吊车和橙色起伏折线构成横向贸易场景，无价格数字、文字或人物",
+    "starter_export": "一间地方工厂通向明亮海港，前景成排的新出口货箱、麦穗和无字订单卷宗，青绿色小货船驶向远方，无人物无文字",
+    "starter_supply": "码头运输轨道被堆积木箱挡住，机械吊臂停在半空，一段断开的桥梁和等待装货的小船在背景，表现物流中断，无人物无字",
 }
 
 ICON_PATHS = {
@@ -139,12 +166,13 @@ def generate_icons():
 
 def generate(definition, key, overwrite, stopped):
     identifier = definition["id"]
-    target = OUTPUT / f"{identifier}.png"
+    output = ROOT / "assets" / "events" if definition.get("_art_kind") == "events" else OUTPUT
+    target = output / f"{identifier}.png"
     if target.exists() and not overwrite:
         return identifier, None
     if stopped.is_set():
         return identifier, None
-    scene = SCENES.get(identifier, definition.get("description", definition["display_name"]))
+    scene = SCENES.get(identifier, definition.get("description", definition.get("display_name", definition.get("title", identifier))))
     prompt = (
         "为经济主题桌游绘制一幅非写实的二维手绘插画，不画卡牌边框。"
         f"具体画面：{scene}。"
@@ -154,6 +182,7 @@ def generate(definition, key, overwrite, stopped):
         "不使用写实油画、半写实、电影光照、摄影、逼真材质、三维渲染或复杂细节。"
         "主体集中在画面中央的横向区域，上下保留环境空间，适合裁切为横向卡牌插画。"
         "不出现任何可读文字、字母、数字、标语、真实国旗、水印、边框或游戏界面，不画拼贴或多格画面。"
+        "文书和纸页必须完全无字，不要写出主题名称，只允许无意义装饰线条。"
     )
     payload = json.dumps({"model": "glm-image", "prompt": prompt, "size": "1280x1280"}).encode()
     request = urllib.request.Request(ENDPOINT, data=payload, headers={
@@ -195,7 +224,8 @@ def generate(definition, key, overwrite, stopped):
     from PIL import Image, ImageOps
     with Image.open(BytesIO(image_data)) as image:
         temporary = target.with_suffix(".png.part")
-        ImageOps.fit(image.convert("RGB"), (512, 288), Image.Resampling.LANCZOS).save(temporary, format="PNG")
+        dimensions = (768, 384) if definition.get("_art_kind") == "events" else (512, 288)
+        ImageOps.fit(image.convert("RGB"), dimensions, Image.Resampling.LANCZOS).save(temporary, format="PNG")
     temporary.replace(target)
     return identifier, {"model": "glm-image", "style": "flat-print-v1", "prompt": prompt}
 
@@ -206,6 +236,7 @@ def main():
     parser.add_argument("--workers", type=int, choices=[1, 2], default=1)
     parser.add_argument("--icons-only", action="store_true")
     parser.add_argument("--only", nargs="*", help="Generate selected IDs only")
+    parser.add_argument("--category", choices=["cards", "events", "all"], default="cards")
     args = parser.parse_args()
     generate_icons()
     if args.icons_only:
@@ -214,12 +245,28 @@ def main():
     if not key:
         parser.error("Set ZHIPU_API_KEY")
     from PIL import Image  # Resolve the dependency before paid requests.
-    OUTPUT.mkdir(parents=True, exist_ok=True)
-    manifest_path = OUTPUT / "manifest.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
-    definitions = [json.loads(path.read_text(encoding="utf-8-sig")) for folder in ["cards", "aids"] for path in sorted((ROOT / "data" / folder).glob("*.json"))]
+    folders = ["cards", "aids"] if args.category == "cards" else (["events"] if args.category == "events" else ["cards", "aids", "events"])
+    definitions = []
+    manifests = {}
+    manifest_paths = {}
+    for folder in folders:
+        kind = "events" if folder == "events" else "cards"
+        output = ROOT / "assets" / kind
+        output.mkdir(parents=True, exist_ok=True)
+        manifest_path = output / "manifest.json"
+        if kind not in manifests:
+            manifests[kind] = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
+            manifest_paths[kind] = manifest_path
+        for path in sorted((ROOT / "data" / folder).glob("*.json")):
+            definition = json.loads(path.read_text(encoding="utf-8-sig"))
+            definition["_art_kind"] = kind
+            definitions.append(definition)
     if args.only:
+        unknown = set(args.only) - {definition["id"] for definition in definitions}
+        if unknown:
+            parser.error("Unknown illustration IDs: " + ", ".join(sorted(unknown)))
         definitions = [definition for definition in definitions if definition["id"] in args.only]
+    kinds = {definition["id"]: definition["_art_kind"] for definition in definitions}
     stopped = threading.Event()
     failed = False
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
@@ -228,6 +275,8 @@ def main():
             try:
                 identifier, entry = future.result()
                 if entry:
+                    manifest = manifests[kinds[identifier]]
+                    manifest_path = manifest_paths[kinds[identifier]]
                     manifest[identifier] = entry
                     temporary = manifest_path.with_suffix(".json.part")
                     temporary.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

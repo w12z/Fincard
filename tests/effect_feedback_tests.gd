@@ -33,6 +33,8 @@ func _run() -> void:
 	root.add_child(ui)
 	ui.setup(controller, &"example_country")
 	ui._dispatch(Command.choose_reward([]))
+	while ui._pile_motion_active:
+		await process_frame
 	var sim := controller.simulation
 	_expect(EconomyForecast.change_color(sim, &"gdp", 100, 102) == UiTheme.POSITIVE, "GDP gains are green")
 	_expect(EconomyForecast.change_color(sim, &"gdp", 102, 100) == UiTheme.NEGATIVE, "GDP losses are red")
@@ -87,7 +89,7 @@ func _run() -> void:
 	await _settle()
 	_expect(ui._effect_feedback.get_child_count() > 0, "Direct dispatch also produces effect feedback")
 	ui._dispatch(Command.end_turn())
-	while ui._settlement_active:
+	while ui._settlement_active or ui._pile_motion_active:
 		await process_frame
 	await _settle()
 	_expect(ui._effect_feedback.get_child_count() == 0, "New turns remove all old effect animations")

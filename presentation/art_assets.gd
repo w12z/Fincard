@@ -34,6 +34,21 @@ static func card_picture(id: StringName, height: float = 86) -> TextureRect:
 	return picture
 
 
+static func event_picture(id: StringName, height: float = 160) -> TextureRect:
+	var illustration := texture("res://assets/events/%s.png" % id)
+	if illustration == null:
+		return null
+	var picture := TextureRect.new()
+	picture.name = "EventIllustration"
+	picture.texture = illustration
+	picture.custom_minimum_size = Vector2(0, height)
+	picture.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return picture
+
+
 static func modifier_icon(key: String) -> Texture2D:
 	var names := {
 		"gdp_auto": "growth", "growth": "growth", "gdp": "growth", "inflation_target": "target",

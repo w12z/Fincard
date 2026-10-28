@@ -40,7 +40,7 @@ func _test_positive_growth() -> void:
 	_expect(is_equal_approx(_delta(sim, &"confidence"), 1.0), "Two-percent growth now adds one confidence rather than two")
 	_expect(is_equal_approx(_delta(sim, &"unemployment"), -0.25), "Two-percent growth now reduces unemployment by 0.25 rather than one")
 	_expect(is_equal_approx(_delta(sim, &"gdp"), 2.0), "GDP gains are not reduced")
-	_expect(is_equal_approx(_delta(sim, &"inflation"), 0.2), "Inflation formula remains unchanged")
+	_expect(is_equal_approx(_delta(sim, &"inflation"), 0.3), "Two-percent growth now contributes 0.3 points to inflation at target")
 	var formula := EconomyForecast.formulas(sim)
 	_expect(formula.contains("Δ失业率 = (6 − 6) / 10 − 2 / 8") and formula.contains("Δ信心 = 2 / 2"), "Forecast explains the reduced positive-growth contributions")
 

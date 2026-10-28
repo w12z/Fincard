@@ -51,9 +51,15 @@ static func formulas(sim: Simulation) -> String:
 	var growth := float(sim.economy.derived[&"growth"].call(sim.state, sim.economy))
 	var g := TextFormatter.fmt(growth)
 	var parts := PackedStringArray()
-	parts.append("回合增长率 = %s + %s / 100 − %s / 10 = %s%%" % [c.call(&"gdp_auto"), v.call(&"confidence"), v.call(&"interest_rate"), g])
+	var inflation_target := sim.economy.coefficient(sim.state, &"inflation_target")
+	var low := TextFormatter.fmt(inflation_target - 2.0)
+	var high := TextFormatter.fmt(inflation_target + 2.0)
+	var drag := TextFormatter.fmt(EconomyBuilder.inflation_growth_drag(sim.state, sim.economy))
+	parts.append("温和物价区间：%s%% ～ %s%%" % [low, high])
+	parts.append("物价拖累 = max(%s − %s, 0) × 0.15 + max(%s − %s, 0) × 0.20 = %s" % [v.call(&"inflation"), high, low, v.call(&"inflation"), drag])
+	parts.append("回合增长率 = %s + %s / 100 − %s / 10 − %s = %s%%" % [c.call(&"gdp_auto"), v.call(&"confidence"), v.call(&"interest_rate"), drag, g])
 	parts.append("ΔGDP = %s × %s / 100" % [v.call(&"gdp"), g])
-	var inflation := "Δ通胀 = (%s − %s + %s) / 10" % [c.call(&"inflation_target"), v.call(&"inflation"), g]
+	var inflation := "Δ通胀 = (%s − %s + 1.5 × %s) / 10" % [c.call(&"inflation_target"), v.call(&"inflation"), g]
 	if not is_zero_approx(sim.economy.coefficient(sim.state, &"infl_anchor")):
 		inflation += " + %s × (%s − %s)" % [c.call(&"infl_anchor"), c.call(&"inflation_target"), v.call(&"inflation")]
 	parts.append(inflation)

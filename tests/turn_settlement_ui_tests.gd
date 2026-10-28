@@ -27,6 +27,8 @@ func _frames(count: int = 6) -> void:
 func _prepare(scenario: StringName = &"example_country", turn: int = 1) -> void:
 	ui.setup(controller, scenario)
 	ui._dispatch(Command.choose_reward([]))
+	while ui._pile_motion_active:
+		await process_frame
 	var sim := controller.simulation
 	sim.state.turn = turn
 	sim.state.turn_in_year = (turn - 1) % 8 + 1
@@ -41,7 +43,7 @@ func _prepare(scenario: StringName = &"example_country", turn: int = 1) -> void:
 
 func _wait_settlement() -> void:
 	var deadline := Time.get_ticks_msec() + 5000
-	while ui._settlement_active and Time.get_ticks_msec() < deadline:
+	while (ui._settlement_active or ui._pile_motion_active) and Time.get_ticks_msec() < deadline:
 		_expect(not ui._overlay_root.visible and not ui._meeting_page.visible, "No event/reward/meeting may appear before settlement finishes")
 		await process_frame
 	_expect(not ui._settlement_active, "Settlement animation must finish")
@@ -85,6 +87,8 @@ func _test_reward_then_meeting() -> void:
 	ui._dispatch(Command.choose_reward([]))
 	_expect(ui._meeting_page.visible, "Annual meeting follows the completed periodic reward")
 	ui._dispatch(Command.choose_reward([]))
+	while ui._pile_motion_active:
+		await process_frame
 	await _frames()
 	_expect(sim.state.turn == 9 and sim.state.year == 2, "Annual preparation continues normally without double settlement")
 
@@ -131,6 +135,44 @@ func _test_same_source_expiration() -> void:
 	_expect(is_equal_approx(sim.economy.value(settled, &"growth"), sim.economy.value(sim.state, &"growth")), "Animated derived growth correctly accounts for one expired source")
 
 
+func _test_sequential_numbers_and_sound() -> void:
+	await _prepare()
+	var audio := SfxAudio.ensure(ui)
+	var saved_muted := audio.muted
+	var saved_volume := audio.volume
+	audio.set_muted(false, false)
+	audio.set_volume(0.8, false)
+	await create_timer(0.3).timeout
+	var landed: Array[StringName] = []
+	var sounds: Array[StringName] = []
+	var on_landed := func(id: StringName) -> void: landed.append(id)
+	var on_sound := func(id: StringName) -> void:
+		if id == &"effect_arrive":
+			sounds.append(id)
+	ui._turn_settlement.indicator_settled.connect(on_landed)
+	audio.sound_played.connect(on_sound)
+	var first: Label = ui._indicator_rows[0]["label"]
+	var second: Label = ui._indicator_rows[1]["label"]
+	var original_second := second.text
+	var changes: Array[Dictionary] = [
+		{"id": &"gdp", "name": "GDP", "label": first, "from": 100.0, "to": 102.0, "color": UiTheme.POSITIVE},
+		{"id": &"inflation", "name": "通胀", "label": second, "from": 3.0, "to": 2.5, "color": UiTheme.POSITIVE},
+	]
+	ui._turn_settlement.play(changes, ui._forecast.get_global_rect())
+	await create_timer(0.40).timeout
+	_expect(landed == [&"gdp"] and sounds.size() == 1, "First number finishes and sounds once before the second starts")
+	_expect(second.text == original_second, "Later indicators do not change while the first one settles")
+	_expect(ui._turn_settlement.get_child_count() <= 1, "Only one settlement number is flying at a time")
+	await create_timer(0.7).timeout
+	_expect(landed == [&"gdp", &"inflation"] and sounds.size() == 2, "Each changed indicator settles in order with its own sound")
+	_expect(first.text == "GDP：102" and second.text == "通胀：2.5", "Sequential animation lands on exact final values")
+	ui._turn_settlement.clear()
+	ui._turn_settlement.indicator_settled.disconnect(on_landed)
+	audio.sound_played.disconnect(on_sound)
+	audio.set_volume(saved_volume, false)
+	audio.set_muted(saved_muted, false)
+
+
 func _run() -> void:
 	controller = GameController.new()
 	controller.seed_value = 7
@@ -145,6 +187,7 @@ func _run() -> void:
 	await _test_fixed_event()
 	await _test_modifier_grid()
 	await _test_same_source_expiration()
+	await _test_sequential_numbers_and_sound()
 	ui.free()
 	controller.free()
 	await process_frame

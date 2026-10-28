@@ -36,6 +36,8 @@ func _run() -> void:
 	root.add_child(ui)
 	ui.setup(controller, &"example_country")
 	ui._dispatch(Command.choose_reward([]))
+	while ui._pile_motion_active:
+		await process_frame
 	var sim := controller.simulation
 	sim.state.modifiers.clear()
 	var modifiers: Array[Modifier] = [
@@ -79,15 +81,15 @@ func _run() -> void:
 	_expect(ui._effect_icons.get_child_count() == entries.size(), "UI renders one badge per parameter or merged effect including abilities")
 	for i in ui._effect_icons.get_child_count():
 		var badge: Button = ui._effect_icons.get_child(i)
-		_expect(badge.get_theme_color("font_color") == UiTheme.modifier_color(i), "Badge color depends only on display index")
-		if i > 0:
-			_expect(badge.get_theme_color("font_color") != ui._effect_icons.get_child(i - 1).get_theme_color("font_color"), "Neighboring badges have staggered colors")
+		if badge.get_meta("recent_change", false):
+			_expect(badge.get_theme_stylebox("normal").border_width_left == 2, "Recent modifiers have a distinct bright border")
+		else:
+			_expect(badge.get_theme_color("font_color") == UiTheme.modifier_color(i), "Older badges retain their muted palette")
 	_expect(ui._log.get_global_rect().end.x <= root.get_visible_rect().end.x + 1, "Unified bar cannot overflow main layout")
-	var original_color: Color = ui._effect_icons.get_child(0).get_theme_color("font_color")
 	sim.state.modifiers.reverse()
 	ui._render()
-	_expect(ui._effect_icons.get_child(0).get_meta("effect_key") == "special:executive_mandate", "First occurrence defines stable order for numeric and special modifiers together")
-	_expect(ui._effect_icons.get_child(0).get_theme_color("font_color") == original_color, "Changing type at the same index keeps the color")
+	for index in range(1, ui._effect_icons.get_child_count()):
+		_expect(int(ui._effect_icons.get_child(index - 1).get_meta("change_order")) >= int(ui._effect_icons.get_child(index).get_meta("change_order")), "Numeric and special modifiers are sorted newest-first")
 	sim.state.modifiers.assign(modifiers)
 	sim._advance_modifiers()
 	sim._advance_modifiers()

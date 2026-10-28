@@ -31,6 +31,12 @@ var _aids_box: HBoxContainer
 var _aids_title: Label
 var _hand_box: HBoxContainer
 var _hand_scroll: ScrollContainer
+var _draw_pile: CardPileView
+var _discard_pile: CardPileView
+var _pile_motion: CardPileMotion
+var _pile_motion_active := false
+var _pending_pile_batch: Dictionary = {}
+var _manual_play_orders: Array[int] = []
 var _played_table: CardTable
 var _table_section: VBoxContainer
 var _deck_label: Label
@@ -80,10 +86,16 @@ var _overlay_signature: String = UNSET_SIGNATURE
 var _forecast_signature: String = UNSET_SIGNATURE
 var _forecast_dirty: bool = true
 var _forecast_build_count: int = 0
+var _modifier_recency := ModifierRecency.new()
 
 
 func setup(p_controller: GameController, scenario_id: StringName) -> void:
 	_presentation_generation += 1
+	_pile_motion_active = false
+	_pending_pile_batch.clear()
+	_manual_play_orders.clear()
+	if is_instance_valid(_pile_motion):
+		_pile_motion.clear()
 	_settlement_active = false
 	_cleared_turn = -1
 	if is_instance_valid(_turn_settlement):
@@ -108,6 +120,7 @@ func setup(p_controller: GameController, scenario_id: StringName) -> void:
 
 
 func _reset_section_signatures() -> void:
+	_modifier_recency.clear()
 	_goal_signature = UNSET_SIGNATURE
 	_indicator_structure = UNSET_SIGNATURE
 	_status_signature = UNSET_SIGNATURE
@@ -197,10 +210,19 @@ func _build() -> void:
 	_played_table.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	table_scroll.add_child(_played_table)
 	var hand_section := _make_section(center, "手牌")
+	var hand_lane := HBoxContainer.new()
+	hand_lane.add_theme_constant_override("separation", 12)
+	hand_section.add_child(hand_lane)
+	_discard_pile = CardPileView.new()
+	_discard_pile.setup(false)
+	hand_lane.add_child(_discard_pile)
 	_hand_scroll = ScrollContainer.new()
 	_hand_scroll.custom_minimum_size.y = 310
 	_hand_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hand_section.add_child(_hand_scroll)
+	hand_lane.add_child(_hand_scroll)
+	_draw_pile = CardPileView.new()
+	_draw_pile.setup(true)
+	hand_lane.add_child(_draw_pile)
 	_hand_box = HBoxContainer.new()
 	_hand_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_hand_box.add_theme_constant_override("separation", 10)
@@ -257,6 +279,8 @@ func _build() -> void:
 	_build_overlay()
 	_turn_settlement = TurnSettlement.new()
 	add_child(_turn_settlement)
+	_pile_motion = CardPileMotion.new()
+	add_child(_pile_motion)
 	_built = true
 
 
@@ -383,7 +407,7 @@ func _make_section(parent: Control, title: String, expand: bool = false, minimum
 
 
 func _render() -> void:
-	if _settlement_active:
+	if _settlement_active or _pile_motion_active:
 		return
 	_state = controller.simulation.state
 	var meeting := _is_annual_meeting()
@@ -415,6 +439,8 @@ func _render() -> void:
 	var deck_text := "牌库 %d · 弃牌 %d · 手牌 %d" % [_state.deck.size(), _state.discard.size(), _state.hand.size()]
 	if _deck_label.text != deck_text:
 		_deck_label.text = deck_text
+	_draw_pile.set_count(_state.deck.size())
+	_discard_pile.set_count(_state.discard.size())
 	_end_turn_button.disabled = _busy() or _flight_active or _state.run_status != GameState.RunStatus.RUNNING
 	_render_log()
 	_render_overlay()
@@ -535,7 +561,7 @@ func _add_indicator_row(id: StringName) -> void:
 
 
 func _render_statuses() -> void:
-	var entries := ModifierDisplay.entries(controller.simulation, _labels())
+	var entries := _modifier_recency.order(ModifierDisplay.entries(controller.simulation, _labels()), _state)
 	var signature := _statuses_signature(entries)
 	if signature == _status_signature:
 		return
@@ -563,8 +589,15 @@ func _render_statuses() -> void:
 		badge.custom_minimum_size = Vector2(24, 24)
 		badge.text = ""
 		badge.tooltip_text = entry["tooltip"]
+		if entry["recent_change"]:
+			badge.tooltip_text += "\n" + ("本回合更新" if entry["current_change"] else "上回合更新")
 		badge.set_meta("effect_key", entry["key"])
+		badge.set_meta("recent_change", entry["recent_change"])
+		badge.set_meta("changed_turn", entry["changed_turn"])
+		badge.set_meta("change_order", entry["change_order"])
 		UiTheme.style_modifier_badge(badge, index)
+		if entry["recent_change"]:
+			UiTheme.style_recent_modifier_badge(badge, entry["current_change"])
 		_effect_icons.add_child(badge)
 		var icon := TextureRect.new()
 		icon.texture = ArtAssets.modifier_icon(str(entry["icon"]))
@@ -595,12 +628,13 @@ func _layout_modifier_icons() -> void:
 func _statuses_signature(entries: Array[Dictionary]) -> String:
 	var parts := PackedStringArray(["cards:%d" % _state.cards_played_this_turn])
 	for entry in entries:
-		parts.append("%s|%s|%s|%s|%s" % [
+		parts.append("%s|%s|%s|%s|%s|%s|%s|%s" % [
 			entry["key"],
 			entry["icon"],
 			str(entry.get("value_text", entry["counter"])),
 			str(entry["counter"]),
 			entry["tooltip"],
+			str(entry["recent_change"]), str(entry["current_change"]), str(entry["change_order"]),
 		])
 	return "\n".join(parts)
 
@@ -876,8 +910,15 @@ func _reward_container() -> VBoxContainer:
 
 
 func _render_overlay() -> void:
-	if _is_annual_meeting():
-		_overlay_root.visible = false
+	if _settlement_active or _pile_motion_active:
+		_overlay_root.hide()
+		return
+	# Visibility is not content: animations temporarily hide an existing panel.
+	# Restore it even when the cached signature says its children can be reused.
+	_overlay_root.visible = not _is_annual_meeting() and (
+		_state.run_status != GameState.RunStatus.RUNNING or _state.pending_event != &"" \
+		or not _state.pending_rewards.is_empty() or _state.flags.get("pending_retain", false) \
+		or _state.flags.get("pending_review", false) or not _state.flags.get("pending_discard_draw", []).is_empty())
 	var variation: StringName = &"EventPanel" if _state.pending_event != &"" and _state.run_status == GameState.RunStatus.RUNNING else &""
 	if _overlay_panel.theme_type_variation != variation:
 		_overlay_panel.theme_type_variation = variation
@@ -990,6 +1031,9 @@ func _show_event() -> void:
 	title.add_theme_font_size_override("font_size", 18)
 	title.add_theme_color_override("font_color", UiTheme.EVENT_ACCENT)
 	_overlay_box.add_child(title)
+	var illustration := ArtAssets.event_picture(_state.pending_event)
+	if illustration != null:
+		_overlay_box.add_child(illustration)
 	if definition != null and definition.description != "":
 		_overlay_box.add_child(_wrapped(definition.description, UiTheme.TEXT, 460.0))
 	if _state.pending_event_choices.is_empty():
@@ -1210,30 +1254,134 @@ func _show_result() -> void:
 
 
 func _dispatch(command: Command) -> void:
-	if _settlement_active:
+	if _settlement_active or _pile_motion_active or _flight_active:
 		return
-	var before: GameState
-	if command.kind in [Command.Kind.END_TURN, Command.Kind.CHOOSE_RETAINED_CARD]:
-		before = controller.simulation.state.snapshot()
-	_apply_command_events(controller.dispatch(command), before)
+	var context := _capture_pile_context(command)
+	var before := controller.simulation.state.snapshot()
+	_apply_command_events(controller.dispatch(command), before, context)
 
 
-func _apply_command_events(events: Array, before: GameState = null) -> void:
+func _capture_pile_context(command: Command) -> Dictionary:
+	var context := {"discards": [], "deck_count": controller.simulation.state.deck.size()}
+	if command.kind == Command.Kind.CHOOSE_RETAINED_CARD:
+		context["retained_index"] = int(command.params.get("hand_index", -1))
+	if command.kind in [Command.Kind.CHOOSE_REVIEW_CARD, Command.Kind.CHOOSE_DISCARD_CARD]:
+		var index := int(command.params.get("hand_index", -1))
+		if index >= 0 and index < _hand_box.get_child_count():
+			var button := _hand_box.get_child(index) as CardButton
+			if button != null:
+				context["discards"].append(CardPileMotion.capture(button))
+	return context
+
+
+func _pile_batch(events: Array, before: GameState, context: Dictionary) -> Dictionary:
+	if events.is_empty():
+		return {}
+	var draws := 0
+	for event: Event in events:
+		if event.kind == Event.Kind.CARDS_DRAWN:
+			draws += int(event.params.get("count", 0))
+	var discards: Array = context.get("discards", [])
+	if draws == 0 and discards.is_empty():
+		return {}
+	return {"draw_count": mini(draws, controller.simulation.state.hand.size()), "discards": discards,
+		"reshuffle": draws > int(context.get("deck_count", before.deck.size() if before != null else draws)),
+		"turn": controller.simulation.state.turn}
+
+
+func _prepare_pile_batch(batch: Dictionary) -> void:
+	if _is_annual_meeting():
+		return
+	var targets: Array[CardButton] = []
+	for child in _hand_box.get_children():
+		if child is CardButton:
+			targets.append(child)
+	var count := mini(int(batch["draw_count"]), targets.size())
+	var new_cards: Array[CardButton] = []
+	for index in range(targets.size() - count, targets.size()):
+		new_cards.append(targets[index])
+		targets[index].modulate.a = 0.0
+	batch["targets"] = new_cards
+	_pending_pile_batch = batch
+	_pile_motion_active = true
+	_overlay_root.hide()
+	_end_turn_button.disabled = true
+	_pile_motion.show()
+	if not _flight_active:
+		_run_pile_batch()
+
+
+func _run_pile_batch() -> void:
+	if _pending_pile_batch.is_empty():
+		return
+	var epoch := _presentation_generation
+	var batch := _pending_pile_batch
+	_pending_pile_batch = {}
+	# Wait for new hand containers to size and position their initially hidden slots.
+	for frame in 5:
+		if not is_inside_tree():
+			return
+		await get_tree().process_frame
+		if epoch != _presentation_generation:
+			return
+	var discards: Array[Dictionary] = []
+	discards.assign(batch["discards"])
+	if not discards.is_empty():
+		await _pile_motion.transfer(discards, false, _discard_pile.card_rect(), _labels())
+		if not is_inside_tree() or epoch != _presentation_generation:
+			return
+	if batch["reshuffle"]:
+		await _pile_motion.reshuffle(_discard_pile.card_rect(), _draw_pile.card_rect())
+		if not is_inside_tree() or epoch != _presentation_generation:
+			return
+	var entries: Array[Dictionary] = []
+	for target in batch["targets"]:
+		if is_instance_valid(target) and target.is_inside_tree():
+			var entry := CardPileMotion.capture(target)
+			entry["destination"] = target
+			# Hidden offscreen hand slots still land at the visible right edge of
+			# the scroll viewport; their real slots remain available by scrolling.
+			var rect: Rect2 = entry["rect"]
+			var viewport_rect := _hand_scroll.get_global_rect()
+			rect.position.x = clampf(rect.position.x, viewport_rect.position.x, maxf(viewport_rect.position.x, viewport_rect.end.x - rect.size.x))
+			entry["rect"] = rect
+			entries.append(entry)
+	if not entries.is_empty():
+		await _pile_motion.transfer(entries, true, _draw_pile.card_rect(), _labels())
+		if not is_inside_tree() or epoch != _presentation_generation:
+			return
+	_pile_motion.clear()
+	_pile_motion_active = false
+	_render()
+	SfxAudio.play_events(self, batch.get("notifications", []))
+	_flush_effect_feedback()
+
+
+func _apply_command_events(events: Array, before: GameState = null, context: Dictionary = {}) -> void:
 	if before != null:
 		for event: Event in events:
 			if event.kind == Event.Kind.TURN_ENDED:
-				_animate_turn_settlement(events, before)
+				_animate_turn_settlement(events, before, context)
 				return
-	_play_events(events)
+	var batch := _pile_batch(events, before, context)
+	if not batch.is_empty():
+		var notifications: Array[Event] = []
+		for event: Event in events:
+			if event.kind in [Event.Kind.EVENT_TRIGGERED, Event.Kind.RUN_WON, Event.Kind.RUN_LOST]:
+				notifications.append(event)
+		batch["notifications"] = notifications
+	_play_events(events, not batch.is_empty())
 	_forecast_dirty = true
 	_render()
 	_queue_automatic_flights(events)
+	if not batch.is_empty():
+		_prepare_pile_batch(batch)
 	_pending_effect_feedback.append_array(EffectFeedback.cues(events, controller.simulation, _labels()))
-	if not _flight_active:
+	if not _flight_active and not _pile_motion_active:
 		_flush_effect_feedback()
 
 
-func _animate_turn_settlement(events: Array, before: GameState) -> void:
+func _animate_turn_settlement(events: Array, before: GameState, context: Dictionary = {}) -> void:
 	_settlement_active = true
 	var epoch := _presentation_generation
 	_pending_effect_feedback.clear()
@@ -1256,6 +1404,32 @@ func _animate_turn_settlement(events: Array, before: GameState) -> void:
 		return
 	SfxAudio.play(self, &"turn_settle")
 	# Clear the completed turn before showing any reward/event/meeting or new hand.
+	var discards: Array[Dictionary] = []
+	var retained_index := int(context.get("retained_index", -1))
+	var hand_index := 0
+	for button in _hand_box.get_children():
+		if button is CardButton:
+			if hand_index != retained_index:
+				discards.append(CardPileMotion.capture(button))
+				button.modulate.a = 0.0
+			hand_index += 1
+	var available_copies := {}
+	for id in before.discard:
+		available_copies[id] = int(available_copies.get(id, 0)) + 1
+	for button in _played_table._cards:
+		# A replay/automatic image is not another card. A manually played card
+		# already shuffled back into the deck/hand must not be discarded twice.
+		var id: StringName = button.preview_card.id
+		if _manual_play_orders.has(int(button.get_meta("play_order", 0))) \
+			and not button.preview_card.once_per_run and int(available_copies.get(id, 0)) > 0:
+			discards.append(CardPileMotion.capture(button, true))
+			available_copies[id] -= 1
+		button.modulate.a = 0.0
+	if not discards.is_empty():
+		await _pile_motion.transfer(discards, false, _discard_pile.card_rect(), _labels())
+		if not is_inside_tree() or epoch != _presentation_generation:
+			return
+	_pile_motion.clear()
 	var fade := create_tween().set_parallel(true)
 	fade.tween_property(_played_table, "modulate:a", 0.0, 0.18)
 	fade.tween_property(_hand_box, "modulate:a", 0.0, 0.18)
@@ -1274,10 +1448,14 @@ func _animate_turn_settlement(events: Array, before: GameState) -> void:
 	_settlement_active = false
 	_turn_settlement.clear()
 	_end_turn_button.text = "结束回合"
-	_apply_command_events(events)
+	# All draws in a newly started turn are appended after a retained card. Do not
+	# rediscard the old hand when presenting the post-settlement event batch.
+	_apply_command_events(events, null, {"post_settlement": true, "deck_count": before.deck.size()})
 
 
 func _flush_effect_feedback(origin: Dictionary = {}, source_id: StringName = &"") -> void:
+	if _pending_effect_feedback.is_empty():
+		return
 	var pending := _pending_effect_feedback.duplicate()
 	_pending_effect_feedback.clear()
 	var generation := _effect_feedback.generation
@@ -1351,11 +1529,15 @@ func _start_next_automatic_flight() -> void:
 		_end_turn_button.disabled = true
 		_animate_card_flight(card_id, order)
 		return
+	if _pile_motion_active and not _pending_pile_batch.is_empty():
+		_run_pile_batch()
 
 
 func _play_card_from_hand(card_id: StringName, button: CardButton) -> void:
-	if _settlement_active or _flight_active or not is_instance_valid(button) or button.disabled:
+	if _settlement_active or _pile_motion_active or _flight_active or not is_instance_valid(button) or button.disabled:
 		return
+	var before := controller.simulation.state.snapshot()
+	var context := _capture_pile_context(Command.play_card(card_id))
 	var origin_rect := button.visual_global_rect()
 	_flight_active = true
 	var events := controller.dispatch(Command.play_card(card_id))
@@ -1365,7 +1547,7 @@ func _play_card_from_hand(card_id: StringName, button: CardButton) -> void:
 		_apply_command_events(events)
 		return
 	_begin_card_flight(button, origin_rect)
-	_apply_command_events(events)
+	_apply_command_events(events, before, context)
 	await _animate_card_flight(card_id)
 
 
@@ -1448,7 +1630,8 @@ func _on_card_flight_finished() -> void:
 	_flight_target = null
 	_flight_active = false
 	_end_turn_button.disabled = _busy() or _state.run_status != GameState.RunStatus.RUNNING
-	_flush_effect_feedback(effect_origin, source_id)
+	if not _pile_motion_active:
+		_flush_effect_feedback(effect_origin, source_id)
 	_start_next_automatic_flight()
 
 
@@ -1480,8 +1663,12 @@ func _notification(what: int) -> void:
 		_flight_tween = null
 
 
-func _play_events(events: Array) -> void:
-	SfxAudio.play_events(self, events)
+func _play_events(events: Array, postpone_notifications: bool = false) -> void:
+	var audible: Array[Event] = []
+	for event: Event in events:
+		if not postpone_notifications or event.kind not in [Event.Kind.EVENT_TRIGGERED, Event.Kind.RUN_WON, Event.Kind.RUN_LOST]:
+			audible.append(event)
+	SfxAudio.play_events(self, audible)
 	var restart := false
 	for event in events:
 		if event.kind in [Event.Kind.RUN_STARTED, Event.Kind.TURN_STARTED, Event.Kind.TURN_ENDED]:
@@ -1493,9 +1680,15 @@ func _play_events(events: Array) -> void:
 			break
 	if restart:
 		_clear_log()
+		_manual_play_orders.clear()
 		_reward_group_index = -1
 		_reset_section_signatures()
+	_modifier_recency.record(events, controller.simulation.state.turn)
 	for event in events:
+		if event.kind == Event.Kind.TURN_STARTED:
+			_manual_play_orders.clear()
+		elif event.kind == Event.Kind.CARD_PLAYED and not event.params.get("automatic", false):
+			_manual_play_orders.append(int(event.params.get("play_order", 0)))
 		var line := _describe(event)
 		if line != "":
 			_append_log_line(line)
@@ -1582,7 +1775,7 @@ func _modifier_event_name(params: Dictionary) -> String:
 
 
 func _busy() -> bool:
-	return _settlement_active or _state.pending_event != &"" or not _state.pending_rewards.is_empty() \
+	return _settlement_active or _pile_motion_active or _state.pending_event != &"" or not _state.pending_rewards.is_empty() \
 		or _state.flags.get("pending_retain", false) or _state.flags.get("pending_review", false) \
 		or not _state.flags.get("pending_discard_draw", []).is_empty()
 

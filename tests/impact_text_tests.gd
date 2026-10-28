@@ -49,6 +49,8 @@ func _run() -> void:
 	main._on_start_requested(&"arcadia")
 	var ui: GameUI = main._screen
 	ui._dispatch(Command.choose_reward([]))
+	while ui._pile_motion_active:
+		await process_frame
 	var sim: Simulation = main.controller.simulation
 	sim.state.budget = 100
 	sim.state.political_capital = 10
@@ -69,8 +71,11 @@ func _run() -> void:
 	sim._fire_event(definition.id)
 	ui._render()
 	await _settle()
-	var choice: Button = ui._overlay_box.get_child(2)
-	_expect(choice.find_children("*", "RichTextLabel", true, false).size() > 0, "Event-choice numeric effects use rich text without changing button actions")
+	var found_choice := false
+	for child in ui._overlay_box.get_children():
+		if child is Button and child.text.begins_with("紧急注资救助银行"):
+			found_choice = child.find_children("*", "RichTextLabel", true, false).size() > 0
+	_expect(found_choice, "Event-choice numeric effects use rich text without changing button actions")
 	await _capture("fincard-gold-event-values.png")
 	var audio := SfxAudio.ensure(main)
 	main.free()

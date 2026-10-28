@@ -17,7 +17,7 @@ static func build(economy: EconomyModel, config: Dictionary, rules: Dictionary) 
 	economy.equations[&"inflation"] = func(state: GameState, model: EconomyModel, _rng: Rng) -> float:
 		var g_rate := EconomyBuilder._growth_rate(state, model)
 		var gap := model.coefficient(state, &"inflation_target") - model.value(state, &"inflation")
-		return (gap + g_rate) / 10.0 + model.coefficient(state, &"infl_anchor") * gap
+		return (gap + 1.5 * g_rate) / 10.0 + model.coefficient(state, &"infl_anchor") * gap
 
 	economy.equations[&"unemployment"] = func(state: GameState, model: EconomyModel, _rng: Rng) -> float:
 		var gap := model.coefficient(state, &"natural_unemployment") - model.value(state, &"unemployment")
@@ -63,9 +63,17 @@ static func special_confidence_delta(state: GameState, growth: float) -> float:
 	return delta
 
 
+static func inflation_growth_drag(state: GameState, model: EconomyModel) -> float:
+	var inflation := model.value(state, &"inflation")
+	var target := model.coefficient(state, &"inflation_target")
+	return maxf(inflation - (target + 2.0), 0.0) * 0.15 \
+		+ maxf((target - 2.0) - inflation, 0.0) * 0.20
+
+
 static func _growth_rate(state: GameState, model: EconomyModel) -> float:
 	var rate := model.coefficient(state, &"gdp_auto") \
 		+ model.value(state, &"confidence") / 100.0 \
-		- model.value(state, &"interest_rate") / 10.0
+		- model.value(state, &"interest_rate") / 10.0 \
+		- inflation_growth_drag(state, model)
 	var pair: Array = model.bounds.get(&"growth", [])
 	return clampf(rate, float(pair[0]), float(pair[1])) if pair.size() == 2 else rate

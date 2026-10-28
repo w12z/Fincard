@@ -102,6 +102,8 @@ func _test_automatic_animation() -> void:
 	root.add_child(ui)
 	ui.setup(controller, &"example_country")
 	ui._dispatch(Command.choose_reward([]))
+	while ui._pile_motion_active:
+		await process_frame
 	var sim := controller.simulation
 	_grant(&"project_continuity")
 	sim.state.budget = 100
@@ -124,8 +126,10 @@ func _test_automatic_animation() -> void:
 	_expect(not ui._flight_active and ui._flight_layer.get_child_count() == 0, "Automatic flight releases its temporary card")
 	_expect(ui._played_table._cards.size() == 1 and ui._played_table._cards[0].visible, "Only the newly automatically played card remains on the table")
 	_expect(ui._played_table._cards[0].tooltip_text.begins_with("自动打出（免费）"), "Automatic table cards clearly identify their origin")
+	while ui._pile_motion_active:
+		await process_frame
 	ui._dispatch(Command.end_turn())
-	while ui._settlement_active:
+	while ui._settlement_active or ui._pile_motion_active:
 		await process_frame
 	for frame in 6:
 		await process_frame

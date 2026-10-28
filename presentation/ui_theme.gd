@@ -51,6 +51,17 @@ static func style_modifier_badge(badge: Button, index: int) -> void:
 		badge.add_theme_color_override(state, color)
 
 
+static func style_recent_modifier_badge(badge: Button, current_turn: bool) -> void:
+	var border := Color("0fb4c5") if current_turn else Color("dca52d")
+	var background := Color("d8faff") if current_turn else Color("fff3c4")
+	for state in ["normal", "hover", "pressed", "focus"]:
+		var style := _button_style(background if state == "normal" else background.darkened(0.035), border, 6, 3, 3)
+		style.set_border_width_all(2)
+		badge.add_theme_stylebox_override(state, style)
+	for state in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		badge.add_theme_color_override(state, border.darkened(0.15))
+
+
 static func build() -> Theme:
 	var theme := Theme.new()
 	theme.default_font_size = 14

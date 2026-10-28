@@ -1,0 +1,17 @@
+{
+  "id": "reform_permanent_coordination",
+  "display_name": "常设协调委员会",
+  "description": "设立常设机构，协调各部门的政策议程。",
+  "card_type": "reform",
+  "rarity": "rare",
+  "cost": 4,
+  "political_cost": 3,
+  "once_per_run": true,
+  "reward_min_turn": 1,
+  "effects": [
+    { "kind": "apply_modifier", "params": {
+      "scope": "indicator", "target": "political_capital_gain", "op": "add",
+      "value": 1, "duration": -1, "source": "常设协调委员会"
+    } }
+  ]
+}

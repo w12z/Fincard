@@ -42,6 +42,8 @@ func _run() -> void:
 	var ui: GameUI = main._screen
 	_expect(not main._sound_controls.visible and ui._header.get_node_or_null("SoundControls") != null, "Gameplay exposes its own compact sound controls")
 	ui._dispatch(Command.choose_reward([]))
+	while ui._pile_motion_active:
+		await process_frame
 	counts.clear()
 	ui._goal_button.pressed.emit()
 	await _frames()
@@ -65,7 +67,7 @@ func _run() -> void:
 	_expect(counts.is_empty(), "Rejected actions do not play success sounds")
 	ui._dispatch(Command.end_turn())
 	_expect(not counts.has(&"turn_settle"), "Settlement does not sound complete before its animation")
-	while ui._settlement_active:
+	while ui._settlement_active or ui._pile_motion_active:
 		await process_frame
 	_expect(int(counts.get(&"turn_settle", 0)) == 1, "Settlement sound fires once at numeric completion")
 	await _frames()
