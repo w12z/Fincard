@@ -3,7 +3,7 @@
   "display_name": "隐约的市场担忧",
   "icon": "review",
   "flavor_text": "小部分经济学家开始担忧，我国的经济并不是繁荣，而是泡沫。这简直是无稽之谈，不是吗？",
-  "description": "第9～16回合结束时，信心达到90或GDP增长率达到1%，增加1层，每回合最多1层，最多8层。每层使黑色星期四额外损失3%的GDP和3信心。股灾结算后移除。",
+  "description": "第9～16回合结束时，信心达到90增加1层，GDP增长率达到1%增加1层；同时满足增加2层，最多16层。每层使黑色星期四额外损失3%的GDP和3信心，满层额外损失48%的GDP和48信心。股灾结算后移除。",
   "rule": "market_overheating",
   "parameters": {
     "allow_zero_stacks": true,
@@ -11,7 +11,7 @@
     "last_turn": 16,
     "confidence_threshold": 90,
     "growth_threshold": 1.0,
-    "max_stacks": 8,
+    "max_stacks": 16,
     "gdp_loss_per_stack": 3,
     "confidence_loss_per_stack": 3
   }

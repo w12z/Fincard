@@ -4,8 +4,8 @@
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -8, "percent": true, "scale_modifier": "market_worry", "amount_per_stack": -3 } },
     { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -16, "scale_modifier": "market_worry", "amount_per_stack": -3 } },
-    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 4 } },
-    { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": -2 } },
+    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 16 } },
+    { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": 8 } },
     { "kind": "remove_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "temporary_only": true, "positive_only": true } },
     { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": -0.6, "duration": 6, "source": "股灾余波" } },
     { "kind": "remove_modifier", "params": { "scope": "special", "target": "stock_market_frenzy" } },

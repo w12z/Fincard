@@ -619,10 +619,11 @@ func _settle_market_worry(growth: float) -> Array[Event]:
 		modifier.data["recorded_turn"] = state.turn
 		modifier.data["last_growth"] = growth
 		modifier.data["last_confidence"] = economy.value(state, &"confidence")
-		var overheated := economy.value(state, &"confidence") >= float(modifier.data.get("confidence_threshold", 90)) \
-			or growth >= float(modifier.data.get("growth_threshold", 1.0)) - 0.00000001
-		if overheated and modifier.stacks < int(modifier.data.get("max_stacks", 8)):
-			modifier.stacks += 1
+		var added := int(economy.value(state, &"confidence") >= float(modifier.data.get("confidence_threshold", 90))) \
+			+ int(growth >= float(modifier.data.get("growth_threshold", 1.0)) - 0.00000001)
+		var maximum := int(modifier.data.get("max_stacks", 16))
+		if added > 0 and modifier.stacks < maximum:
+			modifier.stacks = mini(maximum, modifier.stacks + added)
 			events.append(StatusRules.mark_triggered(modifier, state))
 	return events
 
