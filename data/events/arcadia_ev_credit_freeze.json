@@ -4,7 +4,7 @@
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -7, "percent": true } },
     { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": 5 } },
-    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -6 } },
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -12 } },
     { "kind": "adjust_indicator", "params": { "target": "inflation", "amount": -2 } },
     { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": -0.5, "duration": 6, "source": "信贷冻结" } }
   ]

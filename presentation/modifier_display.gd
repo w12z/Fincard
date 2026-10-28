@@ -16,14 +16,8 @@ class Badge extends Button:
 		title.add_theme_font_size_override("font_size", 16)
 		content.add_child(title)
 		if lines.size() > 1:
-			var body := Label.new()
-			body.text = lines[1]
+			var body := ImpactText.create(lines[1])
 			body.custom_minimum_size.x = 340
-			body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			body.add_theme_color_override("font_color", UiTheme.TEXT)
-			body.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
-			body.add_theme_font_size_override("font_size", 14)
-			body.add_theme_constant_override("line_spacing", 3)
 			content.add_child(body)
 		return panel
 
@@ -81,6 +75,16 @@ static func _special_entry(sim: Simulation, labels: Dictionary, modifier: Modifi
 		if not effects.is_empty():
 			icon_key = String(effects[0].params.get("target", "political_capital_gain"))
 	var duration := "永久" if modifier.is_permanent() else "剩余%d回合" % modifier.remaining_turns
+	if modifier.rule == &"negative_growth_confidence":
+		description = "经济结算时，GDP每下降1%%，额外降低%s信心。" % TextFormatter.fmt(StatusRules.confidence_crash_rate(modifier, sim.state.turn) * modifier.stacks)
+		var expire_turn := int(modifier.data.get("expire_turn", 0))
+		if expire_turn > 0:
+			duration = "第%d回合开始时移除" % expire_turn
+		var weaken_turn := int(modifier.data.get("weaken_turn", 0))
+		if weaken_turn > sim.state.turn:
+			description += "\n第%d回合起减半。" % weaken_turn
+		elif weaken_turn > 0:
+			description += "\n强度已减半。"
 	var tooltip := "%s\n%d层 · %s\n%s" % [name, modifier.stacks, duration, description]
 	if definition != null and definition.flavor_text != "":
 		tooltip += "\n\n" + definition.flavor_text

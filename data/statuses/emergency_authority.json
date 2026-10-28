@@ -1,5 +1,5 @@
 {
   "id": "emergency_authority", "display_name": "紧急全权授权", "icon": "权",
-  "description": "每回合从手牌打出的第二张牌免预算和政治成本。",
+  "description": "每回合打出的第二张牌免预算和政治成本。",
   "rule": "second_card_free", "start_next_turn": true
 }

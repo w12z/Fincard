@@ -1,5 +1,5 @@
 {
   "id": "rapid_disbursement", "display_name": "快速拨付", "icon": "fund",
-  "description": "每回合第二张从手牌打出的政策牌预算成本减2，最低为0。",
+  "description": "每回合打出的第二张政策牌预算成本减2，最低为0。",
   "rule": "second_policy_discount", "amount": 2, "start_next_turn": true
 }

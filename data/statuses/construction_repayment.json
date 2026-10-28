@@ -1,5 +1,5 @@
 {
   "id": "construction_repayment", "display_name": "项目回款", "icon": "income",
-  "description": "每回合从手牌打出第二张投资与援助类卡牌后，预算加2。每回合一次。",
+  "description": "每回合打出第二张投资与援助类卡牌后，预算加2。每回合一次。",
   "rule": "second_investment_budget", "amount": 2, "start_next_turn": true
 }

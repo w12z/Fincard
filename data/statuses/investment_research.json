@@ -1,5 +1,5 @@
 {
   "id": "investment_research", "display_name": "证券监管", "icon": "研",
-  "description": "每累计从手牌打出4张投资与援助类卡牌，抽1张牌。",
+  "description": "每累计打出4张投资与援助类卡牌，抽1张牌。",
   "rule": "investment_draw", "amount": 4, "start_next_turn": true
 }

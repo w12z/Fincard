@@ -51,7 +51,7 @@ static func fill(button: Button, card: CardDef, labels: Dictionary, budget: Stri
 	content.add_theme_constant_override("separation", 4)
 	margin.add_child(content)
 	if options.has("order"):
-		content.add_child(_label("%02d" % int(options["order"]), UiTheme.TEXT, 22, true))
+		content.add_child(_label("%02d%s" % [int(options["order"]), " · 自动" if options.get("automatic", false) else ""], UiTheme.TEXT, 22, true))
 	var title := _label(card.display_name, UiTheme.card_type_color(card.card_type), 16 if compact else 13, true)
 	title.name = "CardName"
 	content.add_child(title)
@@ -60,20 +60,21 @@ static func fill(button: Button, card: CardDef, labels: Dictionary, budget: Stri
 		costs.name = "Costs"
 		costs.alignment = BoxContainer.ALIGNMENT_CENTER
 		costs.add_theme_constant_override("separation", 10)
-		costs.add_child(ResourceAmount.create(&"budget", budget))
-		costs.add_child(ResourceAmount.create(&"political", political))
+		costs.add_child(ResourceAmount.create(&"budget", budget, UiTheme.TEXT, true))
+		costs.add_child(ResourceAmount.create(&"political", political, UiTheme.TEXT, true))
 		content.add_child(costs)
 	content.add_child(ArtAssets.card_picture(card.id, 54 if compact else 86))
 	if not compact:
 		content.add_child(_label("援助" if options.get("aid", false) else TextFormatter.card_type_name(labels, card.card_type), UiTheme.TEXT, 13, true))
 		if card.once_per_run:
 			content.add_child(_label("法案 · 限通过一次", UiTheme.TEXT, 13))
-	var effects := _label(TextFormatter.effects_text(labels, card.effects), UiTheme.TEXT, 13)
+	var effects := ImpactText.create(TextFormatter.effects_text(labels, card.effects), UiTheme.TEXT, 13)
 	effects.name = "Effects"
 	effects.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	if compact:
-		effects.max_lines_visible = 4
-		effects.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		effects.fit_content = false
+		effects.clip_contents = true
+		effects.custom_minimum_size.y = 48
 	content.add_child(effects)
 	for source in options.get("sources", []):
 		content.add_child(_label("★ " + str(source) + "减免", UiTheme.TEXT, 13))

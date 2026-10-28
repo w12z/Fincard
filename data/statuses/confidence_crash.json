@@ -2,7 +2,7 @@
   "id": "confidence_crash",
   "display_name": "信心崩盘",
   "icon": "confidence",
-  "description": "回合经济结算中，GDP每下降1%，额外降低2信心。",
+  "description": "经济结算时，GDP每下降1%，额外降低2信心；第24回合起减半，第32回合开始时移除。",
   "rule": "negative_growth_confidence",
-  "parameters": { "confidence_per_percent": 2 }
+  "parameters": { "confidence_per_percent": 2, "weaken_turn": 24, "weaken_multiplier": 0.5, "expire_turn": 32 }
 }

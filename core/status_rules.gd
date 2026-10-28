@@ -28,6 +28,17 @@ static func allows_deficit(state: GameState, definitions: Dictionary) -> bool:
 	return has_rule(state, definitions, &"deficit_spending")
 
 
+static func confidence_crash_rate(modifier: Modifier, turn: int) -> float:
+	var expire_turn := int(modifier.data.get("expire_turn", 0))
+	if expire_turn > 0 and turn >= expire_turn:
+		return 0.0
+	var rate := float(modifier.data.get("confidence_per_percent", 2))
+	var weaken_turn := int(modifier.data.get("weaken_turn", 0))
+	if weaken_turn > 0 and turn >= weaken_turn:
+		rate *= float(modifier.data.get("weaken_multiplier", 0.5))
+	return rate
+
+
 static func mark_triggered(modifier: Modifier, state: GameState) -> Event:
 	modifier.data["triggered_turn"] = state.turn
 	return Event.new(Event.Kind.STATUS_TRIGGERED, {"status": modifier.target})

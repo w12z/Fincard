@@ -1,5 +1,5 @@
 {
   "id": "employment_guarantee", "display_name": "就业保障", "icon": "employment",
-  "description": "每回合首次从手牌打出直接降低失业率的卡牌后，信心加3。",
+  "description": "每回合首次打出直接降低失业率的卡牌后，信心加3。",
   "rule": "first_job_confidence", "amount": 3, "start_next_turn": true
 }

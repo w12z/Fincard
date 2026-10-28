@@ -13,14 +13,14 @@ func _ready() -> void:
 	resized.connect(_layout_cards)
 
 
-func render(history: Array[StringName], definitions: Dictionary, labels: Dictionary) -> void:
+func render(history: Array[StringName], definitions: Dictionary, labels: Dictionary, automatic_orders: Array = []) -> void:
 	var minimum := Vector2(0 if history.is_empty() else CARD_SIZE.x + MIN_STEP * (history.size() - 1), CARD_SIZE.y + 24)
 	if custom_minimum_size != minimum:
 		custom_minimum_size = minimum
 	var ids := PackedStringArray()
 	for card_id in history:
 		ids.append(String(card_id))
-	var signature := "|".join(ids)
+	var signature := "|".join(ids) + ":" + var_to_str(automatic_orders)
 	if _signature_ready and signature == _history_signature:
 		return
 	_history_signature = signature
@@ -47,8 +47,11 @@ func render(history: Array[StringName], definitions: Dictionary, labels: Diction
 		button.set_meta("card_id", card.id)
 		button.set_meta("play_order", index + 1)
 		button.tooltip_text = "%d. %s\n%s\n%s" % [index + 1, card.display_name, card.description, TextFormatter.effects_text(labels, card.effects)]
+		var automatic := automatic_orders.has(index + 1)
+		if automatic:
+			button.tooltip_text = "自动打出（免费）\n" + button.tooltip_text
 		add_child(button)
-		CardFace.fill(button, card, labels, str(card.cost), str(card.political_cost), {"compact": true, "order": index + 1})
+		CardFace.fill(button, card, labels, str(card.cost), str(card.political_cost), {"compact": true, "order": index + 1, "automatic": automatic})
 		_cards.append(button)
 		button.mouse_entered.connect(func() -> void: button.z_index = _cards.size() + 1)
 		button.mouse_exited.connect(func() -> void: button.z_index = int(button.get_meta("play_order")))

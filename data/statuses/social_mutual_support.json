@@ -1,5 +1,5 @@
 {
   "id": "social_mutual_support", "display_name": "社会互助", "icon": "confidence",
-  "description": "每回合首次从手牌打出直接增加信心的卡牌后，失业率减0.5。",
+  "description": "每回合首次打出直接增加信心的卡牌后，失业率减0.5。",
   "rule": "first_confidence_employment", "parameters": {"reduction": 0.5}, "start_next_turn": true
 }

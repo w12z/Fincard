@@ -59,20 +59,20 @@ func _build() -> void:
 		row.add_child(value_label)
 		left.add_child(row)
 	left.add_child(HSeparator.new())
-	left.add_child(_text("每财年收入 %d 预算 · 余额保留 %d%%" % [scenario.annual_income, roundi(float(controller.rules.get("budget_retention", 0.5)) * 100)], 16, UiTheme.ACCENT_DARK))
-	left.add_child(_text("%d 张初始牌  ·  %d 年任期" % [scenario.starting_deck.size(), scenario.goal.deadline_years], 16, UiTheme.ACCENT_DARK))
+	left.add_child(ImpactText.create("每财年收入 %d 预算 · 余额保留 %d%%" % [scenario.annual_income, roundi(float(controller.rules.get("budget_retention", 0.5)) * 100)], UiTheme.ACCENT_DARK, 16))
+	left.add_child(ImpactText.create("%d 张初始牌  ·  %d 年任期" % [scenario.starting_deck.size(), scenario.goal.deadline_years], UiTheme.ACCENT_DARK, 16))
 	var right := _panel(_columns)
 	right.get_parent().size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_section(right, "国家背景", scenario.description)
 	right.add_child(_text("任期目标", 20, UiTheme.TEXT))
 	for condition in scenario.goal.conditions:
-		right.add_child(_text("◇  " + TextFormatter.condition_text(controller.labels, condition), 17, UiTheme.POSITIVE))
+		right.add_child(ImpactText.create("◇  " + TextFormatter.condition_text(controller.labels, condition), UiTheme.POSITIVE, 17))
 	if scenario.goal.after_turn > 0:
-		right.add_child(_text("胜利判定：第 %d 回合起" % (scenario.goal.after_turn + 1), 15, UiTheme.WARNING))
+		right.add_child(ImpactText.create("胜利判定：第 %d 回合起" % (scenario.goal.after_turn + 1), UiTheme.WARNING, 15))
 	right.add_child(HSeparator.new())
 	right.add_child(_text("风险与失败条件", 20, UiTheme.TEXT))
 	for condition in scenario.goal.loss_conditions:
-		right.add_child(_text("·  " + TextFormatter.condition_text(controller.labels, condition), 15, UiTheme.NEGATIVE))
+		right.add_child(ImpactText.create("·  " + TextFormatter.condition_text(controller.labels, condition), UiTheme.NEGATIVE, 15))
 	right.add_child(_text("任期届满未达成目标则失败。", 14, UiTheme.MUTED))
 	if not scenario.scheduled_events.is_empty():
 		right.add_child(HSeparator.new())
@@ -83,7 +83,7 @@ func _build() -> void:
 			var event: EconomyEventDef = controller.events.get(scenario.scheduled_events[turn_number])
 			if event != null:
 				var phase := "结束" if scenario.scheduled_event_phases.get(turn_number, &"turn_start") == &"turn_end" else "开始"
-				right.add_child(_text("第 %d 回合%s  /  %s" % [turn_number, phase, event.title], 16, UiTheme.WARNING))
+				right.add_child(ImpactText.create("第 %d 回合%s  /  %s" % [turn_number, phase, event.title], UiTheme.WARNING, 16))
 	var actions := HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 16)
 	root.add_child(actions)

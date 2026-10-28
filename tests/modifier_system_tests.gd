@@ -100,9 +100,9 @@ func _test_next_turn_replay() -> void:
 	var events := sim.apply_command(Command.end_turn())
 	var repeats := 0
 	for event in events:
-		if event.kind == Event.Kind.CARD_REPLAYED:
+		if event.kind == Event.Kind.CARD_PLAYED and event.params.get("automatic", false):
 			repeats += 1
-	_expect(repeats == 1 and sim.state.cards_played_this_turn == 0, "The next turn starts with one automatic replay, not a new manual play")
+	_expect(repeats == 1 and sim.state.cards_played_this_turn == 1, "The next turn starts with one free automatic play that counts as a played card")
 	_expect(sim.state.budget == budget and not modifier.data.has("queued_card"), "The queued replay is free and consumed exactly once")
 	for id in sim.economy.indicator_ids:
 		_expect(is_equal_approx(sim.economy.value(sim.state, id), sim.economy.value(forecast, id)), "Forecast includes queued replay: %s" % id)

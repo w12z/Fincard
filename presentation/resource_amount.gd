@@ -5,7 +5,7 @@ const BUDGET := preload("res://assets/icons/budget.svg")
 const POLITICAL := preload("res://assets/icons/political.svg")
 
 
-static func create(resource: StringName, value: String, color: Color = UiTheme.TEXT) -> ResourceAmount:
+static func create(resource: StringName, value: String, color: Color = UiTheme.TEXT, emphasize: bool = false) -> ResourceAmount:
 	var display := ResourceAmount.new()
 	display.name = "BudgetAmount" if resource == &"budget" else "PoliticalAmount"
 	display.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -24,6 +24,13 @@ static func create(resource: StringName, value: String, color: Color = UiTheme.T
 	amount.name = "Amount"
 	amount.text = value
 	amount.add_theme_color_override("font_color", color)
+	if emphasize:
+		amount.add_theme_color_override("font_color", ImpactText.GOLD)
+		amount.add_theme_font_override("font", ImpactText.NUMBER_FONT)
 	amount.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	display.add_child(amount)
 	return display
+
+
+func _make_custom_tooltip(for_text: String) -> Object:
+	return ImpactText.tooltip(for_text)

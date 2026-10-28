@@ -58,9 +58,7 @@ func _make_custom_tooltip(for_text: String) -> Object:
 	tier.add_theme_color_override("font_color", UiTheme.rarity_color(rarity))
 	content.add_child(tier)
 	if lines.size() > 1:
-		var body := Label.new()
-		body.text = lines[1]
+		var body := ImpactText.create(lines[1])
 		body.custom_minimum_size.x = 320
-		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		content.add_child(body)
 	return panel

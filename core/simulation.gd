@@ -158,6 +158,8 @@ func _reset_state() -> void:
 	state.aids.clear()
 	state.flags.clear()
 	state.cards_played_this_turn = 0
+	state.flags["hand_cards_played_this_turn"] = 0
+	state.flags["automatic_play_orders"] = []
 	state.played_cards_this_turn.clear()
 	state.investments_played_this_turn = 0
 	state.budget = 0
@@ -179,7 +181,10 @@ func _start_turn(year_started: bool = false) -> Array[Event]:
 	turns.enter(TurnStateMachine.Phase.TURN_START, state)
 	state.turn += 1
 	state.turn_in_year += 1
+	events.append_array(_update_crisis_modifiers())
 	state.cards_played_this_turn = 0
+	state.flags["hand_cards_played_this_turn"] = 0
+	state.flags["automatic_play_orders"] = []
 	state.played_cards_this_turn.clear()
 	state.investments_played_this_turn = 0
 	state.flags["types_played_this_turn"] = []
@@ -206,9 +211,9 @@ func _start_turn(year_started: bool = false) -> Array[Event]:
 		modifier.data.erase("queued_turn")
 		if replay_id == &"":
 			continue
-		var duration_bonus := int(modifier.data.get("queued_duration_bonus", 0))
 		modifier.data.erase("queued_duration_bonus")
-		events.append_array(_replay_card(replay_id, duration_bonus))
+		var automatic_events := _resolve_played_card(replay_id, true)
+		events.append_array(trigger_engine.process(automatic_events, state, resolver, rng, _iteration_limit()))
 		economy.refresh_derived(state)
 		events.append_array(_check_end_conditions(false))
 		if state.run_status != GameState.RunStatus.RUNNING:
@@ -559,6 +564,24 @@ func _offer_turn_reward() -> Array[Event]:
 	return [Event.new(Event.Kind.REWARD_OFFERED, {"groups": groups.duplicate(true)})]
 
 
+func _update_crisis_modifiers() -> Array[Event]:
+	var events: Array[Event] = []
+	for modifier in state.modifiers.duplicate():
+		if modifier.scope != Modifier.SCOPE_SPECIAL or modifier.rule != &"negative_growth_confidence":
+			continue
+		var expire_turn := int(modifier.data.get("expire_turn", 0))
+		if expire_turn > 0 and state.turn >= expire_turn:
+			state.modifiers.erase(modifier)
+			events.append(Event.new(Event.Kind.MODIFIER_EXPIRED, {"scope": modifier.scope, "target": modifier.target, "source": modifier.source}))
+			continue
+		var weaken_turn := int(modifier.data.get("weaken_turn", 0))
+		if weaken_turn > 0 and state.turn >= weaken_turn and not modifier.data.get("weakened", false):
+			modifier.data["weakened"] = true
+			events.append(Event.new(Event.Kind.MODIFIER_APPLIED, {"scope": modifier.scope, "target": modifier.target,
+				"op": modifier.op, "source": modifier.source, "weakened": true}))
+	return events
+
+
 func _start_turn_recovery_modifiers() -> Array[Event]:
 	var events: Array[Event] = []
 	for modifier in StatusRules.active_modifiers(state):
@@ -635,6 +658,25 @@ func _play_card(params: Dictionary) -> Array[Event]:
 	var political_cost := int(costs["political"])
 	if not can_spend_budget(budget_cost) or (political_cost > 0 and state.political_capital < political_cost):
 		return events
+	state.budget -= budget_cost
+	state.political_capital -= political_cost
+	if budget_cost != 0:
+		events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"budget", "amount": -budget_cost}))
+	if political_cost != 0:
+		events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"political_capital", "amount": -political_cost}))
+	for id in costs["sources"]:
+		var modifier := StatusRules.find_modifier(state, id)
+		if modifier != null:
+			events.append(StatusRules.mark_triggered(modifier, state))
+	events.append_array(_resolve_played_card(card_id))
+	return events
+
+
+func _resolve_played_card(card_id: StringName, automatic: bool = false) -> Array[Event]:
+	var events: Array[Event] = []
+	var card: CardDef = card_db.get(card_id)
+	if card == null:
+		return events
 	var active_before := StatusRules.active_modifiers(state)
 	var duration_bonus := 0
 	if card.card_type == &"investment" and _card_has_limited_growth(card):
@@ -643,10 +685,14 @@ func _play_card(params: Dictionary) -> Array[Event]:
 				duration_bonus += modifier.amount * modifier.stacks
 				events.append(StatusRules.mark_triggered(modifier, state))
 	var political_policy := card.card_type == &"policy" and StatusRules.provides_political(card, state, economy)
-	state.budget -= budget_cost
-	state.political_capital -= political_cost
 	state.cards_played_this_turn += 1
+	if not automatic:
+		state.flags["hand_cards_played_this_turn"] = int(state.flags.get("hand_cards_played_this_turn", 0)) + 1
 	state.played_cards_this_turn.append(card_id)
+	if automatic:
+		var orders: Array = state.flags.get("automatic_play_orders", [])
+		orders.append(state.played_cards_this_turn.size())
+		state.flags["automatic_play_orders"] = orders
 	if card.card_type == &"investment":
 		state.investments_played_this_turn += 1
 	if card.card_type == &"policy":
@@ -657,16 +703,12 @@ func _play_card(params: Dictionary) -> Array[Event]:
 	if not types.has(card.card_type):
 		types.append(card.card_type)
 	state.flags["types_played_this_turn"] = types
-	if budget_cost != 0:
-		events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"budget", "amount": -budget_cost}))
-	if political_cost != 0:
-		events.append(Event.new(Event.Kind.RESOURCE_CHANGED, {"resource": &"political_capital", "amount": -political_cost}))
-	for id in costs["sources"]:
-		var modifier := StatusRules.find_modifier(state, id)
-		if modifier != null:
-			events.append(StatusRules.mark_triggered(modifier, state))
-	state.hand.erase(card_id)
-	events.append(Event.new(Event.Kind.CARD_PLAYED, {"card_id": card_id}))
+	if not automatic:
+		state.hand.erase(card_id)
+	events.append(Event.new(Event.Kind.CARD_PLAYED, {
+		"card_id": card_id, "automatic": automatic, "turn": state.turn,
+		"play_order": state.played_cards_this_turn.size(),
+	}))
 	var card_events := _resolve_card_effects(card, duration_bonus)
 	events.append_array(card_events)
 	var lowered_unemployment := _direct_indicator_changed(card_events, &"unemployment", false)
@@ -674,7 +716,7 @@ func _play_card(params: Dictionary) -> Array[Event]:
 	if card.once_per_run:
 		state.flags["enacted:" + String(card_id)] = true
 		_remove_all_copies(card_id)
-	else:
+	elif not automatic:
 		state.discard.append(card_id)
 	var repeat_card := false
 	for modifier in active_before:
@@ -706,10 +748,10 @@ func _play_card(params: Dictionary) -> Array[Event]:
 					events.append(StatusRules.mark_triggered(modifier, state))
 					events.append_array(resolver.resolve(Effect.from_dict({"kind": "gain_political_capital", "params": {"amount": modifier.amount * modifier.stacks}}), state, rng))
 			&"next_turn_replay":
-				if state.cards_played_this_turn == 1:
+				# Only the first hand play is recorded; automatic plays never queue themselves.
+				if not automatic and int(state.flags.get("hand_cards_played_this_turn", 0)) == 1:
 					modifier.data["queued_card"] = card_id
 					modifier.data["queued_turn"] = state.turn + 1
-					modifier.data["queued_duration_bonus"] = duration_bonus
 					events.append(StatusRules.mark_triggered(modifier, state))
 			&"second_investment_budget":
 				if card.card_type == &"investment" and state.investments_played_this_turn == 2:

@@ -1,5 +1,5 @@
 {
   "id": "recovery_coordination", "display_name": "复苏统筹", "icon": "income",
-  "description": "每回合从手牌打出第三张牌后，预算加2。每回合一次。",
+  "description": "每回合打出第三张牌后，预算加2。每回合一次。",
   "rule": "third_card_budget", "amount": 2, "start_next_turn": true
 }

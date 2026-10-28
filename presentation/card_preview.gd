@@ -19,8 +19,8 @@ static func build(details: String, budget: String, political: String, card: Card
 	if not aid:
 		var costs := HBoxContainer.new()
 		costs.add_theme_constant_override("separation", 16)
-		costs.add_child(ResourceAmount.create(&"budget", budget))
-		costs.add_child(ResourceAmount.create(&"political", political))
+		costs.add_child(ResourceAmount.create(&"budget", budget, UiTheme.TEXT, true))
+		costs.add_child(ResourceAmount.create(&"political", political, UiTheme.TEXT, true))
 		content.add_child(costs)
 	if card != null:
 		content.add_child(name_label(card))
@@ -29,11 +29,8 @@ static func build(details: String, budget: String, political: String, card: Card
 		type_label.text = "援助" if aid else TextFormatter.card_type_name(labels, card.card_type)
 		type_label.add_theme_color_override("font_color", UiTheme.TEXT)
 		content.add_child(type_label)
-	var description := Label.new()
+	var description := ImpactText.create(details.substr(details.find("\n") + 1) if card != null and "\n" in details else details)
 	description.name = "Description"
-	description.text = details.substr(details.find("\n") + 1) if card != null and "\n" in details else details
-	description.add_theme_color_override("font_color", UiTheme.TEXT)
-	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	description.custom_minimum_size.x = 340
 	content.add_child(description)
 	return panel

@@ -119,7 +119,9 @@ func _remove_modifier(params: Dictionary, state: GameState) -> Array[Event]:
 		var matches_target := target == &"" or modifier.target == target
 		var matches_source := source == &"" or modifier.source == source
 		var matches_scope := scope == &"" or modifier.scope == scope
-		if matches_target and matches_source and matches_scope:
+		var matches_duration := not bool(params.get("temporary_only", false)) or not modifier.is_permanent()
+		var matches_positive := not bool(params.get("positive_only", false)) or _is_positive_modifier(modifier, state)
+		if matches_target and matches_source and matches_scope and matches_duration and matches_positive:
 			events.append(Event.new(Event.Kind.MODIFIER_EXPIRED, {
 				"target": modifier.target,
 				"scope": modifier.scope,
@@ -129,6 +131,20 @@ func _remove_modifier(params: Dictionary, state: GameState) -> Array[Event]:
 			kept.append(modifier)
 	state.modifiers = kept
 	return events
+
+
+func _is_positive_modifier(modifier: Modifier, state: GameState) -> bool:
+	match modifier.op:
+		Modifier.Op.ADD:
+			return modifier.effective_value() > 0.0
+		Modifier.Op.MUL:
+			return modifier.effective_value() > 1.0
+		Modifier.Op.OVERRIDE:
+			if modifier.scope == Modifier.SCOPE_COEFFICIENT and economy != null:
+				var base := float(economy.scenario_coefficients.get(modifier.target, economy.base_coefficients.get(modifier.target, 0.0)))
+				return modifier.effective_value() > base
+			return modifier.effective_value() > float(state.indicators.get(modifier.target, 0.0))
+	return false
 
 
 func _adjust_indicator(params: Dictionary, state: GameState) -> Array[Event]:

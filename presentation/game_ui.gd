@@ -24,7 +24,7 @@ var _goal_section: Control
 var _goal_button: Button
 var _statuses_box: VBoxContainer
 var _indicators_box: VBoxContainer
-var _effect_icons: HBoxContainer
+var _effect_icons: GridContainer
 var _cabinets_box: HBoxContainer
 var _cabinet_bar: PanelContainer
 var _aids_box: HBoxContainer
@@ -44,11 +44,19 @@ var _overlay_root: CenterContainer
 var _overlay_box: VBoxContainer
 var _overlay_panel: PanelContainer
 var _flight_layer: Control
+var _effect_feedback: EffectFeedback
+var _pending_effect_feedback: Array[Dictionary] = []
+var _turn_settlement: TurnSettlement
+var _settlement_active := false
+var _presentation_generation := 0
+var _cleared_turn := -1
 
 var _flight_card: CardButton
 var _flight_target: Control
 var _flight_tween: Tween
 var _flight_active: bool = false
+var _flight_generation: int = 0
+var _automatic_flights: Array[Dictionary] = []
 
 var _log_lines: Array[String] = []
 var _reward_group_index: int = -1
@@ -75,7 +83,13 @@ var _forecast_build_count: int = 0
 
 
 func setup(p_controller: GameController, scenario_id: StringName) -> void:
+	_presentation_generation += 1
+	_settlement_active = false
+	_cleared_turn = -1
+	if is_instance_valid(_turn_settlement):
+		_turn_settlement.clear()
 	_cancel_flight(false)
+	_pending_effect_feedback.clear()
 	if _built:
 		for child in get_children():
 			remove_child(child)
@@ -222,6 +236,7 @@ func _build() -> void:
 	log_section.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_log = RichTextLabel.new()
 	_log.bbcode_enabled = true
+	ImpactText.configure(_log)
 	_log.scroll_following = true
 	_log.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_log.custom_minimum_size = Vector2(240, 0)
@@ -232,12 +247,16 @@ func _build() -> void:
 	_flight_layer.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_flight_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_flight_layer)
+	_effect_feedback = EffectFeedback.new()
+	add_child(_effect_feedback)
 
 	_meeting_page = FiscalMeeting.new()
 	_meeting_page.visible = false
 	_meeting_page.exit_requested.connect(func() -> void: exit_requested.emit())
 	add_child(_meeting_page)
 	_build_overlay()
+	_turn_settlement = TurnSettlement.new()
+	add_child(_turn_settlement)
 	_built = true
 
 
@@ -247,6 +266,7 @@ func _build_header_contents() -> void:
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", UiTheme.ACCENT)
 	_header.add_child(title)
+	_header.add_child(SfxAudio.controls(self))
 	var spacer := Control.new()
 	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_header.add_child(spacer)
@@ -363,10 +383,13 @@ func _make_section(parent: Control, title: String, expand: bool = false, minimum
 
 
 func _render() -> void:
+	if _settlement_active:
+		return
 	_state = controller.simulation.state
 	var meeting := _is_annual_meeting()
 	_game_page.visible = not meeting
 	_flight_layer.visible = not meeting
+	_effect_feedback.visible = not meeting
 	_meeting_page.visible = meeting
 	if meeting:
 		if _flight_active:
@@ -381,7 +404,10 @@ func _render() -> void:
 	_render_cabinets()
 	_render_aids()
 	_render_hand()
-	_played_table.render(_state.played_cards_this_turn, controller.cards, _labels())
+	var shown_history: Array[StringName] = []
+	if _state.turn != _cleared_turn:
+		shown_history.assign(_state.played_cards_this_turn)
+	_played_table.render(shown_history, controller.cards, _labels(), _state.flags.get("automatic_play_orders", []))
 	if _flight_active and _flight_target != null \
 		and (not is_instance_valid(_flight_target) or _flight_target.get_parent() != _played_table):
 		# The table rebuilt mid-flight; drop the temporary card instead of ghosting it.
@@ -473,7 +499,7 @@ func _add_rows(box: VBoxContainer, rows: Array[Dictionary]) -> void:
 		elif row.get("wrap", false):
 			box.add_child(_wrapped(str(row["text"]), row["color"]))
 		else:
-			box.add_child(_colored(str(row["text"]), row["color"]))
+			box.add_child(ImpactText.create(str(row["text"]), row["color"]))
 
 
 func _render_indicators() -> void:
@@ -520,17 +546,21 @@ func _render_statuses() -> void:
 		_statuses_box.add_child(_label("（无）"))
 		return
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(280, 38)
+	scroll.custom_minimum_size = Vector2(280, 28)
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_statuses_box.add_child(scroll)
-	_effect_icons = HBoxContainer.new()
+	_effect_icons = GridContainer.new()
+	_effect_icons.columns = 9
 	_effect_icons.add_theme_constant_override("separation", 4)
+	_effect_icons.add_theme_constant_override("h_separation", 4)
+	_effect_icons.add_theme_constant_override("v_separation", 4)
 	scroll.add_child(_effect_icons)
+	scroll.resized.connect(_layout_modifier_icons)
 	for index in entries.size():
 		var entry: Dictionary = entries[index]
 		var badge := ModifierDisplay.Badge.new()
 		badge.theme_type_variation = "StatusBadge"
-		badge.custom_minimum_size = Vector2(34, 34)
+		badge.custom_minimum_size = Vector2(24, 24)
 		badge.text = ""
 		badge.tooltip_text = entry["tooltip"]
 		badge.set_meta("effect_key", entry["key"])
@@ -539,14 +569,27 @@ func _render_statuses() -> void:
 		var icon := TextureRect.new()
 		icon.texture = ArtAssets.modifier_icon(str(entry["icon"]))
 		icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		icon.offset_left = 5
-		icon.offset_top = 5
-		icon.offset_right = -5
-		icon.offset_bottom = -5
+		icon.offset_left = 3
+		icon.offset_top = 3
+		icon.offset_right = -3
+		icon.offset_bottom = -3
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		badge.add_child(icon)
+	_layout_modifier_icons()
+
+
+func _layout_modifier_icons() -> void:
+	if not is_instance_valid(_effect_icons):
+		return
+	var scroll := _effect_icons.get_parent() as ScrollContainer
+	var count := _effect_icons.get_child_count()
+	var per_row := maxi(1, int((maxf(280, scroll.size.x) + 4) / 28))
+	# Fill available width first; only grow horizontally once three rows are full.
+	_effect_icons.columns = maxi(per_row, ceili(count / 3.0))
+	var rows := mini(3, ceili(float(count) / _effect_icons.columns))
+	scroll.custom_minimum_size.y = maxi(28, rows * 28 - 4) + (14 if count > per_row * 3 else 0)
 
 
 func _statuses_signature(entries: Array[Dictionary]) -> String:
@@ -597,7 +640,7 @@ func _render_aids() -> void:
 		return
 	for entry in _state.aids:
 		var definition: AidDef = entry["def"]
-		var use := Button.new()
+		var use := ImpactButton.new()
 		use.text = definition.display_name
 		use.custom_minimum_size = Vector2(110, 64)
 		use.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -610,6 +653,10 @@ func _render_aids() -> void:
 
 
 func _render_hand() -> void:
+	if _state.turn == _cleared_turn:
+		_clear(_hand_box)
+		_hand_signature = UNSET_SIGNATURE
+		return
 	var signature := _hand_content_signature()
 	if signature == _hand_signature:
 		return
@@ -617,6 +664,7 @@ func _render_hand() -> void:
 	_clear(_hand_box)
 	if _state.hand.is_empty():
 		_hand_box.add_child(_label("（无手牌）"))
+		_hand_scroll.custom_minimum_size.y = 310
 		return
 	for card_id in _state.hand:
 		var card: CardDef = controller.cards.get(card_id)
@@ -651,6 +699,20 @@ func _render_hand() -> void:
 		var margin := CardFace.fill(button, card, _labels(), budget_text, political_text, {"sources": sources})
 		margin.get_node("ContentMargin").modulate.a = 0.55 if button.disabled else 1.0
 		button.enable_lift(margin)
+		button.minimum_size_changed.connect(_layout_hand_height)
+	_layout_hand_height()
+
+
+func _layout_hand_height() -> void:
+	if not is_instance_valid(_hand_box) or not is_instance_valid(_hand_scroll):
+		return
+	var tallest := 0.0
+	for child in _hand_box.get_children():
+		if child is CardButton:
+			tallest = maxf(tallest, child.get_combined_minimum_size().y)
+	# Long descriptions should not clip every card's bottom merely because one
+	# reform needs a few extra lines. Retain scrolling for truly oversized text.
+	_hand_scroll.custom_minimum_size.y = minf(maxf(310, tallest + 28), maxf(310, get_viewport_rect().size.y * 0.4))
 
 
 func _hand_content_signature() -> String:
@@ -706,7 +768,7 @@ func _sync_log() -> void:
 	while _log_rendered_lines < _log_lines.size():
 		if _log_rendered_lines > 0:
 			_log.append_text("\n")
-		_log.append_text(_log_lines[_log_rendered_lines])
+		_log.append_text(ImpactText.highlight_bbcode(_log_lines[_log_rendered_lines]))
 		_log_rendered_lines += 1
 		appended = true
 	if appended and _log.is_visible_in_tree():
@@ -744,7 +806,8 @@ func _render_forecast() -> void:
 	if not _forecast_dirty and signature == _forecast_signature:
 		return
 	_forecast.text = EconomyForecast.text(controller.simulation, _labels(), false)
-	_parameters.text = "[b]结算公式[/b]\n%s\n\n%s" % [EconomyForecast.formulas(controller.simulation), EconomyForecast.parameters(controller.simulation, _labels())]
+	ImpactText.configure(_parameters)
+	_parameters.text = ImpactText.highlight_bbcode("[b]结算公式[/b]\n%s\n\n%s" % [EconomyForecast.formulas(controller.simulation), EconomyForecast.parameters(controller.simulation, _labels())])
 	_forecast_signature = signature
 	_forecast_dirty = false
 	_forecast_build_count += 1
@@ -897,7 +960,7 @@ func _show_hand_choice(retain: bool, discard_draw: bool = false) -> void:
 		var card: CardDef = controller.cards.get(_state.hand[index])
 		if card == null:
 			continue
-		var button := Button.new()
+		var button := ImpactButton.new()
 		button.text = card.display_name
 		button.tooltip_text = TextFormatter.effects_text(_labels(), card.effects)
 		var hand_index := index
@@ -953,6 +1016,7 @@ func _show_event() -> void:
 			button.disabled = not controller.simulation.event_choice_available(index)
 			if button.disabled:
 				button.tooltip_text = "预算不足"
+			ImpactText.on_button(button, text, UiTheme.TEXT)
 			var choice_index := index
 			button.pressed.connect(func() -> void: _dispatch(Command.resolve_event(choice_index)))
 			_overlay_box.add_child(button)
@@ -1074,7 +1138,7 @@ func _show_reward_options(group_index: int) -> void:
 			portrait.setup(cabinet, _labels())
 			portrait.pressed.connect(func() -> void: _claim_reward(group_index, pick, token))
 			column.add_child(portrait)
-			var appoint := Button.new()
+			var appoint := ImpactButton.new()
 			appoint.text = cabinet.display_name
 			appoint.tooltip_text = _reward_detail(reward)
 			appoint.pressed.connect(func() -> void: _claim_reward(group_index, pick, token))
@@ -1146,17 +1210,151 @@ func _show_result() -> void:
 
 
 func _dispatch(command: Command) -> void:
-	_apply_command_events(controller.dispatch(command))
+	if _settlement_active:
+		return
+	var before: GameState
+	if command.kind in [Command.Kind.END_TURN, Command.Kind.CHOOSE_RETAINED_CARD]:
+		before = controller.simulation.state.snapshot()
+	_apply_command_events(controller.dispatch(command), before)
 
 
-func _apply_command_events(events: Array) -> void:
+func _apply_command_events(events: Array, before: GameState = null) -> void:
+	if before != null:
+		for event: Event in events:
+			if event.kind == Event.Kind.TURN_ENDED:
+				_animate_turn_settlement(events, before)
+				return
 	_play_events(events)
 	_forecast_dirty = true
 	_render()
+	_queue_automatic_flights(events)
+	_pending_effect_feedback.append_array(EffectFeedback.cues(events, controller.simulation, _labels()))
+	if not _flight_active:
+		_flush_effect_feedback()
+
+
+func _animate_turn_settlement(events: Array, before: GameState) -> void:
+	_settlement_active = true
+	var epoch := _presentation_generation
+	_pending_effect_feedback.clear()
+	_effect_feedback.clear()
+	_overlay_root.hide()
+	_end_turn_button.disabled = true
+	_end_turn_button.text = "结算中…"
+	var settled := TurnSettlement.settled_state(before, events, controller.simulation)
+	var changes: Array[Dictionary] = []
+	for row in _indicator_rows:
+		var id: StringName = row["id"]
+		var old_value := controller.simulation.economy.value(before, id)
+		var new_value := controller.simulation.economy.value(settled, id)
+		if is_equal_approx(old_value, new_value):
+			continue
+		changes.append({"id": id, "name": TextFormatter.indicator(_labels(), id), "label": row["label"],
+			"from": old_value, "to": new_value, "color": EconomyForecast.change_color(controller.simulation, id, old_value, new_value)})
+	await _turn_settlement.play(changes, _forecast.get_global_rect())
+	if not is_inside_tree() or epoch != _presentation_generation:
+		return
+	SfxAudio.play(self, &"turn_settle")
+	# Clear the completed turn before showing any reward/event/meeting or new hand.
+	var fade := create_tween().set_parallel(true)
+	fade.tween_property(_played_table, "modulate:a", 0.0, 0.18)
+	fade.tween_property(_hand_box, "modulate:a", 0.0, 0.18)
+	await fade.finished
+	if not is_inside_tree() or epoch != _presentation_generation:
+		return
+	_cleared_turn = before.turn
+	_played_table.render([], controller.cards, _labels())
+	_clear(_hand_box)
+	_played_table.modulate.a = 1.0
+	_hand_box.modulate.a = 1.0
+	_hand_signature = UNSET_SIGNATURE
+	await get_tree().process_frame
+	if not is_inside_tree() or epoch != _presentation_generation:
+		return
+	_settlement_active = false
+	_turn_settlement.clear()
+	_end_turn_button.text = "结束回合"
+	_apply_command_events(events)
+
+
+func _flush_effect_feedback(origin: Dictionary = {}, source_id: StringName = &"") -> void:
+	var pending := _pending_effect_feedback.duplicate()
+	_pending_effect_feedback.clear()
+	var generation := _effect_feedback.generation
+	# Newly added badges and their scroll containers need their final geometry.
+	for frame in 3:
+		if not is_inside_tree():
+			return
+		await get_tree().process_frame
+		if not is_instance_valid(_effect_feedback) or generation != _effect_feedback.generation:
+			return
+	for index in pending.size():
+		var cue: Dictionary = pending[index]
+		if int(cue["turn"]) != _state.turn or _is_annual_meeting():
+			continue
+		var target := _effect_feedback_target(str(cue["key"]), bool(cue.get("modifier", false)))
+		if target == null:
+			continue
+		var source := origin if cue["card_id"] == source_id else EffectFeedback.capture(_find_played_card(cue["card_id"], int(cue["play_order"])))
+		_effect_feedback.fly(cue, source, target, index * 0.08)
+
+
+func _effect_feedback_target(key: String, modifier: bool = false) -> Control:
+	if not modifier and key.begins_with("indicator:"):
+		for row in _indicator_rows:
+			if key == "indicator:%s" % row["id"]:
+				return row["label"]
+	if is_instance_valid(_effect_icons):
+		for badge in _effect_icons.get_children():
+			if str(badge.get_meta("effect_key", "")) == key:
+				# Keep the destination inside the visible modifier strip.
+				return badge if _effect_icons.get_parent().get_global_rect().encloses(badge.get_global_rect()) else _statuses_box
+	return _statuses_box if modifier or not key.begins_with("indicator:") else null
+
+
+func _queue_automatic_flights(events: Array) -> void:
+	for event: Event in events:
+		if event.kind != Event.Kind.CARD_PLAYED or not event.params.get("automatic", false) \
+			or int(event.params.get("turn", -1)) != _state.turn:
+			continue
+		var entry := event.params.duplicate()
+		var target := _find_played_card(StringName(entry["card_id"]), int(entry["play_order"]))
+		if target == null:
+			continue
+		target.hide()
+		_automatic_flights.append(entry)
+	if not _flight_active:
+		_start_next_automatic_flight()
+
+
+func _start_next_automatic_flight() -> void:
+	while not _automatic_flights.is_empty():
+		var entry: Dictionary = _automatic_flights.pop_front()
+		var card_id := StringName(entry["card_id"])
+		var order := int(entry["play_order"])
+		if int(entry["turn"]) != _state.turn or _find_played_card(card_id, order) == null:
+			continue
+		var card: CardDef = controller.cards.get(card_id)
+		if card == null:
+			continue
+		var button := CardButton.new()
+		button.preview_card = card
+		button.preview_enabled = false
+		CardFace.style(button, card.rarity)
+		_flight_layer.add_child(button)
+		CardFace.fill(button, card, _labels(), "0", "0")
+		# Automatic plays originate at the far-left edge of the deck/hand area,
+		# never take a real card out of the hand or create another deck copy.
+		_begin_card_flight(button, Rect2(_hand_scroll.global_position, Vector2(CardFace.WIDTH, CardFace.HEIGHT)))
+		SfxAudio.play(self, &"card_play")
+		_flight_active = true
+		_end_turn_button.disabled = true
+		_animate_card_flight(card_id, order)
+		return
 
 
 func _play_card_from_hand(card_id: StringName, button: CardButton) -> void:
-	if _flight_active or not is_instance_valid(button) or button.disabled:
+	if _settlement_active or _flight_active or not is_instance_valid(button) or button.disabled:
 		return
 	var origin_rect := button.visual_global_rect()
 	_flight_active = true
@@ -1179,6 +1377,7 @@ func _events_played_card(events: Array, card_id: StringName) -> bool:
 
 
 func _begin_card_flight(button: CardButton, origin_rect: Rect2) -> void:
+	_flight_generation += 1
 	button.cancel_lift()
 	var parent := button.get_parent()
 	if parent != null:
@@ -1193,19 +1392,20 @@ func _begin_card_flight(button: CardButton, origin_rect: Rect2) -> void:
 	_flight_card = button
 
 
-func _animate_card_flight(card_id: StringName) -> void:
+func _animate_card_flight(card_id: StringName, play_order: int = 0) -> void:
+	var generation := _flight_generation
 	# Hide the destination right away so the table copy never shows up next to the
 	# flying hand card, even for the frames spent waiting for the layout to settle.
-	var target := _find_played_card(card_id)
+	var target := _find_played_card(card_id, play_order)
 	if target != null:
 		target.visible = false
 		_flight_target = target
 	# Let containers, the scrollbar and CardTable's deferred reveal settle first.
 	for _frame in CARD_FLIGHT_SETTLE_FRAMES:
 		await get_tree().process_frame
-		if not _flight_active or not is_instance_valid(_flight_card):
+		if generation != _flight_generation or not _flight_active or not is_instance_valid(_flight_card):
 			return
-	var settled := _find_played_card(card_id)
+	var settled := _find_played_card(card_id, play_order)
 	if settled == null or not is_instance_valid(_flight_card):
 		_cancel_flight(true)
 		_hand_signature = UNSET_SIGNATURE
@@ -1227,15 +1427,18 @@ func _animate_card_flight(card_id: StringName) -> void:
 	_flight_tween.finished.connect(_on_card_flight_finished)
 
 
-func _find_played_card(card_id: StringName) -> Button:
+func _find_played_card(card_id: StringName, play_order: int = 0) -> Button:
 	for index in range(_played_table._cards.size() - 1, -1, -1):
 		var card: Button = _played_table._cards[index]
-		if is_instance_valid(card) and StringName(card.get_meta("card_id", &"")) == card_id:
+		if is_instance_valid(card) and StringName(card.get_meta("card_id", &"")) == card_id \
+			and (play_order == 0 or int(card.get_meta("play_order", 0)) == play_order):
 			return card
 	return null
 
 
 func _on_card_flight_finished() -> void:
+	var effect_origin := EffectFeedback.capture(_flight_card)
+	var source_id: StringName = _flight_card.preview_card.id if is_instance_valid(_flight_card) and _flight_card.preview_card != null else &""
 	if is_instance_valid(_flight_target):
 		_flight_target.visible = true
 	if is_instance_valid(_flight_card):
@@ -1245,9 +1448,19 @@ func _on_card_flight_finished() -> void:
 	_flight_target = null
 	_flight_active = false
 	_end_turn_button.disabled = _busy() or _state.run_status != GameState.RunStatus.RUNNING
+	_flush_effect_feedback(effect_origin, source_id)
+	_start_next_automatic_flight()
 
 
 func _cancel_flight(release_card: bool) -> void:
+	_flight_generation += 1
+	for entry in _automatic_flights:
+		if not is_instance_valid(_played_table):
+			break
+		var target := _find_played_card(StringName(entry["card_id"]), int(entry["play_order"]))
+		if target != null:
+			target.show()
+	_automatic_flights.clear()
 	if _flight_tween != null and _flight_tween.is_valid():
 		_flight_tween.kill()
 	_flight_tween = null
@@ -1268,8 +1481,13 @@ func _notification(what: int) -> void:
 
 
 func _play_events(events: Array) -> void:
+	SfxAudio.play_events(self, events)
 	var restart := false
 	for event in events:
+		if event.kind in [Event.Kind.RUN_STARTED, Event.Kind.TURN_STARTED, Event.Kind.TURN_ENDED]:
+			_pending_effect_feedback.clear()
+			if is_instance_valid(_effect_feedback):
+				_effect_feedback.clear()
 		if event.kind == Event.Kind.RUN_STARTED:
 			restart = true
 			break
@@ -1298,6 +1516,8 @@ func _describe(event: Event) -> String:
 		Event.Kind.TURN_ENDED:
 			return name
 		Event.Kind.CARD_PLAYED, Event.Kind.CARD_REPLAYED:
+			if params.get("automatic", false):
+				return "自动出牌（免费）：%s" % _display_name(controller.cards, params.get("card_id", &""))
 			return "%s：%s" % [name, _display_name(controller.cards, params.get("card_id", &""))]
 		Event.Kind.CARD_GAINED, Event.Kind.CARD_REMOVED:
 			return "%s：%s" % [name, _display_name(controller.cards, params.get("card_id", &""))]
@@ -1311,6 +1531,8 @@ func _describe(event: Event) -> String:
 				TextFormatter.signed(float(params.get("delta", 0.0))),
 			]
 		Event.Kind.MODIFIER_APPLIED:
+			if params.get("weakened", false):
+				return "%s：强度减半" % _modifier_event_name(params)
 			return "%s：%s（%s）来源 %s" % [
 				name,
 				_modifier_event_name(params),
@@ -1360,7 +1582,7 @@ func _modifier_event_name(params: Dictionary) -> String:
 
 
 func _busy() -> bool:
-	return _state.pending_event != &"" or not _state.pending_rewards.is_empty() \
+	return _settlement_active or _state.pending_event != &"" or not _state.pending_rewards.is_empty() \
 		or _state.flags.get("pending_retain", false) or _state.flags.get("pending_review", false) \
 		or not _state.flags.get("pending_discard_draw", []).is_empty()
 
@@ -1413,9 +1635,8 @@ func _colored(text: String, color: Color) -> Label:
 	return label
 
 
-func _wrapped(text: String, color: Color, width: float = 200.0) -> Label:
-	var label := _colored(text, color)
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+func _wrapped(text: String, color: Color, width: float = 200.0) -> RichTextLabel:
+	var label := ImpactText.create(text, color)
 	label.custom_minimum_size = Vector2(width, 0)
 	return label
 

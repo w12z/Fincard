@@ -12,15 +12,37 @@ static func text(sim: Simulation, labels: Dictionary, include_formulas: bool = t
 	for id in sim.economy.indicator_ids + sim.economy.derived_ids:
 		var current := sim.economy.value(sim.state, id)
 		var future := sim.economy.value(next, id)
-		parts.append("%s  %s → %s（%s）" % [TextFormatter.indicator(labels, id), TextFormatter.fmt(current), TextFormatter.fmt(future), TextFormatter.signed(future - current)])
-	parts.append("预算  %d → %d" % [sim.state.budget, next.budget])
-	parts.append("政治点  %d → %d" % [sim.state.political_capital, next.political_capital])
+		parts.append("%s  %s → %s（%s）" % [TextFormatter.indicator(labels, id), TextFormatter.fmt(current), TextFormatter.fmt(future), colored_delta(sim, id, current, future)])
+	parts.append("预算  %d → %d（%s）" % [sim.state.budget, next.budget, colored_delta(sim, &"budget", sim.state.budget, next.budget)])
+	parts.append("政治点  %d → %d（%s）" % [sim.state.political_capital, next.political_capital, colored_delta(sim, &"political_capital", sim.state.political_capital, next.political_capital)])
 	if next.run_status != GameState.RunStatus.RUNNING:
 		parts.append("本次结算：%s" % ("目标达成" if next.run_status == GameState.RunStatus.WON else "计划失败"))
 	if include_formulas:
 		parts.append("\n[b]本次经济结算[/b]")
 		parts.append(formulas(sim))
 	return "\n".join(parts)
+
+
+static func colored_delta(sim: Simulation, id: StringName, current: float, future: float) -> String:
+	return "[color=#%s]%s[/color]" % [change_color(sim, id, current, future).to_html(false), TextFormatter.signed(future - current)]
+
+
+static func change_color(sim: Simulation, id: StringName, current: float, future: float) -> Color:
+	var delta := future - current
+	if is_zero_approx(delta):
+		return UiTheme.MUTED
+	var favorable := delta > 0
+	match id:
+		&"unemployment": favorable = delta < 0
+		&"inflation":
+			var target := sim.economy.coefficient(sim.state, &"inflation_target")
+			if is_equal_approx(absf(future - target), absf(current - target)):
+				return UiTheme.MUTED
+			favorable = absf(future - target) < absf(current - target)
+		&"interest_rate":
+			# Rate changes have trade-offs; no universal good/bad direction.
+			return UiTheme.MUTED
+	return UiTheme.POSITIVE if favorable else UiTheme.NEGATIVE
 
 
 static func formulas(sim: Simulation) -> String:
@@ -35,11 +57,11 @@ static func formulas(sim: Simulation) -> String:
 	if not is_zero_approx(sim.economy.coefficient(sim.state, &"infl_anchor")):
 		inflation += " + %s × (%s − %s)" % [c.call(&"infl_anchor"), c.call(&"inflation_target"), v.call(&"inflation")]
 	parts.append(inflation)
-	var unemployment := "Δ失业率 = (%s − %s) / 10 − %s / 2" % [c.call(&"natural_unemployment"), v.call(&"unemployment"), g]
+	var unemployment := "Δ失业率 = (%s − %s) / 10 − %s / %s" % [c.call(&"natural_unemployment"), v.call(&"unemployment"), g, "8" if growth > 0.0 else "2"]
 	if not is_zero_approx(sim.economy.coefficient(sim.state, &"u_revert")):
 		unemployment += " − %s × max(%s − %s, 0)" % [c.call(&"u_revert"), v.call(&"unemployment"), c.call(&"natural_unemployment")]
 	parts.append(unemployment)
-	var confidence := "Δ信心 = %s − |%s − %s| / 5 − max(%s − %s, 0) / 5" % [g, v.call(&"inflation"), c.call(&"inflation_target"), v.call(&"unemployment"), c.call(&"natural_unemployment")]
+	var confidence := "Δ信心 = %s%s − |%s − %s| / 5 − max(%s − %s, 0) / 5 − max(50 − %s, 0) × 0.1" % [g, " / 2" if growth > 0.0 else "", v.call(&"inflation"), c.call(&"inflation_target"), v.call(&"unemployment"), c.call(&"natural_unemployment"), v.call(&"confidence")]
 	if sim.state.budget < 0:
 		confidence += " − %d / 5" % absi(sim.state.budget)
 	var market_delta := EconomyBuilder.special_confidence_delta(sim.state, growth)

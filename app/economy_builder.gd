@@ -21,15 +21,21 @@ static func build(economy: EconomyModel, config: Dictionary, rules: Dictionary) 
 
 	economy.equations[&"unemployment"] = func(state: GameState, model: EconomyModel, _rng: Rng) -> float:
 		var gap := model.coefficient(state, &"natural_unemployment") - model.value(state, &"unemployment")
-		return gap / 10.0 - EconomyBuilder._growth_rate(state, model) / 2.0 \
+		var growth := EconomyBuilder._growth_rate(state, model)
+		var growth_impact := growth / 8.0 if growth > 0.0 else growth / 2.0
+		return gap / 10.0 - growth_impact \
 			- model.coefficient(state, &"u_revert") * maxf(-gap, 0.0)
 
 	economy.equations[&"confidence"] = func(state: GameState, model: EconomyModel, _rng: Rng) -> float:
-		return EconomyBuilder._growth_rate(state, model) \
+		var growth := EconomyBuilder._growth_rate(state, model)
+		var confidence := model.value(state, &"confidence")
+		var growth_impact := growth / 2.0 if growth > 0.0 else growth
+		return growth_impact \
 			- absf(model.value(state, &"inflation") - model.coefficient(state, &"inflation_target")) / 5.0 \
 			- maxf(model.value(state, &"unemployment") - model.coefficient(state, &"natural_unemployment"), 0.0) / 5.0 \
 			- maxf(-float(state.budget), 0.0) / 5.0 \
-			+ EconomyBuilder.special_confidence_delta(state, EconomyBuilder._growth_rate(state, model))
+			- maxf(50.0 - confidence, 0.0) * 0.1 \
+			+ EconomyBuilder.special_confidence_delta(state, growth)
 
 	economy.register_derived(&"growth", func(state: GameState, model: EconomyModel) -> float:
 		return EconomyBuilder._growth_rate(state, model)
@@ -53,7 +59,7 @@ static func special_confidence_delta(state: GameState, growth: float) -> float:
 						var steps := floorf((maxf(growth, 0.0) + 0.00000001) / step)
 						delta += minf(float(modifier.data.get("confidence_cap", 6)), steps * float(modifier.data.get("confidence_per_step", 2))) * modifier.stacks
 			&"negative_growth_confidence":
-				delta -= maxf(-growth, 0.0) * float(modifier.data.get("confidence_per_percent", 2)) * modifier.stacks
+				delta -= maxf(-growth, 0.0) * StatusRules.confidence_crash_rate(modifier, state.turn) * modifier.stacks
 	return delta
 
 

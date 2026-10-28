@@ -68,7 +68,7 @@ func _country_card(scenario: ScenarioDef) -> Button:
 	var title := _label(scenario.display_name, 25, UiTheme.TEXT)
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	content.add_child(title)
-	var goal := _label(scenario.goal.description, 15, UiTheme.MUTED)
+	var goal := ImpactText.create(scenario.goal.description, UiTheme.MUTED, 15)
 	goal.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	goal.custom_minimum_size.x = 220
 	goal.size_flags_vertical = Control.SIZE_EXPAND_FILL
