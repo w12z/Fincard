@@ -9,9 +9,13 @@ var preview_labels := {}
 var preview_aid: bool = false
 var preview_enabled: bool = true
 var _face: Control
+var _frame: Panel
 var _styles := {}
 var _lift_tween: Tween
 var _lifted := false
+var _lift_enabled := false
+var _hovered := false
+var _down := false
 
 
 func _make_custom_tooltip(for_text: String) -> Object:
@@ -25,20 +29,47 @@ func _has_point(point: Vector2) -> bool:
 	return Rect2(Vector2(0, -extra), size + Vector2(0, extra)).has_point(point)
 
 
-func enable_lift(face: Control) -> void:
+func set_face_styles(styles: Dictionary) -> void:
+	_styles = styles
+	for state in styles:
+		add_theme_stylebox_override(state, StyleBoxEmpty.new() if _frame != null else styles[state])
+	_update_face()
+
+
+func attach_face(face: Control) -> void:
+	if _face == face:
+		return
 	_face = face
-	# Keep the hit rectangle in its layout slot; only the painted card moves.
-	# This also avoids hover jitter along the bottom edge of the raised card.
+	_frame = face.get_node("CardFrame") as Panel
+	# The Panel owns the visible frame. Only the input/layout slot stays fixed.
 	for state in ["normal", "hover", "pressed", "hover_pressed", "disabled", "focus"]:
-		_styles[state] = get_theme_stylebox(state)
+		if not _styles.has(state):
+			_styles[state] = get_theme_stylebox(state)
 		add_theme_stylebox_override(state, StyleBoxEmpty.new())
-	_face.draw.connect(_draw_face)
-	mouse_entered.connect(func() -> void: _animate_lift(not disabled))
-	mouse_exited.connect(func() -> void: _animate_lift(false))
-	button_down.connect(func() -> void: _face.queue_redraw())
-	button_up.connect(func() -> void: _face.queue_redraw())
-	focus_entered.connect(func() -> void: _face.queue_redraw())
-	focus_exited.connect(func() -> void: _face.queue_redraw())
+	mouse_entered.connect(func() -> void:
+		_hovered = true
+		_animate_lift(_lift_enabled and not disabled)
+	)
+	mouse_exited.connect(func() -> void:
+		_hovered = false
+		_animate_lift(false)
+	)
+	button_down.connect(func() -> void:
+		_down = true
+		_update_face()
+	)
+	button_up.connect(func() -> void:
+		_down = false
+		_update_face()
+	)
+	focus_entered.connect(_update_face)
+	focus_exited.connect(_update_face)
+	_update_face()
+
+
+func enable_lift(face: Control) -> void:
+	attach_face(face)
+	_lift_enabled = true
 
 
 func cancel_lift() -> void:
@@ -50,7 +81,7 @@ func cancel_lift() -> void:
 	if _face != null:
 		_face.offset_top = 0.0
 		_face.offset_bottom = 0.0
-		_face.queue_redraw()
+		_update_face()
 
 
 func visual_global_rect() -> Rect2:
@@ -60,6 +91,9 @@ func visual_global_rect() -> Rect2:
 
 
 func _animate_lift(raised: bool) -> void:
+	_update_face()
+	if not _lift_enabled:
+		return
 	_lifted = raised and not disabled
 	if _lift_tween != null:
 		_lift_tween.kill()
@@ -68,12 +102,16 @@ func _animate_lift(raised: bool) -> void:
 	var offset := -LIFT if _lifted else 0.0
 	_lift_tween.tween_property(_face, "offset_top", offset, 0.14)
 	_lift_tween.tween_property(_face, "offset_bottom", offset, 0.14)
-	_face.queue_redraw()
 
 
-func _draw_face() -> void:
-	var state := "disabled" if disabled else ("pressed" if is_pressed() else ("hover" if _lifted else "normal"))
-	var rect := Rect2(Vector2.ZERO, _face.size)
-	_styles[state].draw(_face.get_canvas_item(), rect)
-	if has_focus():
-		_styles["focus"].draw(_face.get_canvas_item(), rect)
+func _draw() -> void:
+	_update_face()
+
+
+func _update_face() -> void:
+	if not is_instance_valid(_frame) or _styles.is_empty():
+		return
+	var state := "disabled" if disabled else ("pressed" if _down or is_pressed() else ("hover" if _hovered else ("focus" if has_focus() else "normal")))
+	var style: StyleBox = _styles.get(state, _styles.get("normal"))
+	if style != null and _frame.get_theme_stylebox("panel") != style:
+		_frame.add_theme_stylebox_override("panel", style)

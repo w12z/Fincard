@@ -1,0 +1,9 @@
+{
+  "id": "route_employment_national_jobs", "display_name": "全民就业计划", "description": "协调公共岗位与生产项目，扩大就业。",
+  "card_type": "investment", "rarity": "special", "cost": 5, "political_cost": 3,
+  "recovery_route": "employment", "reward_min_turn": 33,
+  "effects": [
+    {"kind": "adjust_indicator", "params": {"target": "unemployment", "amount": -2.5}},
+    {"kind": "apply_modifier", "params": {"scope": "coefficient", "target": "gdp_auto", "value": 0.6, "duration": 3, "source": "全民就业计划"}}
+  ]
+}

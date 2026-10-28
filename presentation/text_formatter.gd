@@ -111,6 +111,11 @@ static func _effect_body(labels: Dictionary, effect: Effect) -> String:
 		Effect.Kind.APPLY_MODIFIER:
 			if params.get("scope", "indicator") == "special":
 				var id := StringName(params.get("target", ""))
+				if id == &"next_investment_discount" and int(params.get("duration", 1)) == 1:
+					return "本回合" + _lookup(labels, "statuses", id).trim_prefix("专项核准：")
+				if id in [&"repeat_investment", &"investment_political_waiver"] and int(params.get("duration", 1)) == 1:
+					var description := _lookup(labels, "statuses", id)
+					return "本回合" + description.substr(description.find("：") + 1)
 				return "【永久修正】" + _lookup(labels, "statuses", id) if int(params.get("duration", -1)) < 0 else "%d 回合内 %s ×%d" % [int(params.get("duration", 1)), modifier_target(labels, Modifier.SCOPE_SPECIAL, id), int(params.get("stacks", 1))]
 			var target := modifier_target(labels, StringName(params.get("scope", "indicator")), StringName(params.get("target", "")))
 			var duration := int(params.get("duration", 0))
@@ -128,7 +133,11 @@ static func _effect_body(labels: Dictionary, effect: Effect) -> String:
 			return "移除修正：%s" % modifier_target(labels, StringName(params.get("scope", "indicator")), StringName(params.get("target", "")))
 		Effect.Kind.DRAW_CARDS:
 			return "抽 %d 张牌" % int(params.get("count", 0))
+		Effect.Kind.CHOOSE_DISCARD_DRAW:
+			return "弃掉1张手牌，抽%d张牌" % int(params.get("draw_count", 2))
 		Effect.Kind.GAIN_BUDGET:
+			if params.has("per_investment_played"):
+				return "本回合每已从手牌打出一张投资与援助类卡牌，获得%d预算，最多%d预算" % [int(params["per_investment_played"]), int(params.get("cap", 4))]
 			return "财政预算 %s" % signed(float(params.get("amount", 0.0)))
 		Effect.Kind.GAIN_POLITICAL_CAPITAL:
 			return "政治行动点 %s" % signed(float(params.get("amount", 0.0)))

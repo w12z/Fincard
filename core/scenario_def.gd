@@ -12,6 +12,8 @@ var goal: GoalDef
 var annual_income: int = 32
 var groups: Dictionary = {}
 var scheduled_events: Dictionary = {}
+var scheduled_event_phases: Dictionary = {}
+var recovery_routes: Dictionary = {}
 var economy_overrides: Dictionary = {}
 var bounds_overrides: Dictionary = {}
 
@@ -21,6 +23,7 @@ static func from_dict(data: Dictionary) -> ScenarioDef:
 	scenario.id = StringName(data.get("id", ""))
 	scenario.display_name = data.get("display_name", "")
 	scenario.description = data.get("description", "")
+	scenario.recovery_routes = data.get("recovery_routes", {}).duplicate(true)
 	for card_id in data.get("starting_deck", []):
 		scenario.starting_deck.append(StringName(card_id))
 	var raw_indicators = data.get("indicators", {})
@@ -53,7 +56,9 @@ static func from_dict(data: Dictionary) -> ScenarioDef:
 	if raw_scheduled is Array:
 		for entry in raw_scheduled:
 			if entry is Dictionary and entry.has("event"):
-				scenario.scheduled_events[int(entry.get("turn", 0))] = StringName(entry.get("event", ""))
+				var turn := int(entry.get("turn", 0))
+				scenario.scheduled_events[turn] = StringName(entry.get("event", ""))
+				scenario.scheduled_event_phases[turn] = StringName(entry.get("phase", "turn_start"))
 	var raw_overrides = data.get("economy_overrides", {})
 	if raw_overrides is Dictionary:
 		for key in raw_overrides:

@@ -82,7 +82,8 @@ func _build() -> void:
 		for turn_number in turn_numbers:
 			var event: EconomyEventDef = controller.events.get(scenario.scheduled_events[turn_number])
 			if event != null:
-				right.add_child(_text("第 %d 回合  /  %s" % [turn_number, event.title], 16, UiTheme.WARNING))
+				var phase := "结束" if scenario.scheduled_event_phases.get(turn_number, &"turn_start") == &"turn_end" else "开始"
+				right.add_child(_text("第 %d 回合%s  /  %s" % [turn_number, phase, event.title], 16, UiTheme.WARNING))
 	var actions := HBoxContainer.new()
 	actions.add_theme_constant_override("separation", 16)
 	root.add_child(actions)

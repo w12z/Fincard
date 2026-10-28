@@ -1,0 +1,9 @@
+{
+  "id": "route_employment_emergency_allowance", "display_name": "紧急生活补助", "description": "向生活困难的家庭提供及时补助。",
+  "card_type": "investment", "rarity": "special", "cost": 2, "political_cost": 1,
+  "recovery_route": "employment", "reward_min_turn": 29,
+  "effects": [
+    {"kind": "adjust_indicator", "params": {"target": "confidence", "amount": 8}},
+    {"kind": "draw_cards", "params": {"count": 1}}
+  ]
+}

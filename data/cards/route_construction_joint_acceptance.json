@@ -1,0 +1,6 @@
+{
+  "id": "route_construction_joint_acceptance", "display_name": "集中验收", "description": "集中验收成果，推动配套项目同步落实。",
+  "card_type": "policy", "rarity": "special", "cost": 1, "political_cost": 1,
+  "recovery_route": "construction", "reward_min_turn": 33,
+  "effects": [{"kind": "apply_modifier", "params": {"scope": "special", "target": "repeat_investment", "duration": 1, "stacks": 1}}]
+}

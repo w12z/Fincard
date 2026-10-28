@@ -1,0 +1,9 @@
+{
+  "id": "investment_local_procurement", "display_name": "地方采购", "rarity": "common",
+  "description": "向地方企业采购物资，提供短期工作机会。",
+  "card_type": "investment", "cost": 2, "political_cost": 1, "once_per_run": false,
+  "effects": [
+    { "kind": "adjust_indicator", "params": { "target": "unemployment", "amount": -0.5 } },
+    { "kind": "gain_budget", "params": { "amount": 1 } }
+  ]
+}

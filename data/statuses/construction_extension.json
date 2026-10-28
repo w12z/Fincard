@@ -1,0 +1,5 @@
+{
+  "id": "construction_extension", "display_name": "工程接续", "icon": "anchor",
+  "description": "每回合首张带有限期增长加成的投资与援助类卡牌，其增长加成额外持续1回合。",
+  "rule": "first_growth_extension", "amount": 1, "start_next_turn": true
+}

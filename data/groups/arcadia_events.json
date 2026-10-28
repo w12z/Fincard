@@ -18,6 +18,13 @@
     "arcadia_ev_market_flourish",
     "arcadia_ev_black_thursday",
     "arcadia_ev_bank_panic",
-    "arcadia_ev_credit_freeze"
+    "arcadia_ev_credit_freeze",
+    "arcadia_ev_market_stabilization",
+    "arcadia_ev_financial_reorganization",
+    "arcadia_ev_recovery_plan",
+    "arcadia_ev_recovery_direction",
+    "arcadia_ev_recovery_institutions",
+    "arcadia_ev_recovery_support",
+    "arcadia_ev_recovery_mobilization"
   ]
 }

@@ -84,10 +84,11 @@ func _test_content() -> void:
 		for ids in scenario.groups.values():
 			for id in ids:
 				_expect(controller.groups.has(id), "Missing scenario group %s" % id)
-	_expect(controller.events.size() == 19, "All 19 events must load without duplicate IDs")
-	_expect(controller.cards.size() == 42, "All 42 cards must load")
-	_expect(controller.statuses.size() == 13, "All 13 special modifier definitions must load")
+	_expect(controller.events.size() == 22, "All 22 events must load without duplicate IDs")
+	_expect(controller.cards.size() == 50, "All 50 cards must load")
+	_expect(controller.statuses.size() == 17, "All 17 special modifier definitions must load")
 	for card: CardDef in controller.cards.values():
+		_expect(card.card_type != &"reform" or card.once_per_run, "Every reform is a one-time law: %s" % card.id)
 		_expect(CardDef.RARITIES.has(card.rarity), "Card must have a supported rarity: %s" % card.id)
 		_expect(_card_effect_count(card.effects) <= 2, "Card exceeds two effects (including conditional branches): %s" % card.id)
 		_expect(_card_effect_targets(card.effects).size() <= 2, "Card exceeds two effect types across all branches: %s" % card.id)
@@ -95,7 +96,7 @@ func _test_content() -> void:
 			if effect.kind == Effect.Kind.APPLY_MODIFIER and effect.params.get("scope", "") == "special":
 				_expect(controller.statuses.has(StringName(effect.params.get("target", ""))), "Special modifier must reference an existing definition")
 	for status: StatusDef in controller.statuses.values():
-		_expect(status.rule in [&"first_card_political_free", &"first_investment_discount", &"third_card_draw", &"deficit_spending", &"second_card_free", &"retain_card", &"all_types_refund", &"next_turn_replay", &"start_turn_review", &"save_political", &"investment_draw", &"aid_card_repeat", &"repeat_next_card"], "Special modifier must have an implemented rule")
+		_expect(status.rule in [&"first_card_political_free", &"first_investment_discount", &"third_card_draw", &"deficit_spending", &"second_card_free", &"retain_card", &"all_types_refund", &"next_turn_replay", &"start_turn_review", &"save_political", &"investment_draw", &"aid_card_repeat", &"repeat_next_card", &"growth_confidence_bonus", &"market_overheating", &"negative_growth_confidence", &"next_investment_discount"], "Special modifier must have an implemented rule")
 
 
 func _check_economic_data_dir(path: String) -> void:
@@ -259,9 +260,15 @@ func _test_economy() -> void:
 	_expect(sim.state.indicators[&"gdp"] <= before * 1.080001, "Actual growth must respect its cap")
 	# Scheduled crises override probability, with no random-event interference.
 	sim.rules["random_event_chance"] = 0
-	for turn_number in [24, 26, 28]:
+	for turn_number in [16, 17, 18, 19, 20, 21]:
 		sim.state.turn = turn_number
-		sim._schedule_event()
+		sim.state.pending_event = &""
+		if turn_number == 16:
+			sim._schedule_event()
+			_expect(sim.state.pending_event == &"", "The stock crash must not fire at turn sixteen's start")
+			sim._schedule_turn_end_event()
+		else:
+			sim._schedule_event()
 		_expect(sim.state.pending_event == sim.scenario_db[&"arcadia"].scheduled_events[turn_number], "Scheduled crisis missing")
 	sim.rules["random_event_chance"] = 0.35
 
@@ -305,16 +312,17 @@ func _test_ui() -> void:
 	root.add_child(ui)
 	ui.setup(controller, &"example_country")
 	_expect(not ui._sidebar.visible, "Log sidebar must start collapsed")
+	_expect(ui._meeting_page.visible and not ui._game_page.visible and not ui._overlay_root.visible, "Annual preparation is a separate page, not an overlay over the game")
+	ui._dispatch(Command.choose_reward([]))
+	if controller.simulation.state.pending_event != &"":
+		ui._dispatch(Command.resolve_event(0))
+	_expect(not ui._meeting_page.visible and ui._game_page.visible, "Finishing the meeting returns to the game page")
 	ui._sidebar_button.button_pressed = true
 	await process_frame
 	await process_frame
 	_expect(ui._log.get_global_rect().end.x <= root.get_visible_rect().end.x + 1, "All three UI columns must fit")
 	_expect(ui._log.size.y > 150, "Event log must have usable vertical space alongside the forecast")
 	_expect(ui._overlay_root.get_child(0).size.y <= root.get_visible_rect().size.y, "Scrollable modal must fit viewport")
-	_expect(ui._overlay_root.visible, "Rewards UI must be visible")
-	ui._dispatch(Command.choose_reward([]))
-	if controller.simulation.state.pending_event != &"":
-		ui._dispatch(Command.resolve_event(0))
 	_expect(not ui._end_turn_button.disabled, "End turn must be available in main phase")
 	_expect(ui._deck_label.text != "", "Deck counts must be visible")
 	ui._dispatch(Command.end_turn())
@@ -344,8 +352,9 @@ func _autoplay(scenario: StringName, seed_value: int, policy: String) -> Diction
 								pick = i
 				picks.append(pick)
 			sim.apply_command(Command.choose_reward(picks))
-		elif state.flags.get("pending_retain", false) or state.flags.get("pending_review", false):
+		elif state.flags.get("pending_retain", false) or state.flags.get("pending_review", false) or not state.flags.get("pending_discard_draw", []).is_empty():
 			var retain := bool(state.flags.get("pending_retain", false))
+			var discard_draw: bool = not state.flags.get("pending_discard_draw", []).is_empty()
 			var pick := -1
 			if policy == "random" and not state.hand.is_empty():
 				pick = bot_rng.next_int(state.hand.size())
@@ -357,7 +366,10 @@ func _autoplay(scenario: StringName, seed_value: int, policy: String) -> Diction
 					if (retain and score > best) or (not retain and score < best):
 						best = score
 						pick = i
-			sim.apply_command(Command.choose_retained_card(pick) if retain else Command.choose_review_card(pick))
+			if discard_draw:
+				sim.apply_command(Command.choose_discard_card(maxi(0, pick)))
+			else:
+				sim.apply_command(Command.choose_retained_card(pick) if retain else Command.choose_review_card(pick))
 		elif state.pending_event != &"":
 			var definition: EconomyEventDef = sim.event_db[state.pending_event]
 			var available: Array[int] = []
@@ -378,7 +390,7 @@ func _autoplay(scenario: StringName, seed_value: int, policy: String) -> Diction
 						choice = i
 			sim.apply_command(Command.resolve_event(choice))
 		else:
-			if policy != "passive":
+			if policy != "passive" and state.cards_played_this_turn == 0:
 				for entry in state.aids.duplicate():
 					var aid: AidDef = entry["def"]
 					if policy == "random" or (aid.id == &"arcadia_aid_fireside" and sim.economy.value(state, &"confidence") < 45) or (aid.id != &"arcadia_aid_fireside" and state.budget < 6):
@@ -388,7 +400,7 @@ func _autoplay(scenario: StringName, seed_value: int, policy: String) -> Diction
 				for id in state.hand:
 					var card: CardDef = sim.card_db[id]
 					var costs := sim.card_costs(id)
-					if not sim.can_spend_budget(int(costs["budget"])) or (int(costs["political"]) > 0 and state.political_capital < int(costs["political"])):
+					if not costs.get("hand_requirement_met", true) or not sim.can_spend_budget(int(costs["budget"])) or (int(costs["political"]) > 0 and state.political_capital < int(costs["political"])):
 						continue
 					var score := bot_rng.next_float() + 0.01 if policy == "random" else _effects_score(sim, card.effects) / (1 + card.cost * 0.2 + card.political_cost * 0.1)
 					if score > best_score:

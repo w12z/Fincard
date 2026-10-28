@@ -57,7 +57,7 @@ func is_permanent() -> bool:
 
 
 func is_expired() -> bool:
-	return remaining_turns == 0 or stacks <= 0
+	return remaining_turns == 0 or (stacks <= 0 and not bool(data.get("allow_zero_stacks", false)))
 
 
 func is_active(turn: int) -> bool:

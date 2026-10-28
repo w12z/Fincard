@@ -2,11 +2,13 @@ class_name EconomyForecast
 extends RefCounted
 
 
-static func text(sim: Simulation, labels: Dictionary) -> String:
+static func text(sim: Simulation, labels: Dictionary, include_formulas: bool = true) -> String:
 	var next := sim.forecast_next_turn()
 	if next == null:
 		return "待完成当前选择" if sim.state.run_status == GameState.RunStatus.RUNNING else "本局已结束"
-	var parts := PackedStringArray(["[b]下回合预测[/b]", "[color=#667085]不含事件及新增奖励[/color]"])
+	var parts := PackedStringArray(["[color=#667085]不含事件及新增奖励[/color]"])
+	if include_formulas:
+		parts.insert(0, "[b]下回合预测[/b]")
 	for id in sim.economy.indicator_ids + sim.economy.derived_ids:
 		var current := sim.economy.value(sim.state, id)
 		var future := sim.economy.value(next, id)
@@ -15,8 +17,9 @@ static func text(sim: Simulation, labels: Dictionary) -> String:
 	parts.append("政治点  %d → %d" % [sim.state.political_capital, next.political_capital])
 	if next.run_status != GameState.RunStatus.RUNNING:
 		parts.append("本次结算：%s" % ("目标达成" if next.run_status == GameState.RunStatus.WON else "计划失败"))
-	parts.append("\n[b]本次经济结算[/b]")
-	parts.append(formulas(sim))
+	if include_formulas:
+		parts.append("\n[b]本次经济结算[/b]")
+		parts.append(formulas(sim))
 	return "\n".join(parts)
 
 
@@ -39,6 +42,9 @@ static func formulas(sim: Simulation) -> String:
 	var confidence := "Δ信心 = %s − |%s − %s| / 5 − max(%s − %s, 0) / 5" % [g, v.call(&"inflation"), c.call(&"inflation_target"), v.call(&"unemployment"), c.call(&"natural_unemployment")]
 	if sim.state.budget < 0:
 		confidence += " − %d / 5" % absi(sim.state.budget)
+	var market_delta := EconomyBuilder.special_confidence_delta(sim.state, growth)
+	if not is_zero_approx(market_delta):
+		confidence += " %s" % TextFormatter.signed(market_delta)
 	parts.append(confidence)
 	# Equation results come from the same callables as the simulation, not a
 	# second implementation of the economy's arithmetic.

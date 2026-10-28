@@ -1,0 +1,6 @@
+{
+  "id": "route_fiscal_coordination_funding", "display_name": "协调资金", "description": "拨付协商经费，争取政策执行支持。",
+  "card_type": "policy", "rarity": "special", "cost": 3, "political_cost": 0,
+  "recovery_route": "fiscal", "reward_min_turn": 29,
+  "effects": [{"kind": "gain_political_capital", "params": {"amount": 3}}]
+}

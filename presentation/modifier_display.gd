@@ -2,6 +2,32 @@ class_name ModifierDisplay
 extends RefCounted
 
 
+class Badge extends Button:
+	func _make_custom_tooltip(for_text: String) -> Object:
+		var panel := PanelContainer.new()
+		panel.add_theme_stylebox_override("panel", UiTheme._panel_style(Color.WHITE, Color("64748b"), 8, 1, 14))
+		var content := VBoxContainer.new()
+		content.add_theme_constant_override("separation", 8)
+		panel.add_child(content)
+		var lines := for_text.split("\n", true, 1)
+		var title := Label.new()
+		title.text = lines[0]
+		title.add_theme_color_override("font_color", UiTheme.TEXT)
+		title.add_theme_font_size_override("font_size", 16)
+		content.add_child(title)
+		if lines.size() > 1:
+			var body := Label.new()
+			body.text = lines[1]
+			body.custom_minimum_size.x = 340
+			body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			body.add_theme_color_override("font_color", UiTheme.TEXT)
+			body.add_theme_color_override("font_shadow_color", Color.TRANSPARENT)
+			body.add_theme_font_size_override("font_size", 14)
+			body.add_theme_constant_override("line_spacing", 3)
+			content.add_child(body)
+		return panel
+
+
 # Presentation only: keep individual sources and durations intact in the simulation.
 static func entries(sim: Simulation, labels: Dictionary) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
@@ -56,6 +82,13 @@ static func _special_entry(sim: Simulation, labels: Dictionary, modifier: Modifi
 			icon_key = String(effects[0].params.get("target", "political_capital_gain"))
 	var duration := "永久" if modifier.is_permanent() else "剩余%d回合" % modifier.remaining_turns
 	var tooltip := "%s\n%d层 · %s\n%s" % [name, modifier.stacks, duration, description]
+	if definition != null and definition.flavor_text != "":
+		tooltip += "\n\n" + definition.flavor_text
+	if modifier.rule == &"market_overheating":
+		tooltip += "\n股灾额外损失：GDP -%s%%，信心 -%s" % [
+			TextFormatter.fmt(modifier.stacks * float(modifier.data.get("gdp_loss_per_stack", 3))),
+			TextFormatter.fmt(modifier.stacks * float(modifier.data.get("confidence_loss_per_stack", 3))),
+		]
 	if counter != "" and counter != "%d层" % modifier.stacks:
 		tooltip += "\n" + counter
 	if modifier.data.has("queued_card"):

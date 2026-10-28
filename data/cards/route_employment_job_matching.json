@@ -1,0 +1,9 @@
+{
+  "id": "route_employment_job_matching", "display_name": "就业对接", "description": "对接招聘需求，为求职者介绍岗位。",
+  "card_type": "investment", "rarity": "special", "cost": 1, "political_cost": 1,
+  "recovery_route": "employment", "reward_min_turn": 29,
+  "effects": [
+    {"kind": "adjust_indicator", "params": {"target": "unemployment", "amount": -0.8}},
+    {"kind": "draw_cards", "params": {"count": 1}}
+  ]
+}

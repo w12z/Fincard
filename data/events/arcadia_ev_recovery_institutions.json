@@ -1,0 +1,8 @@
+{
+  "id": "arcadia_ev_recovery_institutions", "title": "复苏制度",
+  "description": "新的复苏路线需要相应制度支持，相关法案已提交内阁。",
+  "choices": [{"label": "获得卡牌", "card_reward": {
+    "route_groups": {"construction": "recovery_construction_core", "employment": "recovery_employment_core", "fiscal": "recovery_fiscal_core"},
+    "option_count": 3, "destination": "hand"
+  }}]
+}

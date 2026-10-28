@@ -1,0 +1,6 @@
+{
+  "id": "route_construction_restart_law", "display_name": "国家复工法", "description": "统筹停滞项目的复工拨款。",
+  "card_type": "reform", "rarity": "special", "cost": 4, "political_cost": 2, "once_per_run": true,
+  "recovery_route": "construction", "reward_min_turn": 25,
+  "effects": [{"kind": "apply_modifier", "params": {"scope": "special", "target": "construction_restart", "duration": -1, "stacks": 1}}]
+}

@@ -1,0 +1,6 @@
+{
+  "id": "policy_special_approval", "display_name": "专项核准", "rarity": "common",
+  "description": "为即将实施的投资核准专项经费。",
+  "card_type": "policy", "cost": 0, "political_cost": 1, "once_per_run": false,
+  "effects": [{ "kind": "apply_modifier", "params": { "scope": "special", "target": "next_investment_discount", "stacks": 1, "duration": 1 } }]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "arcadia_ev_financial_reorganization",
+  "title": "金融重整",
+  "description": "银行倒闭潮暴露了金融体系的脆弱，财政部门提出新的重整方案。",
+  "choices": [
+    {
+      "label": "获得卡牌",
+      "card_reward": {
+        "cards": ["arcadia_recover_fdic", "arcadia_recover_gold", "arcadia_reform_social_security"],
+        "fallback_group": "arcadia_post_crisis",
+        "option_count": 3,
+        "destination": "hand"
+      }
+    }
+  ]
+}

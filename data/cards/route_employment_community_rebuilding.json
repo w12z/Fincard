@@ -1,0 +1,9 @@
+{
+  "id": "route_employment_community_rebuilding", "display_name": "社区重建", "description": "修复社区设施，为居民提供就近工作。",
+  "card_type": "investment", "rarity": "special", "cost": 3, "political_cost": 1,
+  "recovery_route": "employment", "reward_min_turn": 29,
+  "effects": [
+    {"kind": "adjust_indicator", "params": {"target": "unemployment", "amount": -1}},
+    {"kind": "adjust_indicator", "params": {"target": "confidence", "amount": 4}}
+  ]
+}

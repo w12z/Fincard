@@ -12,7 +12,7 @@ static func name_label(card: CardDef) -> Label:
 
 static func build(details: String, budget: String, political: String, card: CardDef = null, labels: Dictionary = {}, aid: bool = false) -> Control:
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", UiTheme._panel_style(UiTheme.PANEL_BG, UiTheme.rarity_color(card.rarity) if card != null else UiTheme.PANEL_BORDER, 10, 2, 12))
+	panel.add_theme_stylebox_override("panel", UiTheme._panel_style(UiTheme.PANEL_BG, UiTheme.rarity_color(card.rarity) if card != null else UiTheme.PANEL_BORDER, 10, 6 if card != null else 2, 12))
 	var content := VBoxContainer.new()
 	panel.add_child(content)
 	content.add_theme_constant_override("separation", 8)

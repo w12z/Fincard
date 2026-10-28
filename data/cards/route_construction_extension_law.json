@@ -1,0 +1,6 @@
+{
+  "id": "route_construction_extension_law", "display_name": "工程接续法", "description": "延续项目采购与建设合同，保障工程接续。",
+  "card_type": "reform", "rarity": "special", "cost": 3, "political_cost": 2, "once_per_run": true,
+  "recovery_route": "construction", "reward_min_turn": 25,
+  "effects": [{"kind": "apply_modifier", "params": {"scope": "special", "target": "construction_extension", "duration": -1, "stacks": 1}}]
+}

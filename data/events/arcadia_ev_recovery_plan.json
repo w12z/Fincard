@@ -1,0 +1,16 @@
+{
+  "id": "arcadia_ev_recovery_plan",
+  "title": "复苏计划",
+  "description": "信贷冻结使生产与就业陷入困境，公共投资与就业计划被提上议程。",
+  "choices": [
+    {
+      "label": "获得卡牌",
+      "card_reward": {
+        "cards": ["arcadia_relief_works", "arcadia_relief_ccc", "arcadia_relief_farm"],
+        "fallback_group": "arcadia_post_crisis",
+        "option_count": 3,
+        "destination": "hand"
+      }
+    }
+  ]
+}

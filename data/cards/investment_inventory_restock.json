@@ -1,0 +1,9 @@
+{
+  "id": "investment_inventory_restock", "display_name": "库存补充", "rarity": "common",
+  "description": "补充生产所需库存，接续短期订单。",
+  "card_type": "investment", "cost": 1, "political_cost": 1, "once_per_run": false,
+  "effects": [
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "value": 0.2, "duration": 2, "source": "库存补充" } },
+    { "kind": "draw_cards", "params": { "count": 1 } }
+  ]
+}

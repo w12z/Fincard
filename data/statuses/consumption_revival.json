@@ -1,0 +1,5 @@
+{
+  "id": "consumption_revival", "display_name": "消费振兴", "icon": "growth",
+  "description": "每回合开始时，若信心达到60，获得潜在增长加0.3，持续本回合。",
+  "rule": "confidence_growth_start", "parameters": {"threshold": 60, "growth": 0.3}, "start_next_turn": true
+}

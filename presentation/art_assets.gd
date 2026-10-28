@@ -46,5 +46,11 @@ static func modifier_icon(key: String) -> Texture2D:
 		"aid_card_repeat": "repeat", "repeat_next_card": "repeat", "next_turn_replay": "repeat",
 		"retain_card": "retain", "start_turn_review": "review", "save_political": "political",
 		"deficit_spending": "deficit", "political_capital_gain": "political",
+		"growth_confidence_bonus": "growth", "market_overheating": "review", "negative_growth_confidence": "confidence",
+		"next_investment_discount": "fund",
+		"second_investment_discount": "fund", "first_growth_extension": "anchor", "second_investment_budget": "income",
+		"first_job_confidence": "employment", "confidence_growth_start": "growth", "first_confidence_employment": "confidence",
+		"third_card_budget": "income", "first_political_policy_discount": "political", "second_policy_discount": "fund",
+		"repeat_next_investment": "repeat", "next_investment_political_discount": "political",
 	}
 	return texture("res://assets/icons/modifiers/%s.svg" % names.get(key, "modifier"))

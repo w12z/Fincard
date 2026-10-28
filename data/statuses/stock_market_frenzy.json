@@ -1,0 +1,15 @@
+{
+  "id": "stock_market_frenzy",
+  "display_name": "股市狂热",
+  "icon": "growth",
+  "flavor_text": "当前阿卡迪亚正处于前所未有的经济繁荣期，股市投资规模空前，市场相信这场繁荣将持续下去，或许永远也不会结束......",
+  "description": "回合结束时，GDP增长率每达到0.2%，额外获得2信心，每回合最多6信心。股灾发生后移除。",
+  "rule": "growth_confidence_bonus",
+  "parameters": {
+    "growth_step": 0.2,
+    "confidence_per_step": 2,
+    "confidence_cap": 6,
+    "worry_start_turn": 9,
+    "last_turn": 16
+  }
+}

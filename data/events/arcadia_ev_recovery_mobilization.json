@@ -1,0 +1,8 @@
+{
+  "id": "arcadia_ev_recovery_mobilization", "title": "复苏动员",
+  "description": "复苏进入关键阶段，内阁准备集中资源推进既定路线。",
+  "choices": [{"label": "获得卡牌", "card_reward": {
+    "route_groups": {"construction": "recovery_construction_mobilization", "employment": "recovery_employment_mobilization", "fiscal": "recovery_fiscal_mobilization"},
+    "option_count": 3, "destination": "hand"
+  }}]
+}

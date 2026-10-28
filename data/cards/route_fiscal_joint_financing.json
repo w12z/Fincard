@@ -1,0 +1,9 @@
+{
+  "id": "route_fiscal_joint_financing", "display_name": "联合融资项目", "description": "以共同出资的项目汇集执行支持。",
+  "card_type": "investment", "rarity": "special", "cost": 3, "political_cost": 1,
+  "recovery_route": "fiscal", "reward_min_turn": 29,
+  "effects": [
+    {"kind": "apply_modifier", "params": {"scope": "coefficient", "target": "gdp_auto", "value": 0.3, "duration": 3, "source": "联合融资项目"}},
+    {"kind": "gain_political_capital", "params": {"amount": 2}}
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "id": "investment_political_waiver", "display_name": "广播动员", "icon": "political",
+  "description": "下一张投资与援助类卡牌政治成本减1，最低为0。",
+  "rule": "next_investment_political_discount", "amount": 1, "stackable": true
+}

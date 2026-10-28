@@ -1,5 +1,6 @@
 {
   "rarity": "common",
+  "reward_min_turn": 17,
   "id": "arcadia_relief_dole", "display_name": "直接救济金",
   "description": "向生活困难的家庭发放救济金。",
   "card_type": "investment", "cost": 2, "political_cost": 1,

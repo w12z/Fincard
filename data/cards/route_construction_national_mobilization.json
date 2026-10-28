@@ -1,0 +1,9 @@
+{
+  "id": "route_construction_national_mobilization", "display_name": "全国基建动员", "description": "集中工程力量，展开全国性基础设施建设。",
+  "card_type": "investment", "rarity": "special", "cost": 6, "political_cost": 3,
+  "recovery_route": "construction", "reward_min_turn": 33,
+  "effects": [
+    {"kind": "apply_modifier", "params": {"scope": "coefficient", "target": "gdp_auto", "value": 0.9, "duration": 4, "source": "全国基建动员"}},
+    {"kind": "adjust_indicator", "params": {"target": "unemployment", "amount": -1.5}}
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "route_construction_equipment_coordination", "display_name": "设备统筹", "description": "调配闲置设备，衔接新的施工任务。",
+  "card_type": "investment", "rarity": "special", "cost": 2, "political_cost": 1,
+  "recovery_route": "construction", "reward_min_turn": 33,
+  "effects": [
+    {"kind": "apply_modifier", "params": {"scope": "coefficient", "target": "gdp_auto", "value": 0.35, "duration": 3, "source": "设备统筹"}},
+    {"kind": "draw_cards", "params": {"count": 2}}
+  ]
+}

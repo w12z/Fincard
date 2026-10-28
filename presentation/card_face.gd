@@ -6,13 +6,14 @@ const HEIGHT := 286.0
 
 
 static func style(button: Button, rarity: StringName, playable: bool = false) -> void:
+	var styles := {}
 	for state in ["normal", "hover", "pressed", "disabled", "focus", "hover_pressed"]:
 		var box := StyleBoxFlat.new()
 		box.bg_color = Color("f1f3f6") if state == "disabled" else (Color("effaf5") if playable else Color.WHITE)
 		if state in ["hover", "pressed", "hover_pressed"]:
 			box.bg_color = box.bg_color.darkened(0.025)
 		box.border_color = UiTheme.rarity_color(rarity)
-		box.set_border_width_all(3 if state in ["hover", "focus", "pressed", "hover_pressed"] else 2)
+		box.set_border_width_all(7 if state in ["hover", "focus", "pressed", "hover_pressed"] else 6)
 		box.set_corner_radius_all(10)
 		box.content_margin_left = 10
 		box.content_margin_right = 10
@@ -21,16 +22,31 @@ static func style(button: Button, rarity: StringName, playable: bool = false) ->
 		box.shadow_color = Color(0.03, 0.08, 0.15, 0.16)
 		box.shadow_size = 4
 		box.shadow_offset = Vector2(1, 3)
-		button.add_theme_stylebox_override(state, box)
+		styles[state] = box
+	if button is CardButton:
+		button.set_face_styles(styles)
+	else:
+		for state in styles:
+			button.add_theme_stylebox_override(state, styles[state])
 
 
 static func fill(button: Button, card: CardDef, labels: Dictionary, budget: String, political: String, options: Dictionary = {}) -> Control:
 	var compact := bool(options.get("compact", false))
+	var face := Control.new()
+	face.name = "CardFace"
+	button.add_child(face)
+	face.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var frame := Panel.new()
+	frame.name = "CardFrame"
+	face.add_child(frame)
+	frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	frame.add_theme_stylebox_override("panel", button.get_theme_stylebox("normal"))
 	var margin := MarginContainer.new()
+	margin.name = "ContentMargin"
+	face.add_child(margin)
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for edge in ["left", "right", "top", "bottom"]:
 		margin.add_theme_constant_override("margin_" + edge, 10)
-	button.add_child(margin)
 	var content := VBoxContainer.new()
 	content.add_theme_constant_override("separation", 4)
 	margin.add_child(content)
@@ -66,8 +82,10 @@ static func fill(button: Button, card: CardDef, labels: Dictionary, budget: Stri
 			button.custom_minimum_size.x = maxf(WIDTH, content.get_combined_minimum_size().x + 20)
 			button.custom_minimum_size.y = maxf(HEIGHT, content.get_combined_minimum_size().y + 20)
 		)
-	_ignore_mouse(margin)
-	return margin
+	_ignore_mouse(face)
+	if button is CardButton:
+		button.attach_face(face)
+	return face
 
 
 static func aid_card(aid: AidDef, count: int = -1) -> CardDef:

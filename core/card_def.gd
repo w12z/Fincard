@@ -12,6 +12,8 @@ var rarity: StringName = &"common"
 var cost: int
 var political_cost: int
 var once_per_run: bool
+var reward_min_turn: int = 1
+var recovery_route: StringName = &""
 var effects: Array[Effect] = []
 
 
@@ -24,7 +26,9 @@ static func from_dict(data: Dictionary) -> CardDef:
 	card.rarity = StringName(data.get("rarity", "common"))
 	card.cost = int(data.get("cost", 0))
 	card.political_cost = int(data.get("political_cost", 0))
-	card.once_per_run = bool(data.get("once_per_run", false))
+	card.once_per_run = card.card_type == &"reform" or bool(data.get("once_per_run", false))
+	card.reward_min_turn = maxi(1, int(data.get("reward_min_turn", 1)))
+	card.recovery_route = StringName(data.get("recovery_route", ""))
 	for raw in data.get("effects", []):
 		card.effects.append(Effect.from_dict(raw))
 	return card

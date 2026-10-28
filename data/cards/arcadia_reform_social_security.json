@@ -1,5 +1,6 @@
 {
   "rarity": "rare",
+  "reward_min_turn": 17,
   "id": "arcadia_reform_social_security", "display_name": "社会保障法",
   "description": "建立覆盖失业与养老的社会安全网。",
   "card_type": "reform", "once_per_run": true, "cost": 3, "political_cost": 2,

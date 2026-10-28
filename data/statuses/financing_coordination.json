@@ -1,0 +1,5 @@
+{
+  "id": "financing_coordination", "display_name": "融资协调", "icon": "political",
+  "description": "每回合首张直接提供政治点的政策牌预算成本减2，最低为0。",
+  "rule": "first_political_policy_discount", "amount": 2, "start_next_turn": true
+}

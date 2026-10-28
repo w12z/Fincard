@@ -1,0 +1,5 @@
+{
+  "id": "next_investment_discount", "display_name": "专项核准", "icon": "fund",
+  "description": "下一张投资与援助类卡牌预算成本每层减2，最低为0。",
+  "rule": "next_investment_discount", "amount": 2, "stackable": true
+}

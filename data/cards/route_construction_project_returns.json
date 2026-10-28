@@ -1,0 +1,6 @@
+{
+  "id": "route_construction_project_returns", "display_name": "工程回款", "description": "根据已实施项目收取配套回拨资金。",
+  "card_type": "policy", "rarity": "special", "cost": 0, "political_cost": 1,
+  "recovery_route": "construction", "reward_min_turn": 29,
+  "effects": [{"kind": "gain_budget", "params": {"amount": 0, "per_investment_played": 2, "cap": 4}}]
+}

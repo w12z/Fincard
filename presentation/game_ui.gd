@@ -15,9 +15,13 @@ const TYPE_LABELS := {
 
 var controller: GameController
 var _state: GameState
+var _game_page: MarginContainer
+var _meeting_page: FiscalMeeting
 
 var _header: HBoxContainer
 var _goal_box: VBoxContainer
+var _goal_section: Control
+var _goal_button: Button
 var _statuses_box: VBoxContainer
 var _indicators_box: VBoxContainer
 var _effect_icons: HBoxContainer
@@ -103,6 +107,8 @@ func _reset_section_signatures() -> void:
 
 func _build() -> void:
 	var margin := MarginContainer.new()
+	_game_page = margin
+	_game_page.name = "GamePage"
 	margin.set_anchors_preset(Control.PRESET_FULL_RECT)
 	margin.add_theme_constant_override("margin_left", 12)
 	margin.add_theme_constant_override("margin_right", 12)
@@ -126,13 +132,42 @@ func _build() -> void:
 
 	var left_scroll := ScrollContainer.new()
 	left_scroll.custom_minimum_size = Vector2(260, 0)
+	left_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	split.add_child(left_scroll)
 	var left := VBoxContainer.new()
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_theme_constant_override("separation", 8)
 	left_scroll.add_child(left)
-	_goal_box = _make_section(left, "最终目标")
 	_indicators_box = _make_section(left, "经济指标")
+	var forecast_section := _make_section(left, "下回合预测")
+	var forecast_content := VBoxContainer.new()
+	forecast_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	forecast_section.add_child(forecast_content)
+	_forecast = RichTextLabel.new()
+	_forecast.bbcode_enabled = true
+	_forecast.fit_content = true
+	_forecast.scroll_active = false
+	_forecast.custom_minimum_size.x = 230
+	forecast_content.add_child(_forecast)
+	var formula_button := Button.new()
+	formula_button.text = "结算公式与规则"
+	formula_button.toggle_mode = true
+	forecast_content.add_child(formula_button)
+	_parameters = RichTextLabel.new()
+	_parameters.bbcode_enabled = true
+	_parameters.fit_content = true
+	_parameters.scroll_active = false
+	_parameters.visible = false
+	forecast_content.add_child(_parameters)
+	formula_button.toggled.connect(func(pressed: bool) -> void: _parameters.visible = pressed)
+	_goal_button = Button.new()
+	_goal_button.text = "最终目标"
+	_goal_button.toggle_mode = true
+	left.add_child(_goal_button)
+	_goal_box = _make_section(left, "最终目标")
+	_goal_section = _goal_box.get_parent().get_parent().get_parent()
+	_goal_section.visible = false
+	_goal_button.toggled.connect(func(pressed: bool) -> void: _goal_section.visible = pressed)
 
 	var center := VBoxContainer.new()
 	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -183,32 +218,6 @@ func _build() -> void:
 	_sidebar.custom_minimum_size = Vector2(300, 0)
 	_sidebar.visible = false
 	split.add_child(_sidebar)
-	var forecast_section := _make_section(_sidebar, "结算预测", true)
-	forecast_section.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	var forecast_scroll := ScrollContainer.new()
-	forecast_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	forecast_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	forecast_section.add_child(forecast_scroll)
-	var forecast_content := VBoxContainer.new()
-	forecast_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	forecast_scroll.add_child(forecast_content)
-	_forecast = RichTextLabel.new()
-	_forecast.bbcode_enabled = true
-	_forecast.fit_content = true
-	_forecast.scroll_active = false
-	_forecast.custom_minimum_size.x = 280
-	forecast_content.add_child(_forecast)
-	var parameter_button := Button.new()
-	parameter_button.text = "规则与边界"
-	parameter_button.toggle_mode = true
-	forecast_content.add_child(parameter_button)
-	_parameters = RichTextLabel.new()
-	_parameters.bbcode_enabled = true
-	_parameters.fit_content = true
-	_parameters.scroll_active = false
-	_parameters.visible = false
-	forecast_content.add_child(_parameters)
-	parameter_button.toggled.connect(func(pressed: bool) -> void: _parameters.visible = pressed)
 	var log_section := _make_section(_sidebar, "事件日志", true)
 	log_section.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_log = RichTextLabel.new()
@@ -224,6 +233,10 @@ func _build() -> void:
 	_flight_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_flight_layer)
 
+	_meeting_page = FiscalMeeting.new()
+	_meeting_page.visible = false
+	_meeting_page.exit_requested.connect(func() -> void: exit_requested.emit())
+	add_child(_meeting_page)
 	_build_overlay()
 	_built = true
 
@@ -257,8 +270,7 @@ func _toggle_sidebar(pressed: bool) -> void:
 	_sidebar.visible = pressed
 	_sidebar_button.text = "收起日志" if pressed else "显示日志"
 	if pressed:
-		_forecast_dirty = true
-		_render_log()
+		_sync_log()
 		_scroll_log_to_end()
 
 
@@ -352,6 +364,16 @@ func _make_section(parent: Control, title: String, expand: bool = false, minimum
 
 func _render() -> void:
 	_state = controller.simulation.state
+	var meeting := _is_annual_meeting()
+	_game_page.visible = not meeting
+	_flight_layer.visible = not meeting
+	_meeting_page.visible = meeting
+	if meeting:
+		if _flight_active:
+			_cancel_flight(true)
+		_meeting_page.update_context(controller)
+		_render_overlay()
+		return
 	_render_header()
 	_render_goal()
 	_render_statuses()
@@ -506,7 +528,7 @@ func _render_statuses() -> void:
 	scroll.add_child(_effect_icons)
 	for index in entries.size():
 		var entry: Dictionary = entries[index]
-		var badge := Button.new()
+		var badge := ModifierDisplay.Badge.new()
 		badge.theme_type_variation = "StatusBadge"
 		badge.custom_minimum_size = Vector2(34, 34)
 		badge.text = ""
@@ -627,7 +649,7 @@ func _render_hand() -> void:
 		button.pressed.connect(func() -> void: _play_card_from_hand(card_id, button))
 		_hand_box.add_child(button)
 		var margin := CardFace.fill(button, card, _labels(), budget_text, political_text, {"sources": sources})
-		margin.modulate.a = 0.55 if button.disabled else 1.0
+		margin.get_node("ContentMargin").modulate.a = 0.55 if button.disabled else 1.0
 		button.enable_lift(margin)
 
 
@@ -656,6 +678,7 @@ func _hand_content_signature() -> String:
 
 func _hand_card_disabled(costs: Dictionary) -> bool:
 	return _busy() or _state.run_status != GameState.RunStatus.RUNNING \
+		or not costs.get("hand_requirement_met", true) \
 		or not controller.simulation.can_spend_budget(int(costs["budget"])) \
 		or (int(costs["political"]) > 0 and _state.political_capital < int(costs["political"]))
 
@@ -715,13 +738,13 @@ func _scroll_log_to_end() -> void:
 
 
 func _render_forecast() -> void:
-	if _sidebar == null or not _sidebar.visible:
+	if _forecast == null or not _game_page.visible:
 		return
 	var signature := _forecast_state_signature()
 	if not _forecast_dirty and signature == _forecast_signature:
 		return
-	_forecast.text = EconomyForecast.text(controller.simulation, _labels())
-	_parameters.text = EconomyForecast.parameters(controller.simulation, _labels())
+	_forecast.text = EconomyForecast.text(controller.simulation, _labels(), false)
+	_parameters.text = "[b]结算公式[/b]\n%s\n\n%s" % [EconomyForecast.formulas(controller.simulation), EconomyForecast.parameters(controller.simulation, _labels())]
 	_forecast_signature = signature
 	_forecast_dirty = false
 	_forecast_build_count += 1
@@ -776,7 +799,21 @@ func _forecast_state_signature() -> String:
 	return "\n".join(parts)
 
 
+func _is_annual_meeting() -> bool:
+	return _state != null and _state.run_status == GameState.RunStatus.RUNNING \
+		and _state.pending_event == &"" and not _state.pending_rewards.is_empty() \
+		and not _state.pending_rewards[0].has("event") \
+		and not _state.flags.get("pending_retain", false) and not _state.flags.get("pending_review", false) \
+		and _state.flags.get("pending_discard_draw", []).is_empty()
+
+
+func _reward_container() -> VBoxContainer:
+	return _meeting_page.content if _is_annual_meeting() else _overlay_box
+
+
 func _render_overlay() -> void:
+	if _is_annual_meeting():
+		_overlay_root.visible = false
 	var variation: StringName = &"EventPanel" if _state.pending_event != &"" and _state.run_status == GameState.RunStatus.RUNNING else &""
 	if _overlay_panel.theme_type_variation != variation:
 		_overlay_panel.theme_type_variation = variation
@@ -785,8 +822,12 @@ func _render_overlay() -> void:
 		return
 	_overlay_signature = signature
 	_clear(_overlay_box)
+	_clear(_meeting_page.content)
 	if _state.run_status != GameState.RunStatus.RUNNING:
 		_show_result()
+		return
+	if not _state.flags.get("pending_discard_draw", []).is_empty():
+		_show_hand_choice(false, true)
 		return
 	if _state.flags.get("pending_retain", false):
 		_show_hand_choice(true)
@@ -810,6 +851,8 @@ func _overlay_content_signature() -> String:
 			_state.run_status, _state.year, str(_state.flags.get("loss_reason", "")),
 			_indicator_summary(), _state.seed_value, str(_state.turn),
 		]
+	if not _state.flags.get("pending_discard_draw", []).is_empty():
+		return "discard:%s:%s" % [var_to_str(_state.hand), var_to_str(_state.flags["pending_discard_draw"])]
 	if _state.flags.get("pending_retain", false):
 		return "retain:%s" % var_to_str(_state.hand)
 	if _state.flags.get("pending_review", false):
@@ -833,7 +876,9 @@ func _overlay_content_signature() -> String:
 			TextFormatter.fmt(controller.simulation.rarity_weight(&"legendary")),
 		])
 		for group in _state.pending_rewards:
-			reward_parts.append(str(group.get("type", "")))
+			reward_parts.append("%s|%s|%s" % [str(group.get("type", "")), str(group.get("token", "")), str(group.get("removal_pending", false))])
+			if group.get("removal_pending", false):
+				reward_parts.append(var_to_str(controller.simulation.removable_cards()))
 			for option in group.get("options", []):
 				var reward: Reward = option
 				reward_parts.append("%d:%s:%s" % [reward.type, reward.id, reward.label])
@@ -841,8 +886,12 @@ func _overlay_content_signature() -> String:
 	return "none"
 
 
-func _show_hand_choice(retain: bool) -> void:
-	_overlay_box.add_child(_label("选择一张手牌保留到下回合" if retain else "弃掉一张手牌，再抽两张牌"))
+func _show_hand_choice(retain: bool, discard_draw: bool = false) -> void:
+	var title := "选择一张手牌保留到下回合" if retain else "弃掉一张手牌，再抽两张牌"
+	if discard_draw:
+		var request: Dictionary = _state.flags["pending_discard_draw"][0]
+		title = "弃掉一张手牌，再抽%d张牌" % int(request.get("draw_count", 2))
+	_overlay_box.add_child(_label(title))
 	for index in _state.hand.size():
 		var card: CardDef = controller.cards.get(_state.hand[index])
 		if card == null:
@@ -852,9 +901,15 @@ func _show_hand_choice(retain: bool) -> void:
 		button.tooltip_text = TextFormatter.effects_text(_labels(), card.effects)
 		var hand_index := index
 		button.pressed.connect(func() -> void:
-			_dispatch(Command.choose_retained_card(hand_index) if retain else Command.choose_review_card(hand_index))
+			if discard_draw:
+				_dispatch(Command.choose_discard_card(hand_index))
+			else:
+				_dispatch(Command.choose_retained_card(hand_index) if retain else Command.choose_review_card(hand_index))
 		)
 		_overlay_box.add_child(button)
+	if discard_draw:
+		_overlay_root.visible = true
+		return
 	var skip := Button.new()
 	skip.text = "不保留" if retain else "跳过"
 	skip.pressed.connect(func() -> void:
@@ -876,7 +931,7 @@ func _show_event() -> void:
 	if _state.pending_event_choices.is_empty():
 		if definition != null and not definition.effects.is_empty():
 			_overlay_box.add_child(_colored("影响", UiTheme.EVENT_ACCENT))
-			_overlay_box.add_child(_wrapped(TextFormatter.effects_text(_labels(), definition.effects), UiTheme.TEXT, 460.0))
+			_overlay_box.add_child(_wrapped(TextFormatter.effects_text(_labels(), controller.simulation.event_effects(definition.effects)), UiTheme.TEXT, 460.0))
 		var cont := Button.new()
 		cont.text = "继续"
 		cont.theme_type_variation = "EventChoice"
@@ -888,8 +943,10 @@ func _show_event() -> void:
 			var button := Button.new()
 			button.theme_type_variation = "EventChoice"
 			var text := str(choice.get("label", "..."))
+			if StringName(choice.get("recovery_route", "")) != &"" and str(choice.get("description", "")) != "":
+				text += "\n" + str(choice["description"])
 			if definition != null and index < definition.choices.size() and not definition.choices[index].effects.is_empty():
-				text += "\n" + TextFormatter.effects_text(_labels(), definition.choices[index].effects)
+				text += "\n" + TextFormatter.effects_text(_labels(), controller.simulation.event_effects(definition.choices[index].effects))
 			button.text = text
 			button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			button.disabled = not controller.simulation.event_choice_available(index)
@@ -902,18 +959,22 @@ func _show_event() -> void:
 
 
 func _show_rewards() -> void:
+	for index in _state.pending_rewards.size():
+		if _state.pending_rewards[index].get("removal_pending", false):
+			_show_card_removal(index)
+			return
+	if _state.pending_rewards[0].has("event"):
+		_reward_group_index = 0
+		_show_reward_options(0)
+		return
 	if _reward_group_index >= _state.pending_rewards.size():
 		_reward_group_index = -1
 	if _reward_group_index >= 0:
 		_show_reward_options(_reward_group_index)
 		return
-	var title := Label.new()
-	title.text = "年度筹备"
-	title.add_theme_font_size_override("font_size", 18)
-	title.add_theme_color_override("font_color", UiTheme.ACCENT)
-	_overlay_box.add_child(title)
+	var box := _reward_container()
 	var odds := _wrapped("卡牌／内阁出现权重  普通 %s · 稀有 %s · 传奇 %s" % [TextFormatter.fmt(controller.simulation.rarity_weight(&"common")), TextFormatter.fmt(controller.simulation.rarity_weight(&"rare")), TextFormatter.fmt(controller.simulation.rarity_weight(&"legendary"))], UiTheme.MUTED, 460.0)
-	_overlay_box.add_child(odds)
+	box.add_child(odds)
 	var card_number := 0
 	for group_index in range(_state.pending_rewards.size()):
 		var group: Dictionary = _state.pending_rewards[group_index]
@@ -933,23 +994,69 @@ func _show_rewards() -> void:
 			_overlay_signature = UNSET_SIGNATURE
 			_render_overlay()
 		)
-		_overlay_box.add_child(button)
+		box.add_child(button)
 	var next := Button.new()
 	next.text = "继续"
 	next.theme_type_variation = "PrimaryButton"
-	next.pressed.connect(func() -> void: _dispatch(Command.choose_reward([])))
-	_overlay_box.add_child(next)
-	_overlay_root.visible = true
+	next.pressed.connect(_continue_meeting)
+	box.add_child(next)
+	_overlay_root.visible = not _is_annual_meeting()
+
+
+func _continue_meeting() -> void:
+	for index in _state.pending_rewards.size():
+		var group: Dictionary = _state.pending_rewards[index]
+		if int(group.get("type", -1)) == Reward.Type.CARD:
+			_claim_reward(index, -1, str(group.get("token", "")))
+			return
+	_dispatch(Command.choose_reward([]))
+
+
+func _show_card_removal(group_index: int) -> void:
+	var group: Dictionary = _state.pending_rewards[group_index]
+	var token := str(group.get("token", ""))
+	var box := _reward_container()
+	box.add_child(_label("删除一张牌"))
+	var grid := GridContainer.new()
+	grid.columns = 3
+	grid.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	grid.add_theme_constant_override("h_separation", 12)
+	grid.add_theme_constant_override("v_separation", 16)
+	box.add_child(grid)
+	var cards := controller.simulation.removable_cards()
+	cards.sort()
+	for card_id in cards:
+		var card: CardDef = controller.cards[card_id]
+		var button := CardButton.new()
+		button.preview_card = card
+		button.preview_labels = _labels()
+		button.preview_enabled = false
+		button.custom_minimum_size = Vector2(CardFace.WIDTH, CardFace.HEIGHT)
+		CardFace.style(button, card.rarity)
+		grid.add_child(button)
+		CardFace.fill(button, card, _labels(), str(card.cost), str(card.political_cost))
+		var id: StringName = card_id
+		button.pressed.connect(func() -> void:
+			_dispatch(Command.choose_removed_card(group_index, token, id))
+		)
+	var skip := Button.new()
+	skip.text = "不删牌"
+	skip.pressed.connect(func() -> void:
+		_dispatch(Command.choose_removed_card(group_index, token))
+	)
+	box.add_child(skip)
+	_overlay_root.visible = not _is_annual_meeting()
 
 
 func _show_reward_options(group_index: int) -> void:
 	var group: Dictionary = _state.pending_rewards[group_index]
 	var token := str(group.get("token", ""))
-	_overlay_box.add_child(_label(str(TYPE_LABELS.get(group.get("type"), "奖励"))))
+	var box := _reward_container()
+	box.add_child(_label(str(group.get("title", TYPE_LABELS.get(group.get("type"), "奖励")))))
 	var row := HBoxContainer.new()
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	row.add_theme_constant_override("separation", 12)
-	_overlay_box.add_child(row)
+	box.add_child(row)
 	var options: Array = group.get("options", [])
 	for option_index in options.size():
 		var reward: Reward = options[option_index]
@@ -981,26 +1088,27 @@ func _show_reward_options(group_index: int) -> void:
 		button.preview_aid = reward.type == Reward.Type.AID
 		button.preview_enabled = false
 		button.custom_minimum_size = Vector2(CardFace.WIDTH, CardFace.HEIGHT)
-		button.disabled = not controller.simulation._reward_available(reward.type, reward.id)
+		button.disabled = not controller.simulation.reward_option_available(group, reward)
 		button.tooltip_text = ""
 		CardFace.style(button, card.rarity)
 		row.add_child(button)
 		var face := CardFace.fill(button, card, _labels(), str(card.cost), str(card.political_cost), {"aid": reward.type == Reward.Type.AID})
 		button.enable_lift(face)
 		button.pressed.connect(func() -> void: _claim_reward(group_index, pick, token))
-	var back := Button.new()
-	back.text = "返回"
-	back.pressed.connect(func() -> void:
-		_reward_group_index = -1
-		_overlay_signature = UNSET_SIGNATURE
-		_render_overlay()
-	)
-	_overlay_box.add_child(back)
+	if not group.has("event"):
+		var back := Button.new()
+		back.text = "返回"
+		back.pressed.connect(func() -> void:
+			_reward_group_index = -1
+			_overlay_signature = UNSET_SIGNATURE
+			_render_overlay()
+		)
+		box.add_child(back)
 	var skip := Button.new()
 	skip.text = "跳过"
 	skip.pressed.connect(func() -> void: _claim_reward(group_index, -1, token))
-	_overlay_box.add_child(skip)
-	_overlay_root.visible = true
+	box.add_child(skip)
+	_overlay_root.visible = not _is_annual_meeting()
 
 
 func _claim_reward(group_index: int, option_index: int, token: String) -> void:
@@ -1188,7 +1296,7 @@ func _describe(event: Event) -> String:
 			return name
 		Event.Kind.CARD_PLAYED, Event.Kind.CARD_REPLAYED:
 			return "%s：%s" % [name, _display_name(controller.cards, params.get("card_id", &""))]
-		Event.Kind.CARD_GAINED:
+		Event.Kind.CARD_GAINED, Event.Kind.CARD_REMOVED:
 			return "%s：%s" % [name, _display_name(controller.cards, params.get("card_id", &""))]
 		Event.Kind.CARDS_DRAWN:
 			return "%s %d 张" % [name, int(params.get("count", 0))]
@@ -1250,7 +1358,8 @@ func _modifier_event_name(params: Dictionary) -> String:
 
 func _busy() -> bool:
 	return _state.pending_event != &"" or not _state.pending_rewards.is_empty() \
-		or _state.flags.get("pending_retain", false) or _state.flags.get("pending_review", false)
+		or _state.flags.get("pending_retain", false) or _state.flags.get("pending_review", false) \
+		or not _state.flags.get("pending_discard_draw", []).is_empty()
 
 
 func _turns_per_year() -> int:

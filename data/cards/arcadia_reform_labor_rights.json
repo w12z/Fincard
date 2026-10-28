@@ -2,7 +2,7 @@
   "rarity": "rare",
   "id": "arcadia_reform_labor_rights", "display_name": "劳工权利法",
   "description": "确立集体协商与劳动争议调解制度。",
-  "card_type": "reform", "once_per_run": true, "cost": 4, "political_cost": 3,
+  "card_type": "reform", "once_per_run": true, "cost": 3, "political_cost": 2,
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 2 } },
     { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "u_revert", "op": "add", "value": 0.02, "duration": -1, "source": "劳工权利法" } }

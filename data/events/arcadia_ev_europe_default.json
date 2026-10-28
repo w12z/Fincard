@@ -1,5 +1,5 @@
 {
-  "id": "arcadia_ev_europe_default", "title": "欧洲债务违约", "min_turn": 25, "cooldown": 10,
+  "id": "arcadia_ev_europe_default", "title": "欧洲债务违约", "min_turn": 17, "cooldown": 10,
   "description": "欧洲多国无力偿付战时债务，国际金融再度震荡。",
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -1.2, "percent": true } },

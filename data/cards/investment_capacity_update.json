@@ -1,0 +1,9 @@
+{
+  "id": "investment_capacity_update", "display_name": "产能更新", "rarity": "common",
+  "description": "逐步更新生产设备，稳步调整产能。",
+  "card_type": "investment", "cost": 3, "political_cost": 1, "once_per_run": false,
+  "effects": [
+    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "value": 0.3, "duration": 5, "source": "产能更新" } },
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -3 } }
+  ]
+}

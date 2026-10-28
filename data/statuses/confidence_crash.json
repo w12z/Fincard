@@ -1,0 +1,8 @@
+{
+  "id": "confidence_crash",
+  "display_name": "信心崩盘",
+  "icon": "confidence",
+  "description": "回合经济结算中，GDP每下降1%，额外降低2信心。",
+  "rule": "negative_growth_confidence",
+  "parameters": { "confidence_per_percent": 2 }
+}

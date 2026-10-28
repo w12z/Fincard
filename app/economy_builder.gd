@@ -28,7 +28,8 @@ static func build(economy: EconomyModel, config: Dictionary, rules: Dictionary) 
 		return EconomyBuilder._growth_rate(state, model) \
 			- absf(model.value(state, &"inflation") - model.coefficient(state, &"inflation_target")) / 5.0 \
 			- maxf(model.value(state, &"unemployment") - model.coefficient(state, &"natural_unemployment"), 0.0) / 5.0 \
-			- maxf(-float(state.budget), 0.0) / 5.0
+			- maxf(-float(state.budget), 0.0) / 5.0 \
+			+ EconomyBuilder.special_confidence_delta(state, EconomyBuilder._growth_rate(state, model))
 
 	economy.register_derived(&"growth", func(state: GameState, model: EconomyModel) -> float:
 		return EconomyBuilder._growth_rate(state, model)
@@ -39,6 +40,21 @@ static func build(economy: EconomyModel, config: Dictionary, rules: Dictionary) 
 		if pair is Array and pair.size() == 2:
 			economy.set_bounds(StringName(id), float(pair[0]), float(pair[1]))
 	economy.base_bounds = economy.bounds.duplicate(true)
+
+
+static func special_confidence_delta(state: GameState, growth: float) -> float:
+	var delta := 0.0
+	for modifier in StatusRules.active_modifiers(state):
+		match modifier.rule:
+			&"growth_confidence_bonus":
+				if state.turn <= int(modifier.data.get("last_turn", 16)):
+					var step := float(modifier.data.get("growth_step", 0.2))
+					if step > 0.0:
+						var steps := floorf((maxf(growth, 0.0) + 0.00000001) / step)
+						delta += minf(float(modifier.data.get("confidence_cap", 6)), steps * float(modifier.data.get("confidence_per_step", 2))) * modifier.stacks
+			&"negative_growth_confidence":
+				delta -= maxf(-growth, 0.0) * float(modifier.data.get("confidence_per_percent", 2)) * modifier.stacks
+	return delta
 
 
 static func _growth_rate(state: GameState, model: EconomyModel) -> float:

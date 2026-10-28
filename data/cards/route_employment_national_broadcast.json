@@ -1,0 +1,9 @@
+{
+  "id": "route_employment_national_broadcast", "display_name": "全国广播动员", "description": "通过全国广播争取民众对复苏行动的支持。",
+  "card_type": "policy", "rarity": "special", "cost": 0, "political_cost": 2,
+  "recovery_route": "employment", "reward_min_turn": 33,
+  "effects": [
+    {"kind": "adjust_indicator", "params": {"target": "confidence", "amount": 10}},
+    {"kind": "apply_modifier", "params": {"scope": "special", "target": "investment_political_waiver", "duration": 1, "stacks": 1}}
+  ]
+}

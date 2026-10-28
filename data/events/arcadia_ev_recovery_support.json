@@ -1,0 +1,8 @@
+{
+  "id": "arcadia_ev_recovery_support", "title": "复苏配套",
+  "description": "围绕已确定的复苏路线，各部门提出配套执行方案。",
+  "choices": [{"label": "获得卡牌", "card_reward": {
+    "route_groups": {"construction": "recovery_construction_support", "employment": "recovery_employment_support", "fiscal": "recovery_fiscal_support"},
+    "option_count": 3, "destination": "hand"
+  }}]
+}

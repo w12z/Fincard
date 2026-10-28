@@ -1,0 +1,16 @@
+{
+  "id": "arcadia_ev_market_stabilization",
+  "title": "稳定市场",
+  "description": "交易所的恐慌仍未平息，内阁开始讨论稳定市场与救助民众的方案。",
+  "choices": [
+    {
+      "label": "获得卡牌",
+      "card_reward": {
+        "cards": ["arcadia_recover_bank_holiday", "arcadia_relief_dole", "arcadia_reform_social_security"],
+        "fallback_group": "arcadia_post_crisis",
+        "option_count": 3,
+        "destination": "hand"
+      }
+    }
+  ]
+}

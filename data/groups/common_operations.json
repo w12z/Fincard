@@ -1,0 +1,8 @@
+{
+  "id": "common_operations", "type": "cards", "display_name": "常规操作",
+  "members": [
+    "investment_capacity_update", "investment_local_procurement", "investment_inventory_restock",
+    "policy_asset_disposal", "policy_procedural_motion", "policy_agenda_sorting",
+    "policy_process_review", "policy_special_approval"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "route_construction_local_projects", "display_name": "地方配套工程", "description": "由地方共同承担资金，接续公共建设。",
+  "card_type": "investment", "rarity": "special", "cost": 2, "political_cost": 1,
+  "recovery_route": "construction", "reward_min_turn": 29,
+  "effects": [
+    {"kind": "apply_modifier", "params": {"scope": "coefficient", "target": "gdp_auto", "value": 0.45, "duration": 3, "source": "地方配套工程"}},
+    {"kind": "gain_budget", "params": {"amount": 1}}
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "route_fiscal_cross_department_mobilization", "display_name": "跨部门总动员", "description": "集中各部门资源，同步推进复苏议程。",
+  "card_type": "policy", "rarity": "special", "cost": 4, "political_cost": 1,
+  "recovery_route": "fiscal", "reward_min_turn": 33,
+  "effects": [
+    {"kind": "gain_political_capital", "params": {"amount": 4}},
+    {"kind": "draw_cards", "params": {"count": 2}}
+  ]
+}

@@ -1,5 +1,6 @@
 {
   "rarity": "common",
+  "reward_min_turn": 17,
   "id": "arcadia_recover_bank_holiday", "display_name": "银行假日",
   "description": "暂停银行营业，清查账目与资产。",
   "card_type": "policy", "once_per_run": true, "cost": 2, "political_cost": 2,

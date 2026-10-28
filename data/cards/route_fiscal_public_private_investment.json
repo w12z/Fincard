@@ -1,0 +1,9 @@
+{
+  "id": "route_fiscal_public_private_investment", "display_name": "政企联合投资", "description": "由政府与企业共同出资，恢复生产项目。",
+  "card_type": "investment", "rarity": "special", "cost": 5, "political_cost": 2,
+  "recovery_route": "fiscal", "reward_min_turn": 33,
+  "effects": [
+    {"kind": "apply_modifier", "params": {"scope": "coefficient", "target": "gdp_auto", "value": 0.7, "duration": 3, "source": "政企联合投资"}},
+    {"kind": "gain_budget", "params": {"amount": 2}}
+  ]
+}

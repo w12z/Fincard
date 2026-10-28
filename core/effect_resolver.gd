@@ -18,6 +18,12 @@ func resolve(effect: Effect, state: GameState, rng: Rng) -> Array[Event]:
 			return _adjust_indicator(effect.params, state)
 		Effect.Kind.DRAW_CARDS:
 			return _draw(effect.params, state, rng)
+		Effect.Kind.CHOOSE_DISCARD_DRAW:
+			if not state.hand.is_empty():
+				var requests: Array = state.flags.get("pending_discard_draw", [])
+				requests.append({"draw_count": maxi(0, int(effect.params.get("draw_count", 2)))})
+				state.flags["pending_discard_draw"] = requests
+			return []
 		Effect.Kind.GAIN_BUDGET:
 			return _gain_resource(effect.params, state, &"budget")
 		Effect.Kind.GAIN_POLITICAL_CAPITAL:
@@ -73,7 +79,10 @@ func _apply_modifier(params: Dictionary, state: GameState) -> Array[Event]:
 		var definition: StatusDef = status_db.get(modifier.target)
 		modifier.rule = StringName(params.get("rule", definition.rule if definition != null else ""))
 		modifier.amount = int(params.get("amount", definition.amount if definition != null else 1))
-		modifier.data = params.get("data", {}).duplicate(true)
+		modifier.data = definition.parameters.duplicate(true) if definition != null else {}
+		modifier.data.merge(params.get("data", {}), true)
+		if modifier.data.get("allow_zero_stacks", false):
+			modifier.stacks = maxi(0, int(params.get("stacks", 0)))
 		modifier.ready_turn = state.turn + (1 if definition != null and definition.start_next_turn else 0)
 		if modifier.source == &"" and definition != null:
 			modifier.source = StringName(definition.display_name)
@@ -156,6 +165,9 @@ func _draw(params: Dictionary, state: GameState, rng: Rng) -> Array[Event]:
 
 func _gain_resource(params: Dictionary, state: GameState, resource: StringName) -> Array[Event]:
 	var amount := int(params.get("amount", 0))
+	if resource == &"budget" and params.has("per_investment_played"):
+		amount += state.investments_played_this_turn * int(params["per_investment_played"])
+		amount = mini(amount, int(params.get("cap", amount)))
 	if resource == &"budget":
 		state.budget += amount
 	else:

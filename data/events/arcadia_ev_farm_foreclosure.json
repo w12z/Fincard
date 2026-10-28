@@ -1,5 +1,5 @@
 {
-  "id": "arcadia_ev_farm_foreclosure", "title": "农民断赎潮", "min_turn": 25, "cooldown": 8,
+  "id": "arcadia_ev_farm_foreclosure", "title": "农民断赎潮", "min_turn": 17, "cooldown": 8,
   "description": "农场因无力还贷被银行强制收回。",
   "choices": [
     { "label": "立法暂停农场赎回", "effects": [

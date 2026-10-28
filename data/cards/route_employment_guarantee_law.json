@@ -1,0 +1,6 @@
+{
+  "id": "route_employment_guarantee_law", "display_name": "就业保障法", "description": "以持续就业措施恢复居民对生活的信心。",
+  "card_type": "reform", "rarity": "special", "cost": 3, "political_cost": 2, "once_per_run": true,
+  "recovery_route": "employment", "reward_min_turn": 25,
+  "effects": [{"kind": "apply_modifier", "params": {"scope": "special", "target": "employment_guarantee", "duration": -1, "stacks": 1}}]
+}

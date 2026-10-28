@@ -1,5 +1,6 @@
 {
   "rarity": "rare",
+  "reward_min_turn": 17,
   "id": "arcadia_recover_fdic", "display_name": "联邦存款保险",
   "description": "为储户建立统一的存款保障制度。",
   "card_type": "reform", "once_per_run": true, "cost": 2, "political_cost": 2,

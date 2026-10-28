@@ -1,0 +1,6 @@
+{
+  "id": "route_fiscal_financing_law", "display_name": "融资协调法", "description": "整合政策协商经费，减少组织成本。",
+  "card_type": "reform", "rarity": "special", "cost": 3, "political_cost": 2, "once_per_run": true,
+  "recovery_route": "fiscal", "reward_min_turn": 25,
+  "effects": [{"kind": "apply_modifier", "params": {"scope": "special", "target": "financing_coordination", "duration": -1, "stacks": 1}}]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "route_fiscal_emergency_allocation", "display_name": "紧急拨款", "description": "集中可用资金，承担应急调度的市场疑虑。",
+  "card_type": "policy", "rarity": "special", "cost": 0, "political_cost": 2,
+  "recovery_route": "fiscal", "reward_min_turn": 29,
+  "effects": [
+    {"kind": "gain_budget", "params": {"amount": 5}},
+    {"kind": "adjust_indicator", "params": {"target": "confidence", "amount": -2}}
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "id": "policy_asset_disposal", "display_name": "资产处置", "rarity": "common",
+  "description": "出售闲置资产，回笼财政资金。",
+  "card_type": "policy", "cost": 0, "political_cost": 1, "once_per_run": false,
+  "effects": [
+    { "kind": "gain_budget", "params": { "amount": 2 } },
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -3 } }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "id": "policy_agenda_sorting", "display_name": "议程梳理", "rarity": "common",
+  "description": "撤下不合时宜的议程，重新审议备选方案。",
+  "card_type": "policy", "cost": 0, "political_cost": 1, "once_per_run": false,
+  "effects": [{ "kind": "choose_discard_draw", "params": { "draw_count": 2 } }]
+}

@@ -183,12 +183,12 @@ func _test_fiscal_and_economic_boundaries() -> void:
 	sim = _prepare(&"arcadia")
 	sim.state.indicators[&"gdp"] = 250
 	sim.state.indicators[&"unemployment"] = 3
-	sim.state.turn = 31
+	sim.state.turn = 23
 	sim._check_end_conditions()
-	_expect(sim.state.run_status == GameState.RunStatus.RUNNING, "Arcadia cannot win before the thirty-second turn")
-	sim.state.turn = 32
+	_expect(sim.state.run_status == GameState.RunStatus.RUNNING, "Arcadia cannot win before the twenty-fourth turn")
+	sim.state.turn = 24
 	sim._check_end_conditions()
-	_expect(sim.state.run_status == GameState.RunStatus.WON, "Arcadia can win at the thirty-second turn")
+	_expect(sim.state.run_status == GameState.RunStatus.WON, "Arcadia can win at the twenty-fourth turn")
 
 
 func _test_reward_ui() -> void:

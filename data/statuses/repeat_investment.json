@@ -1,0 +1,5 @@
+{
+  "id": "repeat_investment", "display_name": "集中验收", "icon": "repeat",
+  "description": "下一张从手牌打出的投资与援助类卡牌效果结算两次，只支付一次费用。",
+  "rule": "repeat_next_investment"
+}

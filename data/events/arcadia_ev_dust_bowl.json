@@ -1,5 +1,5 @@
 {
-  "id": "arcadia_ev_dust_bowl", "title": "尘暴", "min_turn": 29, "cooldown": 10,
+  "id": "arcadia_ev_dust_bowl", "title": "尘暴", "min_turn": 21, "cooldown": 10,
   "description": "干旱与狂风摧毁农田，农民举家西迁。",
   "choices": [
     { "label": "联邦赈灾与安置", "effects": [

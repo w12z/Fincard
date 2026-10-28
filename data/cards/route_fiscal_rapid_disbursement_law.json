@@ -1,0 +1,6 @@
+{
+  "id": "route_fiscal_rapid_disbursement_law", "display_name": "快速拨付制度", "description": "接续政策执行，减少反复拨款的成本。",
+  "card_type": "reform", "rarity": "special", "cost": 3, "political_cost": 2, "once_per_run": true,
+  "recovery_route": "fiscal", "reward_min_turn": 25,
+  "effects": [{"kind": "apply_modifier", "params": {"scope": "special", "target": "rapid_disbursement", "duration": -1, "stacks": 1}}]
+}

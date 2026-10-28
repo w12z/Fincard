@@ -27,6 +27,7 @@ enum Kind {
 	STATUS_GAINED,
 	STATUS_TRIGGERED,
 	CARD_REPLAYED,
+	CARD_REMOVED,
 }
 
 const KIND_NAMES := {
@@ -55,6 +56,7 @@ const KIND_NAMES := {
 	"status_gained": Kind.STATUS_GAINED,
 	"status_triggered": Kind.STATUS_TRIGGERED,
 	"card_replayed": Kind.CARD_REPLAYED,
+	"card_removed": Kind.CARD_REMOVED,
 }
 
 var kind: int

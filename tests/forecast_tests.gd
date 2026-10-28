@@ -75,14 +75,14 @@ func _test_forecast() -> void:
 	sim.economy.refresh_derived(sim.state)
 	_assert_prediction(sim)
 	sim = _prepare()
-	sim.state.turn = 23
-	sim.state.turn_in_year = 7
+	sim.state.turn = 17
+	sim.state.turn_in_year = 1
 	_assert_prediction(sim)
-	_expect(sim.state.pending_event == &"arcadia_ev_black_thursday" and sim.forecast_next_turn() == null, "Forecast waits for unresolved events, without guessing choices")
+	_expect(sim.state.pending_event == &"arcadia_ev_bank_panic" and sim.forecast_next_turn() == null, "Forecast waits for unresolved events, without guessing choices")
 	sim = _prepare()
-	sim.state.turn = 48
+	sim.state.turn = 40
 	sim.state.turn_in_year = 8
-	sim.state.year = 6
+	sim.state.year = 5
 	_assert_prediction(sim)
 	sim = _prepare()
 	sim.state.turn = 25
@@ -97,7 +97,7 @@ func _test_forecast() -> void:
 
 func _test_parameters() -> void:
 	var sim := _prepare()
-	_expect(ModifierDisplay.entries(sim, controller.labels).size() == 3, "A fresh economy exposes exactly three default parameters")
+	_expect(ModifierDisplay.entries(sim, controller.labels).size() == 4 and StatusRules.find_modifier(sim.state, &"stock_market_frenzy") != null, "Arcadia exposes its three base parameters and opening market modifier")
 	sim.economy.scenario_coefficients[&"inflation_target"] = 3.0
 	sim.state.modifiers.append(Modifier.new(&"infl_anchor", Modifier.Op.ADD, 0.04, 2, &"", &"coefficient"))
 	sim.state.modifiers.append(Modifier.new(&"gdp_auto", Modifier.Op.MUL, 2, -1, &"", &"coefficient"))

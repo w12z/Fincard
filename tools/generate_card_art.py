@@ -17,6 +17,14 @@ ICONS = ROOT / "assets" / "icons" / "modifiers"
 ENDPOINT = "https://open.bigmodel.cn/api/paas/v4/images/generations"
 
 SCENES = {
+    "investment_capacity_update": "一座简洁的工厂内，旧齿轮和新的青绿色机械并排，缓慢传动的传送带与几只工具箱，画面没有人物",
+    "investment_local_procurement": "地方小仓库前堆放木箱、工具与食材，旁边是采购清单和封好的小钱袋，画面没有人物",
+    "investment_inventory_restock": "整齐排列的木货架上放着麦袋、金属零件和运输箱，前景是一辆装满物资的小推车，画面没有人物",
+    "policy_asset_disposal": "一只打开的旧资产储藏箱、铜色钥匙、封好的交易凭证与两叠硬币，画面没有人物",
+    "policy_procedural_motion": "一枚木槌、一张折起的议事动议文件与一枚议会印章，背景是简洁的议事厅剪影，画面没有人物",
+    "policy_agenda_sorting": "桌面上一张收起的议程纸页和两张新展开的方案，旁边摆着分类夹与钢笔，纸张只有装饰线条，画面没有人物",
+    "policy_process_review": "一份夹在文件板上的流程清单、放大镜与半开的档案抽屉，纸张只画几何符号，画面没有人物",
+    "policy_special_approval": "一份有圆形橙红印记的拨款核准单、两枚金币与小型建筑模型，画面没有人物",
     "example_card": "对称摆放的面包、蔬菜篮和米袋，一架平衡的小天平与没有文字的价签",
     "starter_infrastructure": "横跨蓝色河流的红色钢桥、铁路、起重机与简洁城市剪影",
     "starter_small_business": "一间带条纹遮阳棚的小面包店，窗台上摆着面包，门口有盆栽",

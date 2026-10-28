@@ -39,7 +39,7 @@ func _test_baseline() -> void:
 			_expect(sim.economy.base_coefficients.has(key) and _entry_count(sim, "coefficient:%s" % key) == 1, "Every base parameter is visible once")
 		for key in sim.economy.scenario_coefficients:
 			_expect(expected.has(key), "A scenario cannot silently restore retired base coefficients")
-		_expect(ModifierDisplay.entries(sim, controller.labels).size() == 3, "Opening bar contains only the three default parameters, even with an innate growth modifier")
+		_expect(ModifierDisplay.entries(sim, controller.labels).size() == (4 if scenario == &"arcadia" else 3), "Opening bar contains the three parameters and any national special modifier")
 		_expect(sim.economy.coefficient(sim.state, &"infl_anchor") == 0 and sim.economy.coefficient(sim.state, &"u_revert") == 0, "Extra recovery effects have no default contribution")
 		_expect(_entry_count(sim, "coefficient:infl_anchor") == 0 and _entry_count(sim, "coefficient:u_revert") == 0, "Unearned extra effects do not occupy slots")
 
@@ -52,7 +52,7 @@ func _test_equations() -> void:
 	_expect(is_equal_approx(sim.state.indicators[&"gdp"], 128 * 1.004), "GDP uses potential growth + confidence/100 - interest/10")
 	_expect(is_equal_approx(sim.state.indicators[&"inflation"], 2.04), "Inflation follows its target and current growth")
 	_expect(is_equal_approx(sim.state.indicators[&"unemployment"], 4.9), "Unemployment follows its natural level and growth")
-	_expect(is_equal_approx(sim.state.indicators[&"confidence"], 70.4), "Confidence follows growth and deviation from the inflation target")
+	_expect(is_equal_approx(sim.state.indicators[&"confidence"], 74.4), "Arcadia's growth also grants the opening stock-market confidence bonus")
 	for id in sim.economy.indicator_ids:
 		_expect(is_equal_approx(sim.economy.value(sim.state, id), sim.economy.value(forecast, id)), "Prediction still matches simplified economic settlement")
 	var formula := EconomyForecast.formulas(sim)
@@ -92,7 +92,7 @@ func _test_extensions() -> void:
 	sim.state.modifiers.append(Modifier.new(&"infl_anchor", Modifier.Op.ADD, 0.04, 1, &"", &"coefficient"))
 	sim._advance_modifiers()
 	_expect(_entry_count(sim, "coefficient:infl_anchor") == 0, "An expired optional effect does not leave an empty baseline slot")
-	_expect(ModifierDisplay.entries(sim, controller.labels).size() == 3, "Restart and expiry return to the compact three-parameter bar")
+	_expect(ModifierDisplay.entries(sim, controller.labels).size() == 4, "Restart clears acquired effects while retaining Arcadia's opening market modifier")
 
 
 func _run() -> void:

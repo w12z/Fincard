@@ -1,0 +1,6 @@
+{
+  "id": "route_construction_repayment_law", "display_name": "项目回款制度", "description": "以项目进度协调配套资金回拨。",
+  "card_type": "reform", "rarity": "special", "cost": 3, "political_cost": 2, "once_per_run": true,
+  "recovery_route": "construction", "reward_min_turn": 25,
+  "effects": [{"kind": "apply_modifier", "params": {"scope": "special", "target": "construction_repayment", "duration": -1, "stacks": 1}}]
+}

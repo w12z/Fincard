@@ -1,0 +1,6 @@
+{
+  "id": "policy_procedural_motion", "display_name": "程序动议", "rarity": "common",
+  "description": "通过程序性协商，为后续议程争取支持。",
+  "card_type": "policy", "cost": 2, "political_cost": 0, "once_per_run": false,
+  "effects": [{ "kind": "gain_political_capital", "params": { "amount": 1 } }]
+}

@@ -1,5 +1,6 @@
 {
   "rarity": "common",
+  "reward_min_turn": 17,
   "id": "arcadia_relief_farm", "display_name": "农业停耕补贴",
   "description": "补偿农户休耕土地，协调农业供给。",
   "card_type": "investment", "cost": 2, "political_cost": 1,

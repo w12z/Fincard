@@ -1,0 +1,10 @@
+{
+  "id": "route_employment_consumer_credit", "display_name": "消费信贷恢复", "description": "在居民预期改善后恢复消费融资。",
+  "card_type": "policy", "rarity": "special", "cost": 3, "political_cost": 2,
+  "recovery_route": "employment", "reward_min_turn": 33,
+  "effects": [{"kind": "branch", "params": {
+    "condition": {"indicator": "confidence", "comparator": "ge", "value": 60},
+    "then": [{"kind": "apply_modifier", "params": {"scope": "coefficient", "target": "gdp_auto", "value": 0.8, "duration": 3, "source": "消费信贷恢复"}}],
+    "else": [{"kind": "adjust_indicator", "params": {"target": "confidence", "amount": 8}}]
+  }}]
+}

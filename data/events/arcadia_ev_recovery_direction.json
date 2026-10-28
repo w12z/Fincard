@@ -1,0 +1,9 @@
+{
+  "id": "arcadia_ev_recovery_direction", "title": "复苏路线",
+  "description": "紧急救助之后，内阁必须决定下一阶段的复苏方向。",
+  "choices": [
+    {"label": "公共建设", "description": "连续投资，以项目减费、回款和持续增长恢复生产。", "recovery_route": "construction"},
+    {"label": "就业与消费", "description": "先修复就业和信心，再将居民需求转化为增长。", "recovery_route": "employment"},
+    {"label": "财政动员", "description": "筹集资金与政治支持，衔接政策和投资。", "recovery_route": "fiscal"}
+  ]
+}

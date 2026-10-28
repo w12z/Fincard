@@ -1,5 +1,5 @@
 {
-  "id": "arcadia_ev_bonus_army", "title": "退伍军人请愿", "min_turn": 25, "cooldown": 10,
+  "id": "arcadia_ev_bonus_army", "title": "退伍军人请愿", "min_turn": 17, "cooldown": 10,
   "description": "退伍军人要求提前发放补偿金。",
   "choices": [
     { "label": "提前发放补偿金", "effects": [

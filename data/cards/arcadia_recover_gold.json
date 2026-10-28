@@ -1,5 +1,6 @@
 {
   "rarity": "rare",
+  "reward_min_turn": 17,
   "id": "arcadia_recover_gold", "display_name": "脱离金本位",
   "description": "解除货币与黄金储备之间的约束。",
   "card_type": "policy", "once_per_run": true, "cost": 3, "political_cost": 3,

@@ -1,0 +1,9 @@
+{
+  "id": "route_fiscal_special_recovery_budget", "display_name": "特别复苏预算", "description": "为复苏计划集中调拨额外资金。",
+  "card_type": "policy", "rarity": "special", "cost": 0, "political_cost": 3,
+  "recovery_route": "fiscal", "reward_min_turn": 33,
+  "effects": [
+    {"kind": "gain_budget", "params": {"amount": 8}},
+    {"kind": "adjust_indicator", "params": {"target": "confidence", "amount": -3}}
+  ]
+}

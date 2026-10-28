@@ -1,5 +1,5 @@
 {
-  "id": "arcadia_ev_bank_run", "title": "银行挤兑", "min_turn": 25, "cooldown": 8,
+  "id": "arcadia_ev_bank_run", "title": "银行挤兑", "min_turn": 17, "cooldown": 8,
   "description": "储户排队提款。",
   "choices": [
     { "label": "提供公共担保", "effects": [

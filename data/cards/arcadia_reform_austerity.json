@@ -2,7 +2,7 @@
   "rarity": "common",
   "id": "arcadia_reform_austerity", "display_name": "财政整顿",
   "description": "清查政府账目，裁撤非必要开支。",
-  "card_type": "reform", "cost": 0, "political_cost": 2,
+  "card_type": "policy", "cost": 0, "political_cost": 2,
   "effects": [
     { "kind": "gain_budget", "params": { "amount": 3 } }
   ]

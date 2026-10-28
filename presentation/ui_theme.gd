@@ -83,6 +83,10 @@ static func build() -> Theme:
 	theme.set_color("font_pressed_color", "Button", ACCENT_DARK)
 	theme.set_color("font_focus_color", "Button", ACCENT_DARK)
 	theme.set_color("font_disabled_color", "Button", MUTED)
+	theme.set_stylebox("panel", "TooltipPanel", _panel_style(Color.WHITE, Color("64748b"), 8, 1, 12))
+	theme.set_color("font_color", "TooltipLabel", TEXT)
+	theme.set_color("font_shadow_color", "TooltipLabel", Color.TRANSPARENT)
+	theme.set_font_size("font_size", "TooltipLabel", 14)
 
 	theme.set_type_variation("PrimaryButton", "Button")
 	theme.set_stylebox("normal", "PrimaryButton", _button_style(ACCENT, ACCENT, 8, 16, 8))

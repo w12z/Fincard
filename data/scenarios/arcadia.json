@@ -1,16 +1,18 @@
 {
   "id": "arcadia",
   "display_name": "阿卡迪亚联邦 · 危机",
-  "description": "阿卡迪亚联邦正处于繁荣顶峰：工厂满负荷开工，股市节节攀升，失业率降至历史低位。繁荣之下，投机、信贷扩张与分配失衡不断积累。两年后，一场金融崩盘将席卷全国。",
+  "description": "阿卡迪亚联邦正处于繁荣顶峰：工厂满负荷开工，股市节节攀升，失业率降至历史低位。繁荣之下，投机、信贷扩张与分配失衡不断积累。第二财年结束时，一场金融崩盘将席卷全国。",
   "starting_deck": [
-    "arcadia_relief_dole",
-    "arcadia_relief_dole",
+    "policy_asset_disposal",
+    "investment_inventory_restock",
     "arcadia_reform_austerity",
     "arcadia_policy_bond_yield",
     "arcadia_recover_open_market",
     "policy_emergency_cabinet_meeting",
     "starter_infrastructure",
-    "starter_small_business"
+    "starter_small_business",
+    "investment_capacity_update",
+    "policy_procedural_motion"
   ],
   "indicators": {
     "gdp": 128,
@@ -35,23 +37,37 @@
     "arcadia_ev_market_flourish"
   ],
   "scheduled_events": [
-    { "turn": 24, "event": "arcadia_ev_black_thursday" },
-    { "turn": 26, "event": "arcadia_ev_bank_panic" },
-    { "turn": 28, "event": "arcadia_ev_credit_freeze" }
+    { "turn": 16, "phase": "turn_end", "event": "arcadia_ev_black_thursday" },
+    { "turn": 17, "event": "arcadia_ev_market_stabilization" },
+    { "turn": 18, "event": "arcadia_ev_bank_panic" },
+    { "turn": 19, "event": "arcadia_ev_financial_reorganization" },
+    { "turn": 20, "event": "arcadia_ev_credit_freeze" },
+    { "turn": 21, "event": "arcadia_ev_recovery_plan" },
+    { "turn": 24, "phase": "turn_end", "event": "arcadia_ev_recovery_direction" },
+    { "turn": 25, "event": "arcadia_ev_recovery_institutions" },
+    { "turn": 29, "event": "arcadia_ev_recovery_support" },
+    { "turn": 33, "event": "arcadia_ev_recovery_mobilization" }
   ],
-  "innate_modifiers": [],
+  "recovery_routes": {
+    "construction": "公共建设",
+    "employment": "就业与消费",
+    "fiscal": "财政动员"
+  },
+  "innate_modifiers": [
+    { "kind": "apply_modifier", "params": { "scope": "special", "target": "stock_market_frenzy", "duration": -1, "stacks": 1 } }
+  ],
   "economy_overrides": {},
-  "annual_income": 40,
+  "annual_income": 30,
   "groups": {
-    "cards": ["arcadia_relief", "arcadia_recovery", "arcadia_reform", "fiscal_reforms", "research_cards", "political_cards", "ability_reforms"],
+    "cards": ["arcadia_relief", "arcadia_recovery", "arcadia_reform", "fiscal_reforms", "research_cards", "political_cards", "ability_reforms", "common_operations"],
     "cabinets": ["arcadia_cabinets"],
     "aids": ["arcadia_aids", "fiscal_aids"],
     "events": ["arcadia_events"]
   },
   "goal": {
-    "description": "六年内实现 GDP ≥ 210、失业率 ≤ 6、信心 ≥ 45；最早在第四财年结束时获胜。",
-    "deadline_years": 6,
-    "after_turn": 31,
+    "description": "五年内实现 GDP ≥ 210、失业率 ≤ 6、信心 ≥ 45；最早在第三财年结束时获胜。",
+    "deadline_years": 5,
+    "after_turn": 23,
     "conditions": [
       { "indicator": "unemployment", "comparator": "le", "value": 6 },
       { "indicator": "gdp", "comparator": "ge", "value": 210 },

@@ -1,0 +1,6 @@
+{
+  "id": "policy_process_review", "display_name": "流程复核", "rarity": "common",
+  "description": "核对执行流程，调阅后续政策文件。",
+  "card_type": "policy", "cost": 0, "political_cost": 1, "once_per_run": false,
+  "effects": [{ "kind": "draw_cards", "params": { "count": 1 } }]
+}

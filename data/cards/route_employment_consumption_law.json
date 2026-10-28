@@ -1,0 +1,6 @@
+{
+  "id": "route_employment_consumption_law", "display_name": "消费振兴法", "description": "通过稳定预期促进居民重新安排消费。",
+  "card_type": "reform", "rarity": "special", "cost": 4, "political_cost": 2, "once_per_run": true,
+  "recovery_route": "employment", "reward_min_turn": 25,
+  "effects": [{"kind": "apply_modifier", "params": {"scope": "special", "target": "consumption_revival", "duration": -1, "stacks": 1}}]
+}

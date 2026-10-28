@@ -1,0 +1,5 @@
+{
+  "id": "construction_restart", "display_name": "国家复工", "icon": "fund",
+  "description": "每回合第二张从手牌打出的投资与援助类卡牌预算成本减2，最低为0。",
+  "rule": "second_investment_discount", "amount": 2, "start_next_turn": true
+}

@@ -1,5 +1,5 @@
 {
-  "id": "arcadia_ev_speculation", "title": "股市投机狂热", "max_turn": 23, "cooldown": 6,
+  "id": "arcadia_ev_speculation", "title": "股市投机狂热", "max_turn": 15, "cooldown": 6,
   "description": "保证金账户迅速增长，借贷炒股盛行。",
   "choices": [
     { "label": "收紧保证金监管", "effects": [

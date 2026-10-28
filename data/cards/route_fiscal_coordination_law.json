@@ -1,0 +1,6 @@
+{
+  "id": "route_fiscal_coordination_law", "display_name": "复苏统筹法", "description": "统筹密集政策执行所需的财政资金。",
+  "card_type": "reform", "rarity": "special", "cost": 3, "political_cost": 2, "once_per_run": true,
+  "recovery_route": "fiscal", "reward_min_turn": 25,
+  "effects": [{"kind": "apply_modifier", "params": {"scope": "special", "target": "recovery_coordination", "duration": -1, "stacks": 1}}]
+}

@@ -1,5 +1,5 @@
 {
   "id": "rotation_execution", "display_name": "轮值执行", "icon": "轮",
-  "description": "每回合打出投资与援助、政策、改革三类牌各至少一张后，获得2政治点。每回合一次。",
-  "rule": "all_types_refund", "amount": 2, "start_next_turn": true
+  "description": "每回合打出至少一张投资与援助类卡牌和至少一张政策牌后，获得1政治点。每回合一次。",
+  "rule": "all_types_refund", "amount": 1, "start_next_turn": true
 }
