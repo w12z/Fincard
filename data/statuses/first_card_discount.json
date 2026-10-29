@@ -1,0 +1,5 @@
+{
+  "id": "first_card_discount", "display_name": "先行协调", "icon": "fund",
+  "description": "每回合打出的第一张牌，预算和政治成本各减1，最低为0。",
+  "rule": "first_card_discount", "amount": 1
+}

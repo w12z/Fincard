@@ -1,0 +1,8 @@
+{
+  "id": "cabinet_rowan", "display_name": "罗恩", "rarity": "rare",
+  "description": "每回合结束时，记录本回合最后打出的牌，下回合开始时免费自动打出一次，计入出牌次数并触发相关能力。",
+  "modifiers": [
+    { "kind": "apply_modifier", "params": { "scope": "special", "target": "last_card_replay", "stacks": 1, "duration": -1, "source": "罗恩" } }
+  ],
+  "triggers": []
+}

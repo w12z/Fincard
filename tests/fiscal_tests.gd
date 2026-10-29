@@ -68,14 +68,14 @@ func _test_political_reset() -> void:
 	sim._appoint_cabinet(&"arcadia_cab_fed")
 	sim.state.political_capital = 99
 	_next_year(sim)
-	_expect(sim.state.political_capital == original + 3, "Annual cabinet bonus is applied after the reset and is usable that turn")
+	_expect(sim.state.political_capital == original + 1, "Marlo grants one political point after the reset, including year starts")
 	sim.apply_command(Command.end_turn())
-	_expect(sim.state.political_capital == original, "Annual bonus and leftovers do not carry to the next turn")
+	_expect(sim.state.political_capital == original + 1, "Marlo grants a fresh point each turn without carrying leftovers")
 	sim._gain_aid(&"arcadia_aid_foreign_loan")
 	sim.apply_command(Command.use_aid(&"arcadia_aid_foreign_loan"))
-	_expect(sim.state.political_capital == original + 2, "One-shot aid still grants usable points in the current turn")
+	_expect(sim.state.political_capital == original + 3, "One-shot aid still grants usable points in the current turn")
 	sim.apply_command(Command.end_turn())
-	_expect(sim.state.political_capital == original, "One-shot aid points are not inherited by the next turn")
+	_expect(sim.state.political_capital == original + 1, "Aid points do not carry; Marlo still grants his per-turn point")
 
 
 func _run() -> void:
@@ -102,22 +102,22 @@ func _run() -> void:
 	_play(sim, &"reform_fiscal_capacity")
 	_expect(sim.annual_income() == 38 and sim.state.budget == 29, "Permanent income reform must not immediately pay income")
 	sim._appoint_cabinet(&"example_cabinet")
-	_expect(sim.annual_income() == 41, "Cabinet adds to annual income")
+	_expect(sim.annual_income() == 38, "Irene does not change annual income")
 	sim._gain_aid(&"temporary_fiscal_support")
 	sim.apply_command(Command.use_aid(&"temporary_fiscal_support"))
-	_expect(sim.annual_income() == 47 and sim.state.budget == 29, "Temporary support affects future payments, not current cash")
+	_expect(sim.annual_income() == 44 and sim.state.budget == 29, "Temporary support affects future payments, not current cash")
 	for i in 12:
 		sim._advance_modifiers()
-	_expect(sim.annual_income() == 47, "Fiscal support must not expire per turn")
+	_expect(sim.annual_income() == 44, "Fiscal support must not expire per turn")
 	sim.state.budget = 0
 	_next_year(sim)
-	_expect(sim.state.budget == 47 and sim.annual_income() == 47, "First temporary income payment")
+	_expect(sim.state.budget == 45 and sim.annual_income() == 44, "First temporary income payment plus Irene's turn-start budget")
 	sim.state.budget = 0
 	_next_year(sim)
-	_expect(sim.state.budget == 47 and sim.annual_income() == 41, "Second temporary payment expires support after paying")
+	_expect(sim.state.budget == 45 and sim.annual_income() == 38, "Second temporary payment expires support after paying")
 	sim.state.budget = 0
 	_next_year(sim)
-	_expect(sim.state.budget == 41, "Temporary support must not pay a third time")
+	_expect(sim.state.budget == 39, "Temporary support must not pay a third time; Irene grants one budget")
 	sim = _prepare()
 	sim.state.budget = 0
 	sim.state.hand.assign([&"starter_infrastructure"])
@@ -142,11 +142,11 @@ func _run() -> void:
 	_expect(sim.state.budget == 21, "Deficit carries in full without retention or floor rounding before annual income")
 	sim = _prepare()
 	_expect(not StatusRules.allows_deficit(sim.state, sim.status_db) and sim.annual_income() == 32 and sim.budget_retention() == 0.5, "Restart clears fiscal reforms and temporary support")
-	# An opening cabinet must affect the very first payment, once only.
+	# An opening cabinet grants its first budget at turn start, not as annual income.
 	sim.start_run(&"example_country")
 	sim._appoint_cabinet(&"example_cabinet")
 	sim.apply_command(Command.choose_reward([]))
-	_expect(sim.state.budget == 35, "Opening appointment contributes to first-year income exactly once")
+	_expect(sim.state.budget == 33, "Opening appointment grants one budget at the first turn start")
 	sim = _prepare()
 	for i in 7:
 		sim.apply_command(Command.end_turn())

@@ -70,6 +70,11 @@ static func card_costs(card: CardDef, state: GameState, _definitions: Dictionary
 	var sources: Array[StringName] = []
 	for modifier in active_modifiers(state):
 		match modifier.rule:
+			&"first_card_discount":
+				if state.cards_played_this_turn == 0 and (budget > 0 or political > 0):
+					budget = maxi(0, budget - modifier.amount * modifier.stacks)
+					political = maxi(0, political - modifier.amount * modifier.stacks)
+					sources.append(modifier.target)
 			&"second_card_free":
 				if state.cards_played_this_turn == 1 and (budget > 0 or political > 0):
 					budget = 0
@@ -113,6 +118,8 @@ static func counter(status: StatusDef, state: GameState) -> String:
 	if not modifier.is_active(state.turn):
 		return "下回合生效"
 	match modifier.rule:
+		&"first_card_discount": return "1/1" if state.cards_played_this_turn == 0 else "0/1"
+		&"last_card_next_turn": return "已记录" if modifier.data.has("queued_card") else "回合结束时记录"
 		&"second_card_free": return "1/1" if state.cards_played_this_turn < 2 else "0/1"
 		&"all_types_refund":
 			var types: Array = state.flags.get("types_played_this_turn", [])

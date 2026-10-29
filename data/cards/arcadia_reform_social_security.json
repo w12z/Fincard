@@ -5,6 +5,6 @@
   "description": "建立覆盖失业与养老的社会安全网。",
   "card_type": "reform", "once_per_run": true, "cost": 3, "political_cost": 2,
   "effects": [
-    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 8 } }
+    { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": 12 } }
   ]
 }

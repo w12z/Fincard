@@ -53,9 +53,9 @@ func _test_distribution() -> void:
 	for i in 26000:
 		var id := sim._pick_reward_card(candidates)
 		counts[sim.card_db[id].rarity] += 1
-	_expect(absf(counts[&"common"] / 26000.0 - 20.0 / 26) < 0.015, "Common tier should follow 20/26, independent of its card count")
-	_expect(absf(counts[&"rare"] / 26000.0 - 5.0 / 26) < 0.015, "Rare tier should follow 5/26")
-	_expect(absf(counts[&"legendary"] / 26000.0 - 1.0 / 26) < 0.008, "Legendary tier should follow 1/26")
+	_expect(absf(counts[&"common"] / 26000.0 - 5.0 / 8) < 0.015, "Common tier should follow 5/8, independent of its card count")
+	_expect(absf(counts[&"rare"] / 26000.0 - 2.0 / 8) < 0.015, "Rare tier should follow 2/8")
+	_expect(absf(counts[&"legendary"] / 26000.0 - 1.0 / 8) < 0.008, "Legendary tier should follow 1/8")
 	_expect(counts[&"special"] == 0, "Special tier must never enter weighted rolls")
 	for i in 12:
 		sim.card_db.erase(StringName("test_common_%d" % i))
@@ -82,7 +82,7 @@ func _test_cabinet_rarities() -> void:
 	var counts := {&"common": 0, &"rare": 0, &"legendary": 0, &"special": 0}
 	for i in 26000:
 		counts[sim.cabinet_db[sim._pick_rarity_reward(candidates, sim.cabinet_db)].rarity] += 1
-	_expect(absf(counts[&"common"] / 26000.0 - 20.0 / 26) < 0.015 and absf(counts[&"rare"] / 26000.0 - 5.0 / 26) < 0.015 and absf(counts[&"legendary"] / 26000.0 - 1.0 / 26) < 0.008, "Cabinet tier odds are 20:5:1 regardless of population")
+	_expect(absf(counts[&"common"] / 26000.0 - 5.0 / 8) < 0.015 and absf(counts[&"rare"] / 26000.0 - 2.0 / 8) < 0.015 and absf(counts[&"legendary"] / 26000.0 - 1.0 / 8) < 0.008, "Cabinet tier odds are 5:2:1 regardless of population")
 	_expect(counts[&"special"] == 0, "Special cabinets never enter annual weighted rolls")
 	sim.state.modifiers.append(Modifier.new(&"common", Modifier.Op.OVERRIDE, 0, -1, &"", &"reward"))
 	sim.state.modifiers.append(Modifier.new(&"rare", Modifier.Op.OVERRIDE, 0, -1, &"", &"reward"))
@@ -98,7 +98,7 @@ func _test_cabinet_rarities() -> void:
 			for group in sim._build_year_end_rewards():
 				if group["type"] != Reward.Type.CABINET:
 					continue
-				_expect(group["options"].size() == (1 if scenario == &"example_country" else 2), "Offer two cabinet candidates, or the remaining available count")
+				_expect(group["options"].size() == 2, "Both countries now have enough candidates to offer two cabinets")
 				var seen := {}
 				for reward: Reward in group["options"]:
 					_expect(not seen.has(reward.id) and sim._reward_available(Reward.Type.CABINET, reward.id), "Cabinet candidates are unique, available and country-appropriate")
@@ -151,23 +151,23 @@ func _test_rewards() -> void:
 
 func _test_modifiers() -> void:
 	var sim := _prepare()
-	_expect(sim.rarity_weight(&"common") == 20 and sim.rarity_weight(&"rare") == 5 and sim.rarity_weight(&"legendary") == 1, "Initial weights are exactly 20:5:1")
+	_expect(sim.rarity_weight(&"common") == 5 and sim.rarity_weight(&"rare") == 2 and sim.rarity_weight(&"legendary") == 1, "Initial weights are exactly 5:2:1")
 	sim._appoint_cabinet(&"arcadia_cab_braintrust")
-	_expect(sim.rarity_weight(&"rare") == 10 and sim.rarity_weight(&"legendary") == 1, "Brain trust adds rare weight without changing other weights")
+	_expect(sim.rarity_weight(&"rare") == 5 and sim.rarity_weight(&"legendary") == 1, "Celine adds three rare weight without changing other weights")
 	sim.state.hand.assign([&"reform_research_network"])
 	sim.state.political_capital = 100
 	sim.apply_command(Command.play_card(&"reform_research_network"))
-	_expect(sim.rarity_weight(&"rare") == 15 and sim.rarity_weight(&"legendary") == 2, "Reform stacks with cabinet weights")
+	_expect(sim.rarity_weight(&"rare") == 10 and sim.rarity_weight(&"legendary") == 2, "Reform stacks with cabinet weights")
 	var found := false
 	for entry in ModifierDisplay.entries(sim, controller.labels):
 		if entry["key"] == "reward:rare":
-			found = entry["counter"] == "+10"
+			found = entry["counter"] == "+8"
 	_expect(found, "Reward modifiers merge in the unified modifier bar")
 	for i in 8:
 		sim._advance_modifiers()
-	_expect(sim.rarity_weight(&"rare") == 15, "Permanent weight boosts survive per-turn expiry")
+	_expect(sim.rarity_weight(&"rare") == 10, "Permanent weight boosts survive per-turn expiry")
 	sim = _prepare()
-	_expect(sim.rarity_weight(&"rare") == 5 and sim.rarity_weight(&"legendary") == 1, "Restart clears reward weight bonuses")
+	_expect(sim.rarity_weight(&"rare") == 2 and sim.rarity_weight(&"legendary") == 1, "Restart clears reward weight bonuses")
 
 
 func _test_special_grants() -> void:
@@ -218,7 +218,7 @@ func _test_ui() -> void:
 	for child in ui._overlay_box.get_children():
 		if child is Label or child is CheckBox:
 			text += child.text
-	_expect("普通 20" in text and "稀有 5" in text and "传奇 1" in text, "Annual modal shows effective rarity weights")
+	_expect("普通 5" in text and "稀有 2" in text and "传奇 1" in text, "Annual modal shows effective rarity weights")
 	ui._reward_group_index = 0
 	ui._overlay_signature = GameUI.UNSET_SIGNATURE
 	ui._render_overlay()

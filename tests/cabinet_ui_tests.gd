@@ -40,14 +40,17 @@ func _run() -> void:
 	ui.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.add_child(ui)
 	ui.setup(controller, &"arcadia")
+	while ui._pile_motion_active:
+		await process_frame
 	await _settle()
-	_expect(ui._cabinets_box.get_child(0) is Label, "Empty cabinet must show a compact placeholder")
+	_expect(controller.simulation.state.cabinets.is_empty(), "Opening meeting starts without appointed cabinets")
 	await _settle()
 	var candidates: Array[CabinetPortrait] = []
 	ui._reward_group_index = _cabinet_group(controller.simulation.state)
 	ui._overlay_signature = GameUI.UNSET_SIGNATURE
 	ui._render_overlay()
 	_find_portraits(ui._overlay_box, candidates)
+	_find_portraits(ui._meeting_page.content, candidates)
 	_expect(not candidates.is_empty(), "Cabinet reward options need portraits")
 	await _capture("fincard-cabinet-rewards.png")
 	if not candidates.is_empty():
@@ -55,6 +58,8 @@ func _run() -> void:
 		candidates[0].pressed.emit()
 		_expect(controller.simulation.state.cabinets.size() == 1 and controller.simulation.state.cabinets[0].id == selected_id, "Clicking a portrait immediately appoints that candidate")
 	ui._dispatch(Command.choose_reward([]))
+	while ui._pile_motion_active or ui._settlement_active:
+		await process_frame
 	for cabinet: CabinetDef in controller.cabinets.values():
 		if not controller.simulation.state.cabinets.has(cabinet):
 			controller.simulation._appoint_cabinet(cabinet.id)
@@ -70,18 +75,22 @@ func _run() -> void:
 		_expect(badge.portrait.texture != null, "Cabinet portrait asset missing: %s" % cabinet.id)
 		if badge.portrait.texture != null:
 			paths[badge.portrait.texture.resource_path] = true
+		for state in ["normal", "hover", "pressed", "focus"]:
+			var style := badge.get_theme_stylebox(state) as StyleBoxFlat
+			_expect(style.border_width_left >= 5 and style.border_width_top >= 5 and style.border_width_right >= 5 and style.border_width_bottom >= 5, "Cabinet rarity border must remain thick in every interaction state")
+			_expect(style.border_color.get_luminance() > UiTheme.rarity_color(cabinet.rarity).get_luminance() and style.shadow_color.a >= 0.4, "Rarity border is brighter and has a visible glow")
 		_expect(cabinet.display_name in badge.tooltip_text, "Hover must include the cabinet identity")
 		for effect in cabinet.modifiers:
 			_expect(TextFormatter.effect_text(controller.labels, effect) in badge.tooltip_text, "Hover must include passive effects")
 		for trigger in cabinet.triggers:
 			_expect(TextFormatter.trigger_text(controller.labels, trigger) in badge.tooltip_text, "Hover must include triggered effects")
-		_expect(root.get_visible_rect().encloses(badge.get_global_rect()), "All seven portraits must fit at default resolution")
+		_expect(root.get_visible_rect().encloses(badge.get_global_rect()), "All nine portraits must fit at default resolution")
 		var tooltip: Control = badge._make_custom_tooltip(badge.tooltip_text)
 		root.add_child(tooltip)
 		await _settle()
 		_expect(tooltip.size.x <= 400, "Cabinet tooltip must stay compact")
 		tooltip.free()
-	_expect(paths.size() == controller.cabinets.size(), "Each cabinet needs a distinct portrait asset")
+	_expect(paths.size() == controller.cabinets.size(), "All nine advisers have distinct portrait assets")
 	ui._sidebar_button.button_pressed = true
 	await _settle()
 	_expect(ui._log.get_global_rect().end.x <= root.get_visible_rect().end.x + 1, "Cabinet bar must not overflow the main layout")

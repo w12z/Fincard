@@ -1,5 +1,5 @@
 {
-  "rarity": "rare",
+  "rarity": "common",
   "id": "starter_efficiency", "display_name": "行政效率改革",
   "description": "精简办事流程，清理重复审批。",
   "card_type": "reform", "once_per_run": true, "cost": 3, "political_cost": 3,

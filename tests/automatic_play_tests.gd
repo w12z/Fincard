@@ -61,7 +61,7 @@ func _test_automatic_triggers() -> void:
 	]}
 	sim.state.modifiers.append(cabinet)
 	_manual(&"starter_small_business")
-	investment.data["progress"] = 3
+	investment.data["progress"] = 2
 	var budget := sim.state.budget
 	var piles := sim.state.deck.size() + sim.state.hand.size() + sim.state.discard.size()
 	var preview := sim.forecast_next_turn()
@@ -69,7 +69,7 @@ func _test_automatic_triggers() -> void:
 	var events := sim.apply_command(Command.end_turn())
 	_expect(_automatic_count(events) == 1 and sim.state.cards_played_this_turn == 1, "Automatic card must emit one CARD_PLAYED and count as the first play")
 	_expect(sim.state.investments_played_this_turn == 1 and investment.data["progress"] == 0, "Automatic investment advances cross-turn research counter")
-	_expect(sim.state.hand.size() == 6, "Automatic investment's fourth-card trigger draws one extra card")
+	_expect(sim.state.hand.size() == 6, "Automatic investment's third-card trigger draws one extra card")
 	_expect(sim.state.budget == budget + 1, "Automatic play is free and triggers CARD_PLAYED cabinet effects exactly once")
 	_expect(sim.state.deck.size() + sim.state.hand.size() + sim.state.discard.size() == piles, "Automatic play never duplicates or removes the original card")
 	_expect(not continuity.data.has("queued_card"), "Automatic play cannot record itself for the next turn")
@@ -87,12 +87,92 @@ func _test_automatic_triggers() -> void:
 	_expect(_automatic_count(events) == 0, "No new hand play means no infinite automatic chain")
 
 
-func _test_effect_repeat_is_not_play() -> void:
+func _test_repeat_counts_as_play() -> void:
 	var sim := _prepare()
 	_grant(&"replay")
 	var events := _manual(&"starter_small_business")
-	_expect(sim.state.cards_played_this_turn == 1 and sim.state.investments_played_this_turn == 1, "An effect repeat still counts as only one played card")
-	_expect(_automatic_count(events) == 0 and sim.state.played_cards_this_turn.size() == 2, "Effect repetition does not generate another automatic play")
+	_expect(sim.state.cards_played_this_turn == 2 and sim.state.investments_played_this_turn == 2, "Both plays count toward total and investment counters")
+	_expect(_automatic_count(events) == 1 and sim.state.played_cards_this_turn.size() == 2, "The second play generates one free automatic play")
+
+
+func _test_repeat_triggers() -> void:
+	for repeat_id in [&"replay", &"repeat_investment"]:
+		var sim := _prepare()
+		_manual(&"arcadia_policy_bond_yield")
+		_grant(repeat_id)
+		var research := _grant(&"investment_research")
+		research.data["progress"] = 1
+		_grant(&"policy_synergy")
+		_grant(&"construction_repayment")
+		_grant(&"recovery_coordination")
+		_grant(&"rotation_execution")
+		var continuity := _grant(&"project_continuity")
+		var trigger := Modifier.new(&"repeat_probe", Modifier.Op.ADD, 0, -1, &"probe", Modifier.SCOPE_SPECIAL)
+		trigger.rule = &"event_effects"
+		trigger.data = {"on_kind": Event.Kind.CARD_PLAYED, "effects": [
+			{"kind": "gain_budget", "params": {"amount": 1}},
+		]}
+		sim.state.modifiers.append(trigger)
+		sim.state.hand.clear()
+		sim.state.deck.clear()
+		for i in 10:
+			sim.state.deck.append(&"starter_training")
+		var budget := sim.state.budget
+		var political := sim.state.political_capital
+		var discard := sim.state.discard.count(&"starter_small_business")
+		var events := _manual(&"starter_small_business")
+		_expect(sim.state.cards_played_this_turn == 3 and sim.state.investments_played_this_turn == 2, "Second play advances total and investment counters: %s" % repeat_id)
+		_expect(research.data["progress"] == 0 and sim.state.hand.size() == 3, "Second play triggers third-investment research and third-card draw: %s" % repeat_id)
+		_expect(sim.state.budget == budget - 2 + 2 + 2 + 2, "Pay once; trigger second-investment refund, third-card refund and two CARD_PLAYED effects: %s" % repeat_id)
+		_expect(sim.state.political_capital == political, "Pay one political point and gain one type-synergy refund: %s" % repeat_id)
+		_expect(sim.state.discard.count(&"starter_small_business") == discard + 1, "Second play adds no extra discard copy: %s" % repeat_id)
+		_expect(_automatic_count(events) == 1 and not continuity.data.has("queued_card"), "Second play is automatic and never records itself: %s" % repeat_id)
+		_expect(StatusRules.find_modifier(sim.state, repeat_id) == null, "Repeat is consumed without recursion: %s" % repeat_id)
+	var sim := _prepare()
+	_grant(&"replay")
+	_manual(&"policy_procedural_motion")
+	_expect(sim.state.flags["policies_played_this_turn"] == 2 and sim.state.flags["political_policies_played_this_turn"] == 2, "Both policy plays advance policy and political-policy counters")
+
+
+func _test_aid_and_hand_only_repeat() -> void:
+	var sim := _prepare()
+	_grant(&"aid_card_repeat")
+	sim._gain_aid(&"arcadia_aid_fireside")
+	sim.apply_command(Command.use_aid(&"arcadia_aid_fireside"))
+	var confidence := sim.economy.value(sim.state, &"confidence")
+	var budget := sim.state.budget
+	var political := sim.state.political_capital
+	var events := _manual(&"arcadia_relief_dole")
+	_expect(sim.state.cards_played_this_turn == 2 and sim.state.investments_played_this_turn == 2 and _automatic_count(events) == 1, "Deposit insurance grants two counted plays")
+	_expect(sim.economy.value(sim.state, &"confidence") == confidence + 10 and sim.state.budget == budget - 2 and sim.state.political_capital == political - 1, "Deposit insurance plays twice while charging once")
+	sim._gain_aid(&"arcadia_aid_fireside")
+	sim.apply_command(Command.use_aid(&"arcadia_aid_fireside"))
+	_expect(StatusRules.find_modifier(sim.state, &"replay") == null, "Second aid in one turn does not grant another repeat")
+	for repeat_id in [&"replay", &"repeat_investment"]:
+		sim = _prepare()
+		_grant(repeat_id)
+		sim._resolve_played_card(&"starter_small_business", true)
+		_expect(StatusRules.find_modifier(sim.state, repeat_id) != null and sim.state.cards_played_this_turn == 1, "An automatic play cannot consume a hand-only repeat: %s" % repeat_id)
+		events = _manual(&"starter_small_business")
+		_expect(_automatic_count(events) == 1 and sim.state.cards_played_this_turn == 3, "The next hand play still plays twice: %s" % repeat_id)
+
+
+func _test_reform_adjustments() -> void:
+	var sim := _prepare()
+	_expect(controller.cards[&"starter_efficiency"].rarity == &"common" and controller.cards[&"starter_efficiency"].once_per_run, "Administrative efficiency is common but remains a one-time reform")
+	var confidence := sim.economy.value(sim.state, &"confidence")
+	_manual(&"arcadia_reform_social_security")
+	_expect(sim.economy.value(sim.state, &"confidence") == confidence + 12, "Social security immediately grants twelve confidence")
+	sim = _prepare()
+	var research := _grant(&"investment_research")
+	_manual(&"starter_small_business")
+	_manual(&"starter_small_business")
+	_expect(research.data["progress"] == 2, "Research waits for the third investment")
+	var forecast := sim.forecast_next_turn()
+	_expect(research.data["progress"] == 2 and StatusRules.find_modifier(forecast, &"investment_research").data["progress"] == 2, "Research progress carries across turns without forecast mutation")
+	var hand := sim.state.hand.size()
+	_manual(&"starter_small_business")
+	_expect(research.data["progress"] == 0 and sim.state.hand.size() == hand + 1, "Third investment draws exactly one card")
 
 
 func _test_automatic_animation() -> void:
@@ -144,7 +224,10 @@ func _run() -> void:
 	root.add_child(controller)
 	controller.rules["random_event_chance"] = 0.0
 	_test_automatic_triggers()
-	_test_effect_repeat_is_not_play()
+	_test_repeat_counts_as_play()
+	_test_repeat_triggers()
+	_test_aid_and_hand_only_repeat()
+	_test_reform_adjustments()
 	await _test_automatic_animation()
 	controller.free()
 	await process_frame

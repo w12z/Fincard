@@ -17,7 +17,12 @@ func setup(cabinet: CabinetDef, labels: Dictionary) -> void:
 	var portrait_theme := UiTheme.build()
 	for state in ["normal", "hover", "pressed", "focus"]:
 		var style: StyleBoxFlat = portrait_theme.get_stylebox(state, "CabinetPortrait").duplicate()
-		style.border_color = UiTheme.rarity_color(rarity)
+		var color := UiTheme.rarity_color(rarity).lightened(0.18 if state == "normal" else 0.35)
+		style.border_color = color
+		style.set_border_width_all(5 if state == "normal" else 6)
+		style.shadow_color = Color(color, 0.4 if state == "normal" else 0.6)
+		style.shadow_size = 4 if state == "normal" else 6
+		style.shadow_offset = Vector2.ZERO
 		add_theme_stylebox_override(state, style)
 	var lines := PackedStringArray([cabinet.display_name])
 	for effect in cabinet.modifiers:
@@ -27,10 +32,10 @@ func setup(cabinet: CabinetDef, labels: Dictionary) -> void:
 	tooltip_text = "\n".join(lines)
 	portrait = TextureRect.new()
 	portrait.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	portrait.offset_left = 5
-	portrait.offset_top = 5
-	portrait.offset_right = -5
-	portrait.offset_bottom = -5
+	portrait.offset_left = 7
+	portrait.offset_top = 7
+	portrait.offset_right = -7
+	portrait.offset_bottom = -7
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -38,6 +43,17 @@ func setup(cabinet: CabinetDef, labels: Dictionary) -> void:
 	if ResourceLoader.exists(path):
 		portrait.texture = load(path)
 	add_child(portrait)
+	if portrait.texture == null:
+		var placeholder := Label.new()
+		placeholder.name = "NamePlaceholder"
+		placeholder.text = cabinet.display_name
+		placeholder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		placeholder.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		placeholder.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		placeholder.add_theme_font_size_override("font_size", 18)
+		placeholder.add_theme_color_override("font_color", Color.WHITE)
+		placeholder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		portrait.add_child(placeholder)
 
 
 func _make_custom_tooltip(for_text: String) -> Object:

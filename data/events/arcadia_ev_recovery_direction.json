@@ -1,6 +1,6 @@
 {
   "id": "arcadia_ev_recovery_direction", "title": "复苏路线",
-  "description": "紧急救助之后，内阁必须决定下一阶段的复苏方向。",
+  "description": "承受第一轮冲击后，随着政府紧急措施的出台，我国经济崩盘总算踩下了刹车，是时候选择如何走向复苏了。",
   "choices": [
     {"label": "公共建设", "description": "连续投资，以项目减费、回款和持续增长恢复生产。", "recovery_route": "construction"},
     {"label": "就业与消费", "description": "先修复就业和信心，再将居民需求转化为增长。", "recovery_route": "employment"},

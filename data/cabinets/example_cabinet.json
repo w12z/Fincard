@@ -1,10 +1,7 @@
 {
   "rarity": "rare",
-  "id": "example_cabinet", "display_name": "发展顾问",
-  "description": "潜在回合增长率 +0.08 个百分点，每个财年的预算收入 +3。",
-  "modifiers": [
-    { "kind": "apply_modifier", "params": { "scope": "coefficient", "target": "gdp_auto", "op": "add", "value": 0.08, "duration": -1, "source": "发展顾问" } },
-    { "kind": "apply_modifier", "params": { "scope": "fiscal", "target": "annual_income", "value": 3, "duration": -1, "source": "发展顾问" } }
-  ],
-  "triggers": []
+  "id": "example_cabinet", "display_name": "艾琳",
+  "description": "每回合开始时预算 +1。",
+  "modifiers": [],
+  "triggers": [ { "on": "turn_started", "effects": [ { "kind": "gain_budget", "params": { "amount": 1 } } ] } ]
 }

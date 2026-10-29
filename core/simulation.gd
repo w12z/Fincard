@@ -204,7 +204,7 @@ func _start_turn(year_started: bool = false) -> Array[Event]:
 	events.append_array(trigger_engine.process(turn_events, state, resolver, rng, _iteration_limit()))
 	events.append_array(_start_turn_recovery_modifiers())
 	for modifier in StatusRules.active_modifiers(state):
-		if modifier.rule != &"next_turn_replay" or int(modifier.data.get("queued_turn", state.turn + 1)) > state.turn:
+		if modifier.rule not in [&"next_turn_replay", &"last_card_next_turn"] or int(modifier.data.get("queued_turn", state.turn + 1)) > state.turn:
 			continue
 		var replay_id := StringName(modifier.data.get("queued_card", ""))
 		modifier.data.erase("queued_card")
@@ -230,7 +230,8 @@ func _start_turn(year_started: bool = false) -> Array[Event]:
 func _enter_main() -> Array[Event]:
 	var events: Array[Event] = []
 	turns.enter(TurnStateMachine.Phase.DRAW, state)
-	events.append_array(_draw(int(rules.get("draw_per_turn", 0))))
+	var draw_count := maxi(0, int(rules.get("draw_per_turn", 0)) + int(economy.value(state, &"turn_draw_bonus")))
+	events.append_array(_draw(draw_count))
 	turns.enter(TurnStateMachine.Phase.MAIN, state)
 	return events
 
@@ -515,6 +516,11 @@ func _finish_turn(retained: StringName = &"") -> Array[Event]:
 	events.append_array(economy.tick(state, rng))
 	events.append(Event.new(Event.Kind.TURN_ENDED, {"turn": state.turn}))
 	events = trigger_engine.process(events, state, resolver, rng, _iteration_limit())
+	for modifier in StatusRules.active_modifiers(state):
+		if modifier.rule == &"last_card_next_turn" and not state.played_cards_this_turn.is_empty():
+			modifier.data["queued_card"] = state.played_cards_this_turn.back()
+			modifier.data["queued_turn"] = state.turn + 1
+			events.append(StatusRules.mark_triggered(modifier, state))
 	events.append_array(_settle_market_worry(settled_growth))
 	events.append_array(_advance_modifiers())
 	economy.refresh_derived(state)
@@ -621,7 +627,7 @@ func _settle_market_worry(growth: float) -> Array[Event]:
 		modifier.data["last_confidence"] = economy.value(state, &"confidence")
 		var added := int(economy.value(state, &"confidence") >= float(modifier.data.get("confidence_threshold", 90))) \
 			+ int(growth >= float(modifier.data.get("growth_threshold", 1.0)) - 0.00000001)
-		var maximum := int(modifier.data.get("max_stacks", 16))
+		var maximum := int(modifier.data.get("max_stacks", 12))
 		if added > 0 and modifier.stacks < maximum:
 			modifier.stacks = mini(maximum, modifier.stacks + added)
 			events.append(StatusRules.mark_triggered(modifier, state))
@@ -728,10 +734,11 @@ func _resolve_played_card(card_id: StringName, automatic: bool = false) -> Array
 					if int(modifier.data.get("triggered_turn", -1)) != state.turn:
 						events.append(StatusRules.mark_triggered(modifier, state))
 			&"repeat_next_card":
-				repeat_card = true
-				modifier.stacks = 0
+				if not automatic:
+					repeat_card = true
+					modifier.stacks = 0
 			&"repeat_next_investment":
-				if card.card_type == &"investment":
+				if not automatic and card.card_type == &"investment":
 					repeat_card = true
 					modifier.stacks = 0
 			&"third_card_draw":
@@ -771,7 +778,7 @@ func _resolve_played_card(card_id: StringName, automatic: bool = false) -> Array
 					events.append(StatusRules.mark_triggered(modifier, state))
 					events.append_array(resolver.resolve(Effect.from_dict({"kind": "adjust_indicator", "params": {"target": "unemployment", "amount": -float(modifier.data.get("reduction", 0.5)) * modifier.stacks}}), state, rng))
 	if repeat_card:
-		events.append_array(_replay_card(card_id, duration_bonus))
+		events.append_array(_resolve_played_card(card_id, true))
 	for modifier in state.modifiers.duplicate():
 		if modifier.is_expired():
 			state.modifiers.erase(modifier)
@@ -815,16 +822,6 @@ func _direct_indicator_changed(events: Array[Event], target: StringName, positiv
 			if (positive and delta > 0) or (not positive and delta < 0):
 				return true
 	return false
-
-
-func _replay_card(card_id: StringName, duration_bonus: int = 0) -> Array[Event]:
-	var card: CardDef = card_db.get(card_id)
-	if card == null:
-		return []
-	var events: Array[Event] = [Event.new(Event.Kind.CARD_REPLAYED, {"card_id": card_id})]
-	state.played_cards_this_turn.append(card_id)
-	events.append_array(_resolve_card_effects(card, duration_bonus))
-	return events
 
 
 func _remove_all_copies(card_id: StringName) -> void:
@@ -1237,7 +1234,7 @@ func _add_reward_group(groups: Array[Dictionary], type: int, pool: Array[StringN
 
 
 func base_rarity_weight(rarity: StringName) -> float:
-	var defaults := {"common": 20.0, "rare": 5.0, "legendary": 1.0}
+	var defaults := {"common": 5.0, "rare": 2.0, "legendary": 1.0}
 	return float(rules.get("card_rarity_weights", {}).get(String(rarity), defaults.get(String(rarity), 0.0)))
 
 

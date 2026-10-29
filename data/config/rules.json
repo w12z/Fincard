@@ -1,7 +1,7 @@
 {
   "draw_per_turn": 5,
   "turns_per_year": 8,
-  "card_rarity_weights": { "common": 20, "rare": 5, "legendary": 1 },
+  "card_rarity_weights": { "common": 5, "rare": 2, "legendary": 1 },
   "reward_option_count": 3,
   "card_reward_groups": 2,
   "aid_capacity": 3,

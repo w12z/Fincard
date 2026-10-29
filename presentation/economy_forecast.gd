@@ -67,7 +67,7 @@ static func formulas(sim: Simulation) -> String:
 	if not is_zero_approx(sim.economy.coefficient(sim.state, &"u_revert")):
 		unemployment += " − %s × max(%s − %s, 0)" % [c.call(&"u_revert"), v.call(&"unemployment"), c.call(&"natural_unemployment")]
 	parts.append(unemployment)
-	var confidence := "Δ信心 = %s%s − |%s − %s| / 5 − max(%s − %s, 0) / 5 − max(50 − %s, 0) × 0.1" % [g, " / 2" if growth > 0.0 else "", v.call(&"inflation"), c.call(&"inflation_target"), v.call(&"unemployment"), c.call(&"natural_unemployment"), v.call(&"confidence")]
+	var confidence := "Δ信心 = %s%s − |%s − %s| / 5 − max(%s − %s, 0) / 5 − max(50 − %s, 0) × 0.05" % [g, " / 2" if growth > 0.0 else "", v.call(&"inflation"), c.call(&"inflation_target"), v.call(&"unemployment"), c.call(&"natural_unemployment"), v.call(&"confidence")]
 	if sim.state.budget < 0:
 		confidence += " − %d / 5" % absi(sim.state.budget)
 	var market_delta := EconomyBuilder.special_confidence_delta(sim.state, growth)

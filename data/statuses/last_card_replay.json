@@ -1,0 +1,5 @@
+{
+  "id": "last_card_replay", "display_name": "后续落实", "icon": "repeat",
+  "description": "每回合结束时，记录本回合最后打出的牌，下回合开始时免费自动打出一次，计入出牌次数并触发相关能力。",
+  "rule": "last_card_next_turn"
+}

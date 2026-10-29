@@ -4,6 +4,12 @@ extends Control
 signal start_requested(scenario_id: StringName)
 signal back_requested
 
+const ROUTINE_REWARD_EVENTS: Array[StringName] = [
+	&"arcadia_ev_recovery_institutions",
+	&"arcadia_ev_recovery_support",
+	&"arcadia_ev_recovery_mobilization",
+]
+
 var controller: GameController
 var scenario: ScenarioDef
 var _confirm_button: Button
@@ -80,6 +86,8 @@ func _build() -> void:
 		var turn_numbers := scenario.scheduled_events.keys()
 		turn_numbers.sort()
 		for turn_number in turn_numbers:
+			if scenario.scheduled_events[turn_number] in ROUTINE_REWARD_EVENTS:
+				continue
 			var event: EconomyEventDef = controller.events.get(scenario.scheduled_events[turn_number])
 			if event != null:
 				var phase := "结束" if scenario.scheduled_event_phases.get(turn_number, &"turn_start") == &"turn_end" else "开始"

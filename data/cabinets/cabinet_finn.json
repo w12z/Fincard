@@ -1,0 +1,8 @@
+{
+  "id": "cabinet_finn", "display_name": "芬恩", "rarity": "common",
+  "description": "每回合打出的第一张牌，预算和政治成本各减1，最低为0。",
+  "modifiers": [
+    { "kind": "apply_modifier", "params": { "scope": "special", "target": "first_card_discount", "stacks": 1, "duration": -1, "source": "芬恩" } }
+  ],
+  "triggers": []
+}

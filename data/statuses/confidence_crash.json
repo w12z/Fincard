@@ -2,6 +2,7 @@
   "id": "confidence_crash",
   "display_name": "信心崩盘",
   "icon": "confidence",
+  "flavor_text": "我们完了。股市崩盘引发全体投资者对金融系统的剧烈恐慌，所有人都在逃离，无数工厂在倒闭，失业的人挤满了街道。一切都是代价，这场灾难才刚开始几个月，或许永远也不会结束。",
   "description": "经济结算时，GDP每下降1%，额外降低2信心；第24回合起减半，第32回合开始时移除。",
   "rule": "negative_growth_confidence",
   "parameters": { "confidence_per_percent": 2, "weaken_turn": 24, "weaken_multiplier": 0.5, "expire_turn": 32 }

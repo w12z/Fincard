@@ -11,7 +11,8 @@
     "construction_restart": "国家复工", "construction_extension": "工程接续", "construction_repayment": "项目回款",
     "employment_guarantee": "就业保障", "consumption_revival": "消费振兴", "social_mutual_support": "社会互助",
     "recovery_coordination": "复苏统筹", "financing_coordination": "融资协调", "rapid_disbursement": "快速拨付",
-    "repeat_investment": "集中验收", "investment_political_waiver": "广播动员"
+    "repeat_investment": "集中验收", "investment_political_waiver": "广播动员",
+    "first_card_discount": "先行协调", "last_card_replay": "后续落实"
   },
   "reward": { "common": "普通出现权重", "rare": "稀有出现权重", "legendary": "传奇出现权重" },
   "card_types": {
@@ -26,7 +27,8 @@
     "confidence": "市场信心",
     "interest_rate": "利率",
     "growth": "回合经济增长率",
-    "political_capital_gain": "每回合政治点重置加成"
+    "political_capital_gain": "每回合政治点重置加成",
+    "turn_draw_bonus": "每回合起始抽牌加成"
   },
   "statuses": {
     "executive_mandate": "行政授权：每回合首张牌免政治成本",
@@ -39,11 +41,11 @@
     "project_continuity": "项目接续：每回合首张从手牌打出的牌，下回合开始时免费自动打出一次，计入出牌次数并触发相关能力",
     "midterm_review": "中期评估：每回合开始抽牌后，可弃掉一张手牌，再抽两张牌",
     "agenda_reserve": "议程储备：回合结束时最多保留2政治点，下回合重置后加回",
-    "investment_research": "证券监管：每累计打出4张投资与援助类卡牌，抽1张牌",
-    "aid_card_repeat": "存款保险：每回合首次使用援助后，下一张从手牌打出的卡牌效果结算两次，只支付一次费用",
-    "replay": "重放：下一张从手牌打出的卡牌额外结算一次效果",
+    "investment_research": "证券监管：每累计打出3张投资与援助类卡牌，抽1张牌",
+    "aid_card_repeat": "存款保险：每回合首次使用援助后，下一张从手牌打出的卡牌打出两次，只支付一次费用，均计入出牌次数并触发相关能力",
+    "replay": "重放：下一张从手牌打出的卡牌打出两次，只支付一次费用，均计入出牌次数并触发相关能力",
     "stock_market_frenzy": "股市狂热：回合GDP增长率每达到0.2%，额外获得2信心，每回合最多6信心",
-    "market_worry": "隐约的市场担忧：第9～16回合结束时，信心达到90、GDP增长率达到1%各增加1层，同时满足加2层，最多16层；每层使股灾额外损失3%的GDP和3信心，满层额外损失48%的GDP和48信心",
+    "market_worry": "隐约的市场担忧：第9～16回合结束时，信心达到90、GDP增长率达到1%各增加1层，同时满足加2层，最多12层；每层使股灾额外损失3%的GDP和3信心，满层额外损失36%的GDP和36信心",
     "confidence_crash": "信心崩盘：经济结算时，GDP每下降1%，额外降低2信心；第24回合起减半，第32回合开始时移除",
     "next_investment_discount": "专项核准：下一张投资与援助类卡牌预算成本-2，最低为0",
     "construction_restart": "国家复工：每回合打出的第二张投资与援助类卡牌预算成本-2，最低为0",
@@ -55,8 +57,10 @@
     "recovery_coordination": "复苏统筹：每回合打出第三张牌后，预算+2，每回合一次",
     "financing_coordination": "融资协调：每回合首张直接提供政治点的政策牌预算成本-2，最低为0",
     "rapid_disbursement": "快速拨付：每回合打出的第二张政策牌预算成本-2，最低为0",
-    "repeat_investment": "集中验收：下一张从手牌打出的投资与援助类卡牌效果结算两次，只支付一次费用",
-    "investment_political_waiver": "广播动员：下一张投资与援助类卡牌政治成本-1，最低为0"
+    "repeat_investment": "集中验收：下一张从手牌打出的投资与援助类卡牌打出两次，只支付一次费用，均计入出牌次数并触发相关能力",
+    "investment_political_waiver": "广播动员：下一张投资与援助类卡牌政治成本-1，最低为0",
+    "first_card_discount": "先行协调：每回合打出的第一张牌，预算和政治成本各减1，最低为0",
+    "last_card_replay": "后续落实：每回合最后打出的牌，下回合开始时免费自动打出一次，计入出牌次数并触发相关能力"
   },
   "fiscal": { "annual_income": "年度预算收入", "budget_retention": "跨年预算保留系数" },
   "resources": {

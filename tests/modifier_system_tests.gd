@@ -84,8 +84,8 @@ func _test_aid_replay() -> void:
 	var confidence := float(sim.state.indicators[&"confidence"])
 	var budget := sim.state.budget
 	_play(sim, &"arcadia_relief_dole")
-	_expect(sim.state.indicators[&"confidence"] == confidence + 10 and sim.state.budget == budget - 2, "Replay resolves the effect twice but pays only once")
-	_expect(StatusRules.find_modifier(sim.state, &"replay") == null and sim.state.cards_played_this_turn == 1 and sim.state.played_cards_this_turn.size() == 2, "Replay consumes its modifier without recursively counting as another manual play")
+	_expect(sim.state.indicators[&"confidence"] == confidence + 10 and sim.state.budget == budget - 2, "Replay plays twice but pays only once")
+	_expect(StatusRules.find_modifier(sim.state, &"replay") == null and sim.state.cards_played_this_turn == 2 and sim.state.played_cards_this_turn.size() == 2, "Replay consumes its modifier and counts the free second play")
 	sim.apply_command(Command.use_aid(&"arcadia_aid_fireside"))
 	_expect(StatusRules.find_modifier(sim.state, &"replay") == null, "A second aid in the same turn does not grant another replay")
 
@@ -119,17 +119,17 @@ func _test_types_and_cross_turn_counter() -> void:
 	_expect(sim.state.political_capital == 16, "The all-types refund cannot retrigger in the same turn")
 	sim = _prepare()
 	var counter := _grant(sim, &"investment_research", true)
-	for i in 3:
+	for i in 2:
 		_play(sim, &"starter_small_business")
-	_expect(counter.data.get("progress") == 3, "Investment draw tracks its first three cards")
+	_expect(counter.data.get("progress") == 2, "Investment draw tracks its first two cards")
 	sim.apply_command(Command.end_turn())
-	_expect(counter.data.get("progress") == 3, "Investment progress survives a turn boundary")
+	_expect(counter.data.get("progress") == 2, "Investment progress survives a turn boundary")
 	var events := _play(sim, &"starter_small_business")
 	var draws := 0
 	for event in events:
 		if event.kind == Event.Kind.CARDS_DRAWN:
 			draws += int(event.params["count"])
-	_expect(draws == 1 and counter.data.get("progress") == 0, "The fourth investment draws one card and resets the counter")
+	_expect(draws == 1 and counter.data.get("progress") == 0, "The third investment draws one card and resets the counter")
 
 
 func _test_card_choices_and_political_reserve() -> void:

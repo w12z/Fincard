@@ -172,7 +172,7 @@ func _test_rebalanced_cards() -> void:
 	_expect(is_equal_approx(sim.economy.coefficient(sim.state, &"gdp_auto"), growth), "Tariff growth penalty expires after two turns")
 	sim = _prepare()
 	_play(sim, &"arcadia_reform_social_security")
-	_expect(is_equal_approx(sim.economy.coefficient(sim.state, &"natural_unemployment"), 6) and sim.economy.value(sim.state, &"confidence") == 58, "Social security gives eight confidence without changing natural unemployment")
+	_expect(is_equal_approx(sim.economy.coefficient(sim.state, &"natural_unemployment"), 6) and sim.economy.value(sim.state, &"confidence") == 62, "Social security gives twelve confidence without changing natural unemployment")
 	sim = _prepare()
 	sim.state.indicators[&"interest_rate"] = 4
 	_play(sim, &"arcadia_recover_gold")

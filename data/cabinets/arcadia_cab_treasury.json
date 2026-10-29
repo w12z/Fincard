@@ -1,7 +1,7 @@
 {
   "rarity": "common",
-  "id": "arcadia_cab_treasury", "display_name": "财政部长",
+  "id": "arcadia_cab_treasury", "display_name": "凯恩",
   "description": "统筹财政资金，每财年预算收入永久增加 4。",
-  "modifiers": [{ "kind": "apply_modifier", "params": { "scope": "fiscal", "target": "annual_income", "value": 4, "duration": -1, "source": "财政部长" } }],
+  "modifiers": [{ "kind": "apply_modifier", "params": { "scope": "fiscal", "target": "annual_income", "value": 4, "duration": -1, "source": "凯恩" } }],
   "triggers": []
 }

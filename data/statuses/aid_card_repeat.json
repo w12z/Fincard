@@ -1,5 +1,5 @@
 {
   "id": "aid_card_repeat", "display_name": "存款保险", "icon": "复",
-  "description": "每回合首次使用援助后，下一张从手牌打出的卡牌效果结算两次，只支付一次费用。",
+  "description": "每回合首次使用援助后，下一张从手牌打出的卡牌打出两次，只支付一次费用；第二次计入出牌次数并触发相关能力。",
   "rule": "aid_card_repeat", "start_next_turn": true
 }

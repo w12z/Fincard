@@ -34,7 +34,7 @@ static func build(economy: EconomyModel, config: Dictionary, rules: Dictionary) 
 			- absf(model.value(state, &"inflation") - model.coefficient(state, &"inflation_target")) / 5.0 \
 			- maxf(model.value(state, &"unemployment") - model.coefficient(state, &"natural_unemployment"), 0.0) / 5.0 \
 			- maxf(-float(state.budget), 0.0) / 5.0 \
-			- maxf(50.0 - confidence, 0.0) * 0.1 \
+			- maxf(50.0 - confidence, 0.0) * 0.05 \
 			+ EconomyBuilder.special_confidence_delta(state, growth)
 
 	economy.register_derived(&"growth", func(state: GameState, model: EconomyModel) -> float:

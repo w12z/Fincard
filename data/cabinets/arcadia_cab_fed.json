@@ -1,9 +1,7 @@
 {
   "rarity": "rare",
-  "id": "arcadia_cab_fed", "display_name": "联邦储备主席",
-  "description": "任职期间利率 -1 个百分点，每财年补充 3 政治行动点。",
-  "modifiers": [
-    { "kind": "apply_modifier", "params": { "target": "interest_rate", "op": "add", "value": -1, "duration": -1, "source": "联储主席" } }
-  ],
-  "triggers": [ { "on": "year_started", "effects": [ { "kind": "gain_political_capital", "params": { "amount": 3 } } ] } ]
+  "id": "arcadia_cab_fed", "display_name": "马洛",
+  "description": "每回合开始时额外获得 1 政治点。",
+  "modifiers": [],
+  "triggers": [ { "on": "turn_started", "effects": [ { "kind": "gain_political_capital", "params": { "amount": 1 } } ] } ]
 }

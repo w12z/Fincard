@@ -1,0 +1,16 @@
+{
+  "id": "reform_policy_briefing",
+  "display_name": "政策简报制度",
+  "description": "建立常态化简报制度，拓宽政策信息来源。",
+  "card_type": "reform",
+  "rarity": "rare",
+  "cost": 3,
+  "political_cost": 2,
+  "once_per_run": true,
+  "effects": [
+    { "kind": "apply_modifier", "params": {
+      "scope": "indicator", "target": "turn_draw_bonus", "op": "add",
+      "value": 1, "duration": -1, "source": "政策简报制度"
+    } }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "rarity": "rare",
-  "id": "arcadia_cab_interior", "display_name": "内政部长",
+  "id": "arcadia_cab_interior", "display_name": "诺兰",
   "description": "推动地方建设，每回合结束时 GDP +0.15%。",
   "modifiers": [],
   "triggers": [

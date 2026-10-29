@@ -2,5 +2,5 @@
   "id": "example_cabinet_group",
   "type": "cabinets",
   "display_name": "新港内阁",
-  "members": ["example_cabinet"]
+  "members": ["example_cabinet", "cabinet_finn", "cabinet_rowan"]
 }

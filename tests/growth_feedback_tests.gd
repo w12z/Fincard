@@ -59,7 +59,7 @@ func _test_negative_growth() -> void:
 
 
 func _test_low_confidence() -> void:
-	for pair in [[60, 0.0], [50, 0.0], [49, -0.1], [40, -1.0], [30, -2.0]]:
+	for pair in [[60, 0.0], [50, 0.0], [49, -0.05], [40, -0.5], [30, -1.0]]:
 		var sim := _prepare(0, float(pair[0]))
 		_expect(is_equal_approx(_delta(sim, &"confidence"), float(pair[1])), "Below-fifty confidence penalty is linear and absent above fifty: %d" % pair[0])
 	var sim := _prepare(0, 40)
@@ -67,9 +67,9 @@ func _test_low_confidence() -> void:
 	var preview := sim.forecast_next_turn()
 	_expect(is_equal_approx(sim.state.indicators[&"confidence"], old_confidence), "Forecast never applies the real low-confidence penalty")
 	sim.apply_command(Command.end_turn())
-	_expect(is_equal_approx(sim.state.indicators[&"confidence"], 39.0), "The forty-confidence penalty is applied once, not recursively")
+	_expect(is_equal_approx(sim.state.indicators[&"confidence"], 39.5), "The halved forty-confidence penalty is applied once, not recursively")
 	_expect(is_equal_approx(sim.state.indicators[&"confidence"], preview.indicators[&"confidence"]), "Predicted confidence matches actual settlement")
-	_expect(EconomyForecast.formulas(sim).contains("max(50 − 39, 0) × 0.1"), "Forecast includes the low-confidence spiral term")
+	_expect(EconomyForecast.formulas(sim).contains("max(50 − 39.5, 0) × 0.05"), "Forecast includes the halved low-confidence spiral term")
 
 
 func _test_special_boom_bonus_unchanged() -> void:

@@ -42,16 +42,28 @@ func _capture(filename: String) -> void:
 	_expect(error == OK, "Screenshot failed")
 
 
+func _profile_text(node: Node) -> String:
+	var text := ""
+	if node is Label or node is RichTextLabel:
+		text = node.text + "\n"
+	for child in node.get_children():
+		text += _profile_text(child)
+	return text
+
+
 func _run() -> void:
 	var main = load("res://presentation/main.tscn").instantiate()
 	root.add_child(main)
 	await _settle()
 	_expect(main._screen is ScenarioMenu, "Game must open on the country selection screen")
 	var menu: ScenarioMenu = main._screen
-	_expect(menu._list.get_child_count() == main.controller.scenarios.size(), "Every country needs a selection card")
-	_expect(menu._list.columns == 2, "Wide menu must use two columns")
+	_expect(menu._country_buttons.size() == main.controller.scenarios.size(), "Every country needs a selection entry")
+	_expect(menu._primary_button.get_global_rect().get_center().is_equal_approx(root.get_visible_rect().get_center()), "Arcadia is centered on the start screen")
+	_expect(menu._tutorial_button.get_global_rect().get_center().x > root.size.x * 0.7 and menu._tutorial_button.get_global_rect().get_center().y > root.size.y * 0.7, "New Harbor is in the bottom-right corner")
+	_expect(_profile_text(menu._tutorial_button).contains("新手体验关卡"), "New Harbor is explicitly labeled as the beginner experience")
+	_expect(menu._primary_button.size.x > menu._tutorial_button.size.x and menu._primary_button.size.y > menu._tutorial_button.size.y, "Arcadia is the primary entry and New Harbor is compact")
 	_check_copy(menu)
-	for card: Button in menu._list.get_children():
+	for card: Button in menu._country_buttons.values():
 		_expect(root.get_visible_rect().encloses(card.get_global_rect()), "Country cards must fit the viewport")
 	await _capture("fincard-country-menu.png")
 	var first := CountryFlag.new()
@@ -64,13 +76,20 @@ func _run() -> void:
 	for id in [&"example_country", &"arcadia"]:
 		menu = main._screen
 		# Exercise the actual button callback, not just the main routing method.
-		var index := 0 if id == &"example_country" else 1
-		menu._list.get_child(index).pressed.emit()
+		menu._country_buttons[id].pressed.emit()
 		await _settle()
 		_expect(main._screen is CountryProfile, "Clicking a country must open its profile")
 		var profile: CountryProfile = main._screen
 		_expect(profile.scenario.id == id, "Profile must match the selected country")
 		_check_copy(profile)
+		if id == &"arcadia":
+			var text := _profile_text(profile)
+			for title in ["复苏制度", "复苏配套", "复苏动员"]:
+				_expect(not text.contains(title), "Routine card rewards are omitted from major events: %s" % title)
+			for title in ["黑色星期四", "信贷冻结", "复苏路线"]:
+				_expect(text.contains(title), "Major crises and route selection remain visible: %s" % title)
+			for turn in [25, 29, 33]:
+				_expect(profile.scenario.scheduled_events.has(turn), "Hiding a reward must not change its schedule")
 		_expect(main.controller.simulation.state.scenario_id == &"", "Reading a profile must not start a run")
 		_expect(root.get_visible_rect().encloses(profile._confirm_button.get_global_rect()), "Confirm button must remain on screen")
 		_expect(root.get_visible_rect().encloses(profile._back_button.get_global_rect()), "Back button must remain on screen")
@@ -85,11 +104,15 @@ func _run() -> void:
 		await _settle()
 		_expect(main._screen is ScenarioMenu, "Back must return to the selection screen")
 		_expect(main.controller.simulation.state.pending_rewards.is_empty(), "Back must not initialize a run")
-	# Small layouts stack rather than hide country information.
+	# Smaller windows keep the primary and tutorial entries visible and separate.
 	menu = main._screen
-	menu.size.x = 900
-	menu._update_columns()
-	_expect(menu._list.columns == 1, "Narrow menu must stack country cards")
+	menu.size = Vector2(900, 700)
+	menu._update_layout()
+	await _settle()
+	for card: Button in menu._country_buttons.values():
+		_expect(Rect2(Vector2.ZERO, menu.size).encloses(card.get_rect()), "Both entries fit smaller windows")
+	_expect(not menu._primary_button.get_rect().intersects(menu._tutorial_button.get_rect()), "Primary and tutorial entries never overlap in smaller windows")
+	await _capture("fincard-country-menu-compact.png")
 	menu.country_selected.emit(&"arcadia")
 	await _settle()
 	var profile: CountryProfile = main._screen

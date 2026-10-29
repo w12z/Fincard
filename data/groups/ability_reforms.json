@@ -3,6 +3,6 @@
   "members": [
     "reform_emergency_authority", "reform_policy_reserve", "reform_rotation_execution",
     "reform_project_continuity", "reform_midterm_review", "reform_agenda_reserve",
-    "reform_permanent_coordination"
+    "reform_permanent_coordination", "reform_policy_briefing"
   ]
 }

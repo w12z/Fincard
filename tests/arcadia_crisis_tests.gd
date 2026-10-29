@@ -70,35 +70,35 @@ func _test_worry() -> void:
 	sim._settle_market_worry(1.0)
 	_expect(worry.stacks == 4, "Both thresholds add two layers in one settlement")
 	sim.state.turn = 16
-	worry.stacks = 15
+	worry.stacks = 11
 	sim._settle_market_worry(2.0)
-	_expect(worry.stacks == 16, "Two qualifying conditions are clamped at sixteen layers")
+	_expect(worry.stacks == 12, "Two qualifying conditions are clamped at twelve layers")
 	sim.state.turn = 17
 	sim._settle_market_worry(2.0)
-	_expect(worry.stacks == 16, "Worry stops accumulating after turn sixteen")
+	_expect(worry.stacks == 12, "Worry stops accumulating after turn sixteen")
 
 
 func _test_turn_end_crash() -> void:
 	var sim := _prepare(16)
 	sim._activate_market_worry()
 	var worry := StatusRules.find_modifier(sim.state, &"market_worry")
-	worry.stacks = 15
+	worry.stacks = 11
 	sim._schedule_event()
 	_expect(sim.state.pending_event == &"", "The crash does not fire at the start of turn sixteen")
 	sim.apply_command(Command.end_turn())
 	_expect(sim.state.turn == 16 and sim.state.pending_event == &"arcadia_ev_black_thursday" and sim.state.pending_rewards.is_empty(), "Turn sixteen settles before the crash, and annual rewards wait for its resolution")
-	_expect(worry.stacks == 16, "Turn sixteen contributes its final worry layers")
+	_expect(worry.stacks == 12, "Turn sixteen contributes its final worry layers")
 	var gdp := float(sim.state.indicators[&"gdp"])
 	var confidence := float(sim.state.indicators[&"confidence"])
 	var unemployment := float(sim.state.indicators[&"unemployment"])
 	var budget := sim.state.budget
 	var definition: EconomyEventDef = controller.events[&"arcadia_ev_black_thursday"]
 	var effects := sim.event_effects(definition.effects)
-	_expect(effects[0].params["amount"] == -56 and effects[1].params["amount"] == -64, "Sixteen worry layers produce 56 percent total GDP loss and 64 confidence loss")
+	_expect(effects[0].params["amount"] == -44 and effects[1].params["amount"] == -52, "Twelve worry layers produce 44 percent total GDP loss and 52 confidence loss")
 	sim.event_choice_available(-1)
-	_expect(worry.stacks == 16 and StatusRules.find_modifier(sim.state, &"stock_market_frenzy") != null, "Affordability preview cannot consume live market modifiers")
+	_expect(worry.stacks == 12 and StatusRules.find_modifier(sim.state, &"stock_market_frenzy") != null, "Affordability preview cannot consume live market modifiers")
 	sim.apply_command(Command.resolve_event(-1))
-	_expect(is_equal_approx(sim.state.indicators[&"gdp"], gdp * 0.44) and is_equal_approx(sim.state.indicators[&"confidence"], confidence - 64), "Actual losses match the displayed crisis values without applying collapse to the event")
+	_expect(is_equal_approx(sim.state.indicators[&"gdp"], gdp * 0.56) and is_equal_approx(sim.state.indicators[&"confidence"], confidence - 52), "Actual losses match the displayed crisis values without applying collapse to the event")
 	_expect(is_equal_approx(sim.state.indicators[&"unemployment"], unemployment + 16), "The prior economic settlement is not repeated after crisis confirmation")
 	_expect(StatusRules.find_modifier(sim.state, &"stock_market_frenzy") == null and StatusRules.find_modifier(sim.state, &"market_worry") == null and StatusRules.find_modifier(sim.state, &"confidence_crash") != null, "The crash consumes worry and replaces frenzy with collapse")
 	_expect(sim.state.budget == budget and not sim.state.pending_rewards.is_empty(), "Crisis resolution opens annual rewards without prematurely paying income")

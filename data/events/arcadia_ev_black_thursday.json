@@ -1,6 +1,6 @@
 {
   "id": "arcadia_ev_black_thursday", "title": "黑色星期四",
-  "description": "交易所被抛单淹没。",
+  "description": "在上周，股市上涨的势头开始放缓，我们的经济学家宣称这只是国际形式的小波动。今天，我国股市不再缓慢波动——它崩盘了。成千上万的人挤在交易所，只求能更早卖出自己手上的股票。这场金融游戏终于到了它的清算时刻。",
   "effects": [
     { "kind": "adjust_indicator", "params": { "target": "gdp", "amount": -8, "percent": true, "scale_modifier": "market_worry", "amount_per_stack": -3 } },
     { "kind": "adjust_indicator", "params": { "target": "confidence", "amount": -16, "scale_modifier": "market_worry", "amount_per_stack": -3 } },

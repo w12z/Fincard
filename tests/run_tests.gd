@@ -96,7 +96,7 @@ func _test_content() -> void:
 			if effect.kind == Effect.Kind.APPLY_MODIFIER and effect.params.get("scope", "") == "special":
 				_expect(controller.statuses.has(StringName(effect.params.get("target", ""))), "Special modifier must reference an existing definition")
 	for status: StatusDef in controller.statuses.values():
-		_expect(status.rule in [&"first_card_political_free", &"first_investment_discount", &"third_card_draw", &"deficit_spending", &"second_card_free", &"retain_card", &"all_types_refund", &"next_turn_replay", &"start_turn_review", &"save_political", &"investment_draw", &"aid_card_repeat", &"repeat_next_card", &"growth_confidence_bonus", &"market_overheating", &"negative_growth_confidence", &"next_investment_discount"], "Special modifier must have an implemented rule")
+		_expect(status.rule in [&"first_card_political_free", &"first_investment_discount", &"third_card_draw", &"deficit_spending", &"second_card_free", &"retain_card", &"all_types_refund", &"next_turn_replay", &"start_turn_review", &"save_political", &"investment_draw", &"aid_card_repeat", &"repeat_next_card", &"growth_confidence_bonus", &"market_overheating", &"negative_growth_confidence", &"next_investment_discount", &"first_card_discount", &"last_card_next_turn"], "Special modifier must have an implemented rule")
 
 
 func _check_economic_data_dir(path: String) -> void:
@@ -193,8 +193,8 @@ func _test_rules() -> void:
 	sim = _new_run(&"example_country")
 	_setup(sim)
 	sim.state.turn = 13
-	sim.state.indicators[&"gdp"] = 135.01
-	sim.state.indicators[&"unemployment"] = 6.1
+	sim.state.indicators[&"gdp"] = 134.9
+	sim.state.indicators[&"unemployment"] = 5.9
 	sim.state.indicators[&"inflation"] = 2
 	sim.economy.scenario_coefficients[&"gdp_auto"] = 0
 	sim.state.indicators[&"confidence"] = 50
