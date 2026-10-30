@@ -4,6 +4,10 @@ extends RefCounted
 
 static func text(sim: Simulation, labels: Dictionary, include_formulas: bool = true) -> String:
 	var next := sim.forecast_next_turn()
+	return from_state(sim, labels, next, include_formulas)
+
+
+static func from_state(sim: Simulation, labels: Dictionary, next: GameState, include_formulas: bool = true) -> String:
 	if next == null:
 		return "待完成当前选择" if sim.state.run_status == GameState.RunStatus.RUNNING else "本局已结束"
 	var parts := PackedStringArray(["[color=#667085]不含事件及新增奖励[/color]"])

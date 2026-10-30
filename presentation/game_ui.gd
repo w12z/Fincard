@@ -45,6 +45,7 @@ var _log: RichTextLabel
 var _sidebar: VBoxContainer
 var _sidebar_button: Button
 var _forecast: RichTextLabel
+var _calculation_map: CalculationMap
 var _parameters: RichTextLabel
 var _overlay_root: CenterContainer
 var _overlay_box: VBoxContainer
@@ -176,6 +177,9 @@ func _build() -> void:
 	_forecast.scroll_active = false
 	_forecast.custom_minimum_size.x = 230
 	forecast_content.add_child(_forecast)
+	_calculation_map = CalculationMap.new()
+	forecast_content.add_child(_calculation_map)
+	_calculation_map.attach(self)
 	var formula_button := Button.new()
 	formula_button.text = "结算公式与规则"
 	formula_button.toggle_mode = true
@@ -839,7 +843,9 @@ func _render_forecast() -> void:
 	var signature := _forecast_state_signature()
 	if not _forecast_dirty and signature == _forecast_signature:
 		return
-	_forecast.text = EconomyForecast.text(controller.simulation, _labels(), false)
+	var next := controller.simulation.forecast_next_turn()
+	_forecast.text = EconomyForecast.from_state(controller.simulation, _labels(), next, false)
+	_calculation_map.render(controller.simulation, next)
 	ImpactText.configure(_parameters)
 	_parameters.text = ImpactText.highlight_bbcode("[b]结算公式[/b]\n%s\n\n%s" % [EconomyForecast.formulas(controller.simulation), EconomyForecast.parameters(controller.simulation, _labels())])
 	_forecast_signature = signature
